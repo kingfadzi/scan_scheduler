@@ -1,0 +1,20 @@
+services:
+  postgres-service:
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
+      args:
+        USER_ID: ${HOST_UID}
+        GROUP_ID: ${HOST_GID}
+    container_name: postgres-service-db
+    ports:
+      - "5422:5432"
+    volumes:
+      - ./pgdata:/var/lib/pgsql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: airflow
+networks:
+  default:
+    name: postgres_network
