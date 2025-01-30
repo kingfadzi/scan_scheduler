@@ -7,6 +7,7 @@ ENV AIRFLOW_DAGS_FOLDER=/home/airflow/airflow/dags
 ARG GLOBAL_INDEX
 ARG GLOBAL_INDEX_URL
 ARG HOST_UID=1000
+ARG HOST_UID=1000
 ARG HOST_GID=1000
 ARG GRADLE_DISTRIBUTIONS_BASE_URL="https://services.gradle.org/distributions/"
 ARG GRADLE_VERSIONS="4.10.3 5.6.4 6.9.4 7.6.1 8.8 8.12"
@@ -123,12 +124,6 @@ RUN mkdir -p /home/airflow/.pip && \
     else \
       echo -e "[global]\nindex-url = ${GLOBAL_INDEX_URL}" > /home/airflow/.pip/pip.conf; \
     fi
-
-RUN wget -qO /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" && \
-    tar -xzf /tmp/tools.tar.gz -C / && \
-    rm /tmp/tools.tar.gz && \
-    chown airflow:airflow /usr/local/bin/* || true && \
-    chmod +x /usr/local/bin/* || true
 
 COPY --chown=airflow:airflow scheduler_entrypoint.sh /usr/local/bin/scheduler_entrypoint.sh
 
