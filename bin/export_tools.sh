@@ -25,3 +25,4 @@ docker exec "$CONTAINER_ID" tar -czf - \
 > "${DEST_DIR}/tools.tar.gz"
 
 echo "tools.tar.gz has been saved to ${DEST_DIR}/tools.tar.gz"
+
