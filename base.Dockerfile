@@ -92,6 +92,17 @@ RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" && \
     chown airflow:airflow /usr/local/bin/* || true && \
     chmod +x /usr/local/bin/* || true
 
+RUN dnf install -y unzip wget \
+ && mkdir -p /opt/gradle \
+ && for VERSION in $GRADLE_VERSIONS; do \
+      echo "Installing Gradle $VERSION..."; \
+      wget "${GRADLE_DISTRIBUTIONS_BASE_URL}gradle-${VERSION}-bin.zip" -O /tmp/gradle-${VERSION}-bin.zip; \
+      unzip -qo /tmp/gradle-${VERSION}-bin.zip -d /opt/gradle; \
+      rm /tmp/gradle-${VERSION}-bin.zip; \
+      ln -s "/opt/gradle/gradle-${VERSION}/bin/gradle" "/usr/local/bin/gradle-${VERSION}"; \
+    done \
+ && dnf clean all
+
 ENV GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
 ENV PATH="$GRADLE_HOME/bin:$PATH"
 
