@@ -15,13 +15,13 @@ mkdir -p "$DEST_DIR"
 
 docker exec "$CONTAINER_ID" tar -czf - \
   -C / \
-  usr/local/bin/cloc \
-  usr/local/bin/go-entry \
-  usr/local/bin/kantra \
-  usr/local/bin/grype \
-  usr/local/bin/syft \
-  usr/local/bin/trivy \
-  home/airflow \
+  /usr/local/bin/cloc \
+  /usr/local/bin/go-entry \
+  /usr/local/bin/kantra \
+  /usr/local/bin/grype \
+  /usr/local/bin/syft \
+  /usr/local/bin/trivy \
+  /home/airflow \
 > "${DEST_DIR}/tools.tar.gz"
 
 echo "tools.tar.gz has been saved to ${DEST_DIR}/tools.tar.gz"
