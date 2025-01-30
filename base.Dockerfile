@@ -1,3 +1,5 @@
+# base.Dockerfile
+
 # FROM registry.access.redhat.com/ubi8/ubi:latest
 FROM almalinux:8
 
@@ -6,7 +8,6 @@ ENV AIRFLOW_DAGS_FOLDER=/home/airflow/airflow/dags
 
 ARG GLOBAL_INDEX
 ARG GLOBAL_INDEX_URL
-ARG HOST_UID=1000
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 ARG GRADLE_DISTRIBUTIONS_BASE_URL="https://services.gradle.org/distributions/"
@@ -136,12 +137,5 @@ RUN mkdir -p /home/airflow/.pip && \
       echo -e "[global]\nindex-url = ${GLOBAL_INDEX_URL}" > /home/airflow/.pip/pip.conf; \
     fi
 
-COPY --chown=airflow:airflow scheduler_entrypoint.sh /usr/local/bin/scheduler_entrypoint.sh
-
-RUN chmod +x /usr/local/bin/scheduler_entrypoint.sh && \
-    chmod +x /usr/local/bin/*
-
 USER airflow
 WORKDIR /home/airflow/airflow
-EXPOSE 8080
-ENTRYPOINT ["/usr/local/bin/scheduler_entrypoint.sh"]
