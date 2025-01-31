@@ -1,0 +1,59 @@
+services:
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: scheduler.Dockerfile
+      args:
+        GLOBAL_CERT: ${GLOBAL_CERT}
+        GLOBAL_INDEX: ${GLOBAL_INDEX}
+        GLOBAL_INDEX_URL: ${GLOBAL_INDEX_URL}
+        HOST_UID: ${HOST_UID}
+        HOST_GID: ${HOST_GID}
+    container_name: airflow-scheduler
+    tmpfs:
+      - /home/airflow/cloned_repositories:size=10G,mode=1777
+      - /home/airflow/airflow/logs:size=500M,mode=177
+      - /home/airflow/airflow/output
+    environment:
+      CLONED_REPOSITORIES_DIR: /home/airflow/cloned_repositories
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-}
+      RULESET_MAPPING_FILE: ${RULESET_MAPPING_FILE}
+      METRICS_DATABASE_USER: ${METRICS_DATABASE_USER}
+      METRICS_DATABASE_PASSWORD: ${METRICS_DATABASE_PASSWORD}
+      METRICS_DATABASE_HOST: ${METRICS_DATABASE_HOST}
+      METRICS_DATABASE_PORT: ${METRICS_DATABASE_PORT}
+      METRICS_DATABASE_NAME: ${METRICS_DATABASE_NAME}
+      TRIVYIGNORE_TEMPLATE: ${TRIVYIGNORE_TEMPLATE}
+      SYFT_CONFIG_PATH: ${SYFT_CONFIG_PATH}
+      GRYPE_CONFIG_PATH: ${GRYPE_CONFIG_PATH}
+      SEMGREP_CONFIG_DIR: ${SEMGREP_CONFIG_DIR}
+
+      BITBUCKET_HOSTNAME: ${BITBUCKET_HOSTNAME}
+      GITLAB_HOSTNAME: ${GITLAB_HOSTNAME}
+
+      KANTRA_RULESETS: ${KANTRA_RULESETS}
+      KANTRA_OUTPUT_ROOT: /home/airflow/airflow/output
+
+      HTTP_PROXY_HOST: "${HTTP_PROXY_HOST:-}"
+      HTTP_PROXY_PORT: "${HTTP_PROXY_PORT:-}"
+      HTTP_PROXY_USER: "${HTTP_PROXY_USER:-}"
+      HTTP_PROXY_PASSWORD: "${HTTP_PROXY_PASSWORD:-}"
+      TRUSTSTORE_PATH: "${TRUSTSTORE_PATH:-}"
+      TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
+    restart: always
+    volumes:
+      - ${SSH_KEYS_PATH:-~/.ssh/porfolios_github_key}:/home/airflow/.ssh/id_rsa:ro
+      - ${SSH_KEYS_PUB_PATH:-~/.ssh/porfolios_github_key.pub}:/home/airflow/.ssh/id_rsa.pub:ro
+      - ./keys/java.cacerts:/home/airflow/java.cacerts
+      - ~/.gradle:/home/airflow/.gradle
+    networks:
+      - default
+
