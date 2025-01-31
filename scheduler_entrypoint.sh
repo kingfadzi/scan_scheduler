@@ -18,6 +18,8 @@ fi
 if [ -f /tmp/keys/known_hosts ]; then
     mkdir -p /home/airflow/.ssh
     cp /tmp/keys/known_hosts /home/airflow/.ssh/known_hosts
+    chmod 644 /home/airflow/.ssh/known_hosts
+    chown airflow:airflow /home/airflow/.ssh/known_hosts
 fi
 
 if [ -d /home/airflow/.ssh ]; then
