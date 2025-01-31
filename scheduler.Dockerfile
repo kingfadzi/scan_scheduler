@@ -1,7 +1,7 @@
 FROM my-airflow-base:latest
 
-ARG KANTRA_RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
-ENV KANTRA_RULESETS_GIT_URL=$KANTRA_RULESETS_GIT_URL
+ARG RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
+ENV RULESETS_GIT_URL=$RULESETS_GIT_URL
 
 ENV AIRFLOW_HOME=/home/airflow/airflow
 ENV AIRFLOW_DAGS_FOLDER=${AIRFLOW_HOME}/dags

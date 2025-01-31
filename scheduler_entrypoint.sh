@@ -15,13 +15,18 @@ if [ -f /tmp/keys/id_ed25519.pub ]; then
     chown airflow:airflow /home/airflow/.ssh/id_ed25519.pub
 fi
 
+if [ -f /tmp/keys/known_hosts ]; then
+    mkdir -p /home/airflow/.ssh
+    cp /tmp/keys/known_hosts /home/airflow/.ssh/known_hosts
+fi
+
 if [ -d /home/airflow/.ssh ]; then
     chmod 700 /home/airflow/.ssh
     chown airflow:airflow /home/airflow/.ssh
 fi
 
 rm -rf /home/airflow/.kantra/custom-rulesets
-git clone "$KANTRA_RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets
+git clone "$RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets
 chown -R airflow:airflow /home/airflow/.kantra/custom-rulesets
 
 rm -f "$AIRFLOW_HOME/airflow-scheduler.pid"
