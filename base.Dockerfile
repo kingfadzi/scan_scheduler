@@ -87,11 +87,12 @@ ENV JAVA_21_HOME="/usr/lib/jvm/java-21"
 ENV JAVA_HOME="${JAVA_17_HOME}"
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" && \
+RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" || (echo "Error: Failed to download tools tarball" && exit 1) && \
     tar -xzf /tmp/tools.tar.gz -C / && \
     rm /tmp/tools.tar.gz && \
-    chown airflow:airflow /usr/local/bin/* || true && \
-    chmod +x /usr/local/bin/* || true
+    chown airflow:airflow /usr/local/bin/* && \
+    chmod +x /usr/local/bin/*
+
 
 RUN dnf install -y unzip wget \
  && mkdir -p /opt/gradle \
