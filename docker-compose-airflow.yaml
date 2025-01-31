@@ -52,8 +52,7 @@ services:
     volumes:
       - ${SSH_KEYS_PATH:-~/.ssh/porfolios_github_key}:/home/airflow/.ssh/id_rsa:ro
       - ${SSH_KEYS_PUB_PATH:-~/.ssh/porfolios_github_key.pub}:/home/airflow/.ssh/id_rsa.pub:ro
-      - ./keys/java.cacerts:/home/airflow/java.cacerts
-      - ~/.gradle:/home/airflow/.gradle
+       - ~/.gradle:/home/airflow/.gradle
     networks:
       - default
 
