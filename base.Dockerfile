@@ -95,8 +95,8 @@ RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
  && chown -R airflow:airflow /usr/local/bin \
  && chmod -R +x /usr/local/bin
 
-RUN rm -rf /home/airflow/.kantra/current-ruleset \
- && git clone --depth=1 "${RULESET_REPO_URL}" /home/airflow/.kantra/current-ruleset \
+RUN rm -rf /home/airflow/.kantra/current-rulesets \
+ && git clone --depth=1 "${RULESET_REPO_URL}" /home/airflow/.kantra/current-rulesets \
  && chown -R airflow:airflow /home/airflow/.kantra
 
 RUN dnf install -y unzip wget \
