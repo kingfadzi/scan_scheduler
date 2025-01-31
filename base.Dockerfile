@@ -14,7 +14,6 @@ ARG GRADLE_DISTRIBUTIONS_BASE_URL="https://services.gradle.org/distributions/"
 ARG GRADLE_VERSIONS="4.10.3 5.6.4 6.9.4 7.6.1 8.8 8.12"
 ARG DEFAULT_GRADLE_VERSION=8.12
 ARG TOOLS_TARBALL_URL="http://192.168.1.188/tools.tar.gz"
-ARG RULESET_REPO_URL="https://github.com/kingfadzi/custom-rulesets.git"
 
 COPY keys/ /tmp/keys/
 

@@ -29,7 +29,6 @@ fi
 
 rm -rf /home/airflow/.kantra/custom-rulesets
 git clone "$RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets
-chown -R airflow:airflow /home/airflow/.kantra/custom-rulesets
 
 rm -f "$AIRFLOW_HOME/airflow-scheduler.pid"
 
