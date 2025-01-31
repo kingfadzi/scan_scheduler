@@ -50,8 +50,8 @@ services:
       TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
     restart: always
     volumes:
-      - ${SSH_KEYS_PATH:-~/.ssh/porfolios_github_key}:/home/airflow/.ssh/id_rsa:ro
-      - ${SSH_KEYS_PUB_PATH:-~/.ssh/porfolios_github_key.pub}:/home/airflow/.ssh/id_rsa.pub:ro
+      - ${SSH_KEYS_PATH:-~/.ssh/porfolios_github_key}:/tmp/keys/id_ed25519:ro
+      - ${SSH_KEYS_PUB_PATH:-~/.ssh/porfolios_github_key.pub}:/tmp/keys/id_ed25519.pub:ro
        - ~/.gradle:/home/airflow/.gradle
     networks:
       - default
