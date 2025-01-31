@@ -28,6 +28,11 @@ RUN if [ -f "/tmp/keys/tls-ca-bundle.pem" ]; then \
     [ -n "$GLOBAL_INDEX" ] && echo "index = ${GLOBAL_INDEX}" >> /etc/pip.conf; \
     echo "index-url = ${GLOBAL_INDEX_URL}" >> /etc/pip.conf
 
+RUN if [ -f "/tmp/keys/java.cacerts" ]; then \
+      mkdir -p /home/airflow && \
+      cp /tmp/keys/java.cacerts /home/airflow/java.cacerts; \
+    fi
+
 RUN dnf -y update && \
     dnf module reset -y python36 && \
     dnf install -y \
