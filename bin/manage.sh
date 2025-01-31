@@ -4,9 +4,9 @@ set -e
 ##
 # Usage: ./manage.sh <start|stop|restart> <env> <service>
 #
-# - 'start':   docker compose up -d --build
+# - 'start':   docker compose build --no-cache && docker compose up -d
 # - 'stop':    docker compose down
-# - 'restart': (stop + start)
+# - 'restart': (stop + build + start)
 #
 # <env> is used to find the file ".env-<env>"
 # <service> is used to find the file "docker-compose-<service>.yaml"
@@ -41,12 +41,22 @@ fi
 case "$COMMAND" in
   start)
     echo "Starting project '$PROJECT_NAME' using '$ENV_FILE' and '$COMPOSE_FILE'..."
+
+    # 1. Build (no cache)
     docker compose \
       --project-name "$PROJECT_NAME" \
       --env-file "$ENV_FILE" \
       -f "$COMPOSE_FILE" \
-      up -d --build
+      build --no-cache
+
+    # 2. Bring up containers
+    docker compose \
+      --project-name "$PROJECT_NAME" \
+      --env-file "$ENV_FILE" \
+      -f "$COMPOSE_FILE" \
+      up -d
     ;;
+
   stop)
     echo "Stopping project '$PROJECT_NAME' using '$ENV_FILE' and '$COMPOSE_FILE'..."
     docker compose \
@@ -55,22 +65,32 @@ case "$COMMAND" in
       -f "$COMPOSE_FILE" \
       down
     ;;
+
   restart)
-    echo "Restarting project '$PROJECT_NAME' by stopping then starting..."
-    # First, do a stop/down
+    echo "Restarting project '$PROJECT_NAME' by stopping, building, then starting..."
+
+    # 1. Stop/down
     docker compose \
       --project-name "$PROJECT_NAME" \
       --env-file "$ENV_FILE" \
       -f "$COMPOSE_FILE" \
       down
 
-    # Then, do a fresh start/up
+    # 2. Build (no cache)
     docker compose \
       --project-name "$PROJECT_NAME" \
       --env-file "$ENV_FILE" \
       -f "$COMPOSE_FILE" \
-      up -d --build
+      build --no-cache
+
+    # 3. Start containers
+    docker compose \
+      --project-name "$PROJECT_NAME" \
+      --env-file "$ENV_FILE" \
+      -f "$COMPOSE_FILE" \
+      up -d
     ;;
+
   *)
     echo "Invalid command: $COMMAND. Valid commands are 'start', 'stop', or 'restart'."
     exit 1

@@ -32,11 +32,21 @@ IF NOT EXIST "%COMPOSE_FILE%" (
 REM Handle the command
 IF /I "%COMMAND%"=="start" (
     echo Starting project "%PROJECT_NAME%" using "%ENV_FILE%" and "%COMPOSE_FILE%"...
+
+    REM Build with no cache
     docker compose ^
         --project-name "%PROJECT_NAME%" ^
         --env-file "%ENV_FILE%" ^
         -f "%COMPOSE_FILE%" ^
-        up -d --build
+        build --no-cache
+
+    REM Start containers
+    docker compose ^
+        --project-name "%PROJECT_NAME%" ^
+        --env-file "%ENV_FILE%" ^
+        -f "%COMPOSE_FILE%" ^
+        up -d
+
 ) ELSE IF /I "%COMMAND%"=="stop" (
     echo Stopping project "%PROJECT_NAME%" using "%ENV_FILE%" and "%COMPOSE_FILE%"...
     docker compose ^
@@ -44,8 +54,10 @@ IF /I "%COMMAND%"=="start" (
         --env-file "%ENV_FILE%" ^
         -f "%COMPOSE_FILE%" ^
         down
+
 ) ELSE IF /I "%COMMAND%"=="restart" (
-    echo Restarting project "%PROJECT_NAME%" by stopping then starting...
+    echo Restarting project "%PROJECT_NAME%" by stopping, building, then starting...
+
     REM Stop/down first
     docker compose ^
         --project-name "%PROJECT_NAME%" ^
@@ -53,12 +65,20 @@ IF /I "%COMMAND%"=="start" (
         -f "%COMPOSE_FILE%" ^
         down
 
-    REM Start/up again
+    REM Build with no cache
     docker compose ^
         --project-name "%PROJECT_NAME%" ^
         --env-file "%ENV_FILE%" ^
         -f "%COMPOSE_FILE%" ^
-        up -d --build
+        build --no-cache
+
+    REM Start containers
+    docker compose ^
+        --project-name "%PROJECT_NAME%" ^
+        --env-file "%ENV_FILE%" ^
+        -f "%COMPOSE_FILE%" ^
+        up -d
+
 ) ELSE (
     echo Invalid command: %COMMAND%. Valid commands are "start", "stop", or "restart".
     exit /b 1
