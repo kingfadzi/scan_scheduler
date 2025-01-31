@@ -10,7 +10,7 @@ services:
     ports:
       - "5422:5432"
     volumes:
-      - ./pgdata:/var/lib/pgsql/data
+      - postgres_data:/var/lib/pgsql/data
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -18,3 +18,6 @@ services:
 networks:
   default:
     name: postgres_network
+
+volumes:
+  postgres_data:
