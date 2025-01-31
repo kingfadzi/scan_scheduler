@@ -1,4 +1,4 @@
 # scheduler
 
-`docker build -f base.Dockerfile -t airflow-base:latest .`
+`docker build --no-cache -f base.Dockerfile -t airflow-base:latest .`
 
