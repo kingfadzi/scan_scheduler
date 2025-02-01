@@ -57,9 +57,9 @@ services:
 
     restart: always
     volumes:
-      - ${USER_HOME}/.ssh/id_ed25519:/tmp/keys/id_ed25519:ro
-      - ${USER_HOME}/.ssh/id_ed25519.pub:/tmp/keys/id_ed25519.pub:ro
-      - ${USER_HOME}/.ssh/known_hosts:/tmp/keys/known_hosts:ro
+      - ${USER_HOME}/.ssh/id_REPLACE_ME:/tmp/keys/id_ed25519:ro
+      - ${USER_HOME}/.ssh/id_REPLACE_ME.pub:/tmp/keys/id_ed25519.pub:ro
+      - ${USER_HOME}/.ssh/known_hosts_REPLACE_ME:/tmp/keys/known_hosts:ro
       - ${USER_HOME}/.gradle:/home/airflow/.gradle:ro
 
     networks:
