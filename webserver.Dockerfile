@@ -1,4 +1,4 @@
-FROM airflow-base:1.0
+FROM airflow-base:latest
 
 ENV AIRFLOW_HOME=/home/airflow/airflow
 ENV AIRFLOW_DAGS_FOLDER=${AIRFLOW_HOME}/dags
