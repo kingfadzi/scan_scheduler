@@ -57,10 +57,11 @@ services:
 
     restart: always
     volumes:
-      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/id_ed25519:/tmp/keys/id_ed25519:ro
-      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/id_ed25519.pub:/tmp/keys/id_ed25519.pub:ro
-      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/known_hosts:/tmp/keys/known_hosts:ro
-      - ${USER_HOME:?Error: USER_HOME is not set}/.gradle:/home/airflow/.gradle
+      - ${USER_HOME}/.ssh/id_ed25519:/tmp/keys/id_ed25519:ro
+      - ${USER_HOME}/.ssh/id_ed25519.pub:/tmp/keys/id_ed25519.pub:ro
+      - ${USER_HOME}/.ssh/known_hosts:/tmp/keys/known_hosts:ro
+      - ${USER_HOME}/.gradle:/home/airflow/.gradle:ro
+
     networks:
       - default
 
