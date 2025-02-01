@@ -57,9 +57,9 @@ services:
 
     restart: always
     volumes:
-      - ${SSH_KEYS_PATH:-/dev/null}:/tmp/keys/id_ed25519:ro
-      - ${SSH_KEYS_PUB_PATH:-/dev/null}:/tmp/keys/id_ed25519.pub:ro
-      - ${SSH_KNOWN_HOSTS_PATH:-/dev/null}:/tmp/keys/known_hosts:ro
+      - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro
+      - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub:ro
+      - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts:ro
       - ${USER_HOME}/.gradle:/home/airflow/.gradle:ro
 
     networks:
