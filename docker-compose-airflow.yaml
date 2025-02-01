@@ -48,12 +48,19 @@ services:
       HTTP_PROXY_PASSWORD: "${HTTP_PROXY_PASSWORD:-}"
       TRUSTSTORE_PATH: "${TRUSTSTORE_PATH:-}"
       TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
+
+      AIRFLOW_ADMIN_USERNAME: admin
+      AIRFLOW_ADMIN_FIRSTNAME: Admin
+      AIRFLOW_ADMIN_LASTNAME: User
+      AIRFLOW_ADMIN_EMAIL: admin@example.com
+      AIRFLOW_ADMIN_PASSWORD: password
+
     restart: always
     volumes:
-      - ~/.ssh/id_ed25519:/tmp/keys/id_ed25519:ro
-      - ~/.ssh/id_ed25519.pub:/tmp/keys/id_ed25519.pub:ro
-      - ~/.ssh/known_hosts:/tmp/keys/known_hosts:ro
-      - ~/.gradle:/home/airflow/.gradle
+      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/id_ed25519:/tmp/keys/id_ed25519:ro
+      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/id_ed25519.pub:/tmp/keys/id_ed25519.pub:ro
+      - ${USER_HOME:?Error: USER_HOME is not set}/.ssh/known_hosts:/tmp/keys/known_hosts:ro
+      - ${USER_HOME:?Error: USER_HOME is not set}/.gradle:/home/airflow/.gradle
     networks:
       - default
 
@@ -69,6 +76,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+
+      AIRFLOW_ADMIN_USERNAME: admin
+      AIRFLOW_ADMIN_FIRSTNAME: Admin
+      AIRFLOW_ADMIN_LASTNAME: User
+      AIRFLOW_ADMIN_EMAIL: admin@example.com
+      AIRFLOW_ADMIN_PASSWORD: password
+
     ports:
       - "8088:8080"
     restart: always
