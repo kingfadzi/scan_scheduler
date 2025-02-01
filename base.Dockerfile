@@ -92,13 +92,6 @@ ENV JAVA_21_HOME="/usr/lib/jvm/java-21"
 ENV JAVA_HOME="${JAVA_17_HOME}"
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
-    || (echo "Error: Failed to download tools tarball" && exit 1) \
- && tar -xzvf /tmp/tools.tar.gz -C / \
- && rm /tmp/tools.tar.gz \
- && chown -R airflow:airflow /usr/local/bin \
- && chmod -R +x /usr/local/bin
-
 RUN dnf install -y unzip wget \
  && mkdir -p /opt/gradle \
  && for VERSION in $GRADLE_VERSIONS; do \
@@ -135,6 +128,13 @@ RUN mkdir -p \
     chmod 700 /home/airflow/.ssh
 
 COPY --chown=airflow:airflow ./airflow.cfg $AIRFLOW_HOME/airflow.cfg
+
+RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
+    || (echo "Error: Failed to download tools tarball" && exit 1) \
+ && tar -xzvf /tmp/tools.tar.gz -C / \
+ && rm /tmp/tools.tar.gz \
+ && chown -R airflow:airflow /usr/local/bin \
+ && chmod -R +x /usr/local/bin
 
 RUN mkdir -p /home/airflow/.pip && \
     if [ -n "$GLOBAL_CERT" ]; then \
