@@ -11,9 +11,6 @@ USER root
 COPY --chown=airflow:airflow ./dags $AIRFLOW_DAGS_FOLDER
 COPY --chown=airflow:airflow ./modular $AIRFLOW_DAGS_FOLDER/modular
 
-RUN chmod -R airflow:airflow $AIRFLOW_DAGS_FOLDER
-RUN chmod -R airflow:airflow AIRFLOW_DAGS_FOLDER/modular
-
 COPY --chown=airflow:airflow scheduler_entrypoint.sh /usr/local/bin/scheduler_entrypoint.sh
 RUN chmod +x /usr/local/bin/scheduler_entrypoint.sh
 
