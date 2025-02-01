@@ -27,11 +27,11 @@ if [ -d /home/airflow/.ssh ]; then
     chown airflow:airflow /home/airflow/.ssh
 fi
 
-rm -rf /home/airflow/.kantra/custom-rulesets
-if ! git clone "$RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets; then
-    echo "Git clone failed for repository: $RULESETS_GIT_URL. Exiting..."
-    exit 1
-fi
+#rm -rf /home/airflow/.kantra/custom-rulesets
+#if ! git clone "$RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets; then
+#    echo "Git clone failed for repository: $RULESETS_GIT_URL. Exiting..."
+#    exit 1
+#fi
 
 rm -f "$AIRFLOW_HOME/airflow-scheduler.pid"
 
