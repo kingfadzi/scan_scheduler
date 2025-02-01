@@ -1,4 +1,4 @@
-FROM my-airflow-base:latest
+FROM airflow-base:latest
 
 ARG RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
 ENV RULESETS_GIT_URL=$RULESETS_GIT_URL
