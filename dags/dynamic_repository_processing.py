@@ -24,7 +24,6 @@ def analyze_repositories(batch, run_id, **kwargs):
         try:
             logger.info(f"Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
 
-            # Instantiate and call each analyzer class
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
             logger.debug(f"Repository cloned to: {repo_dir}")
 
@@ -85,18 +84,16 @@ def determine_final_status(repo, run_id, session):
     session.commit()
     logger.info(f"Final status for repository {repo.repo_name}: {repo.status} ({repo.comment})")
 
-def fetch_repositories(batch_size=1000, **kwargs):
+def fetch_repositories(batch_size=1000, sql_query=None):
     """
-    Fetch repositories dynamically based on the SQL query provided in the DAG run config.
+    Fetch repositories dynamically based on the SQL query provided.
     If no query is provided, do nothing.
     """
-    session = Session()
-    sql_query = kwargs['dag_run'].conf.get('sql')
-
     if not sql_query:
         logger.info("No SQL query provided. Skipping repository fetching.")
-        return  # Exit early if no SQL is provided
+        return []
 
+    session = Session()
     try:
         result = session.execute(text(sql_query)).fetchall()
         repositories = [Repository(**dict(row)) for row in result]
@@ -106,16 +103,26 @@ def fetch_repositories(batch_size=1000, **kwargs):
 
     except Exception as e:
         logger.error(f"Error executing SQL query: {e}")
+        return []
 
     finally:
         session.close()
 
-def create_batches(batch_size=1000, num_tasks=10, **kwargs):
+def create_batches(batch_size=1000, num_tasks=10, dag_run=None):
     """
     Fetch repositories dynamically based on SQL query from dag_run.conf.
     """
+    if not dag_run:
+        logger.error("dag_run object is missing. No repositories will be processed.")
+        return []
+
+    sql_query = dag_run.conf.get('sql')
+    if not sql_query:
+        logger.info("No SQL query provided. Skipping repository fetching.")
+        return []
+
     logger.info("Fetching repositories with custom SQL query and creating batches.")
-    all_repositories = [repo for batch in fetch_repositories(batch_size, **kwargs) for repo in batch]
+    all_repositories = [repo for batch in fetch_repositories(batch_size, sql_query=sql_query) for repo in batch]
 
     if not all_repositories:
         logger.info("No repositories found. Skipping batch creation.")
@@ -141,10 +148,12 @@ with DAG(
         catchup=False,
 ) as dag:
 
-    # Fetch and divide repositories into batches using the submitted SQL query
-    batches = create_batches(batch_size=1000, num_tasks=10, **{'dag_run': '{{ dag_run }}'})
+    def prepare_batches(**kwargs):
+        return create_batches(batch_size=1000, num_tasks=10, dag_run=kwargs['dag_run'])
 
-    if batches:  # Ensure we only create tasks if there are repositories to process
+    batches = prepare_batches(**{'dag_run': '{{ dag_run }}'})
+
+    if batches:
         for task_id, batch in enumerate(batches):
             PythonOperator(
                 task_id=f"process_batch_{task_id}",
