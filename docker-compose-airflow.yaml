@@ -60,7 +60,7 @@ services:
       - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro
       - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub:ro
       - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts:ro
-      - ${USER_HOME}/.gradle:/home/airflow/.gradle:ro
+      - ${USER_HOME}/.gradle:/home/airflow/.gradle
 
     networks:
       - default
