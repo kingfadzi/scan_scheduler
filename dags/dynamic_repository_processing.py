@@ -139,7 +139,7 @@ default_args = {
     'retries': 1
 }
 
-# Define the **new** DAG with dynamic SQL support
+# Define the DAG with dynamic SQL support
 with DAG(
         'dynamic_repository_processing',
         default_args=default_args,
@@ -149,19 +149,34 @@ with DAG(
 ) as dag:
 
     def prepare_batches(**kwargs):
-        return create_batches(batch_size=1000, num_tasks=10, dag_run=kwargs['dag_run'])
+        return create_batches(batch_size=1000, num_tasks=10, dag_run=kwargs.get('dag_run'))
 
-    batches = prepare_batches(**{'dag_run': '{{ dag_run }}'})
+    prepare_batches_task = PythonOperator(
+        task_id="prepare_batches",
+        python_callable=prepare_batches,
+        provide_context=True
+    )
 
-    if batches:
+    def process_batches(**kwargs):
+        batches = kwargs['ti'].xcom_pull(task_ids="prepare_batches")
+        if not batches:
+            logger.info("No tasks created because no repositories were fetched.")
+            return
+
         for task_id, batch in enumerate(batches):
             PythonOperator(
                 task_id=f"process_batch_{task_id}",
                 python_callable=analyze_repositories,
                 op_kwargs={
                     'batch': batch,
-                    'run_id': '{{ run_id }}'
+                    'run_id': kwargs['run_id']
                 },
-            )
-    else:
-        logger.info("No tasks created because no repositories were fetched.")
+            ).execute(kwargs)
+
+    process_batches_task = PythonOperator(
+        task_id="process_batches",
+        python_callable=process_batches,
+        provide_context=True
+    )
+
+    prepare_batches_task >> process_batches_task
