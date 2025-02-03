@@ -28,13 +28,14 @@ def log_payload(**kwargs):
 
     # Extract and log individual fields (handling missing keys)
     fields = [
-        "crm.host_name",
-        "crm.activity_status",
-        "crm.tc",
-        "crm.main_language",
-        "crm.classification_label",
-        "r.app_id",
-        "crm.number_of_contributors"
+        "repo_id",
+        "host_name",
+        "activity_status",
+        "tc",
+        "main_language",
+        "classification_label",
+        "app_id",
+        "number_of_contributors"
     ]
 
     for field in fields:
