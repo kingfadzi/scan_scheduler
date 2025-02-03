@@ -29,7 +29,7 @@ def log_message(**context):
 
 with dag:
     log_task = PythonOperator(
-        task_id='log_message_task',
+        task_id='dynamic_repository_processing',
         python_callable=log_message,
         provide_context=True
     )
