@@ -58,6 +58,8 @@ class CloningAnalyzer(BaseLogger):
         clone_url_ssh = repo.clone_url_ssh
         host_name = repo.host_name
 
+        self.logger.info(f"Processing URL: {clone_url_ssh}")
+
         if not host_name:
             raise ValueError("repo.host_name is required")
 
