@@ -24,7 +24,7 @@ with DAG(
     def process_batches(**kwargs):
         dag_run = kwargs.get('dag_run')
         payload = dag_run.conf if dag_run and dag_run.conf else {}
-        batches = create_batches(payload, batch_size=1000, num_tasks=5)
+        batches = create_batches(payload, batch_size=5, num_tasks=5)
         run_id = kwargs.get('run_id') or '{{ run_id }}'
         for i, batch in enumerate(batches):
             logger.info(f"Processing batch {i} with {len(batch)} repositories")
