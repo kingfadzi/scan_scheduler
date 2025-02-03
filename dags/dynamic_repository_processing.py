@@ -11,7 +11,7 @@ def log_sql_query(**kwargs):
     """
     Extracts and logs the SQL query from the API request (dag_run.conf).
     """
-    dag_run = kwargs.get('dag_run')  # Correctly access dag_run
+    dag_run = kwargs.get('dag_run')
 
     if not dag_run:
         logger.error("Missing dag_run context")
@@ -27,10 +27,10 @@ def log_sql_query(**kwargs):
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2023, 12, 1),
-    'retries': 1
+    'retries': 0  # Disable retries for all tasks
 }
 
-# Define DAG with the same name
+# Define DAG
 with DAG(
     'dynamic_repository_processing',
     default_args=default_args,
@@ -40,7 +40,8 @@ with DAG(
 
     log_sql_task = PythonOperator(
         task_id="log_sql_query",
-        python_callable=log_sql_query
+        python_callable=log_sql_query,
+        retries=0  # Explicitly disable retries for this task
     )
 
-    log_sql_task  # Ensures task is part of the DAG
+    log_sql_task
