@@ -1,47 +1,35 @@
-import logging
-from airflow import DAG
-from airflow.operators.python import PythonOperator
 from datetime import datetime
+from airflow import DAG
+from airflow.models.param import Param
+from airflow.operators.python import PythonOperator
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def log_sql_query(**kwargs):
-    """
-    Extracts and logs the SQL query from the API request (dag_run.conf).
-    """
-    dag_run = kwargs.get('dag_run')
-
-    if not dag_run:
-        logger.error("Missing dag_run context")
-        return
-
-    sql_query = dag_run.conf.get('sql')
-    if sql_query:
-        logger.info(f"Received SQL query: {sql_query}")
-    else:
-        logger.info("No SQL query provided.")
-
-# Default DAG arguments
+# Define the DAG with a string parameter
 default_args = {
     'owner': 'airflow',
-    'start_date': datetime(2023, 12, 1),
-    'retries': 0  # Disable retries for all tasks
+    'start_date': datetime(2024, 1, 1),
 }
 
-# Define DAG
-with DAG(
-    'dynamic_repository_processing',
+dag = DAG(
+    'log_message_dag',
     default_args=default_args,
+    description='A DAG that accepts a string parameter and logs it',
     schedule_interval=None,
     catchup=False,
-) as dag:
+    params={
+        'message': Param('Default message', type='string', description='Message to log')
+    }
+)
 
-    log_sql_task = PythonOperator(
-        task_id="log_sql_query",
-        python_callable=log_sql_query,
-        retries=0  # Explicitly disable retries for this task
+def log_message(**context):
+    # Retrieve the message parameter
+    message = context['params']['message']
+
+    # Log the message
+    context['ti'].log.info(f"Received message: {message}")
+
+with dag:
+    log_task = PythonOperator(
+        task_id='log_message_task',
+        python_callable=log_message,
+        provide_context=True
     )
-
-    log_sql_task
