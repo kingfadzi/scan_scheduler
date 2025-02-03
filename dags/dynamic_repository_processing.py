@@ -12,8 +12,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def analyze_repositories(batch, run_id, **kwargs):
-    session = Session()
-    for repo in batch:
+    session = Session()  # Processing session
+    # Reattach each Repository object to this session.
+    attached_batch = [session.merge(repo) for repo in batch]
+    for repo in attached_batch:
         repo_dir = None
         try:
             logger.info(f"Processing: {repo.repo_name} ({repo.repo_id})")
