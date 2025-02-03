@@ -32,18 +32,20 @@ def build_query(payload):
     for key, column in filter_mapping.items():
         if key in payload:
             value = payload[key]
-            # Handle list values: generate an IN clause.
+            # If the value is a list, generate an IN clause.
             if isinstance(value, list):
                 if value:  # Only add filter if the list is not empty.
-                    formatted_values = ", ".join(
-                        f"'{v}'" if isinstance(v, str) else str(v)
-                        for v in value
-                    )
-                    filters.append(f"{column} IN ({formatted_values})")
+                    # For lists of strings, generate case-insensitive comparisons.
+                    if all(isinstance(v, str) for v in value):
+                        formatted_values = ", ".join(f"LOWER('{v.lower()}')" for v in value)
+                        filters.append(f"LOWER({column}) IN ({formatted_values})")
+                    else:
+                        formatted_values = ", ".join(str(v) for v in value)
+                        filters.append(f"{column} IN ({formatted_values})")
             else:
-                # Handle single value: add an equality check.
+                # For single values, use case-insensitive equality for strings.
                 if isinstance(value, str):
-                    filters.append(f"{column} = '{value}'")
+                    filters.append(f"LOWER({column}) = LOWER('{value}')")
                 else:
                     filters.append(f"{column} = {value}")
 
