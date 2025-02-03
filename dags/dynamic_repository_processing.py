@@ -19,12 +19,11 @@ from sqlalchemy import text
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def analyze_repositories(batch, run_id, **kwargs):
+def analyze_repositories(batch, run_id):
     session = Session()
     for repo in batch:
         try:
             logger.info(f"Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
-
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
             logger.debug(f"Repository cloned to: {repo_dir}")
 
@@ -37,10 +36,8 @@ def analyze_repositories(batch, run_id, **kwargs):
             repo.updated_on = datetime.utcnow()
             session.add(repo)
             session.commit()
-            logger.info(f"Repository {repo.repo_name} marked as ERROR.")
         finally:
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
-            logger.debug(f"Repository directory {repo_dir} cleaned up.")
 
     session.close()
 
@@ -53,9 +50,7 @@ def fetch_repositories(batch_size=1000, sql_query=None):
     try:
         result = session.execute(text(sql_query)).fetchall()
         repositories = [Repository(**dict(row)) for row in result]
-
-        for i in range(0, len(repositories), batch_size):
-            yield repositories[i:i + batch_size]
+        return [repositories[i:i + batch_size] for i in range(0, len(repositories), batch_size)]
 
     except Exception as e:
         logger.error(f"Error executing SQL query: {e}")
@@ -64,7 +59,11 @@ def fetch_repositories(batch_size=1000, sql_query=None):
     finally:
         session.close()
 
-def create_batches(ti, batch_size=1000, num_tasks=10, dag_run=None):
+def create_batches(ti, batch_size=1000, num_tasks=10, **kwargs):
+    """
+    Fetch repositories dynamically based on the SQL query provided in dag_run.conf.
+    """
+    dag_run = kwargs.get('dag_run')
     if not dag_run:
         logger.error("dag_run object is missing. No repositories will be processed.")
         return []
@@ -75,16 +74,12 @@ def create_batches(ti, batch_size=1000, num_tasks=10, dag_run=None):
         return []
 
     logger.info("Fetching repositories with custom SQL query and creating batches.")
-    all_repositories = [repo for batch in fetch_repositories(batch_size, sql_query=sql_query) for repo in batch]
+    task_batches = fetch_repositories(batch_size, sql_query)
 
-    if not all_repositories:
+    if not task_batches:
         logger.info("No repositories found. Skipping batch creation.")
         return []
 
-    task_batches = [all_repositories[i::num_tasks] for i in range(num_tasks)]
-    logger.info(f"Created {len(task_batches)} batches for processing.")
-
-    # Store batch data in XCom
     ti.xcom_push(key='batches', value=task_batches)
 
 # Default DAG arguments
@@ -94,7 +89,6 @@ default_args = {
     'retries': 1
 }
 
-# Define DAG
 with DAG(
         'dynamic_repository_processing',
         default_args=default_args,
@@ -106,6 +100,7 @@ with DAG(
     prepare_batches_task = PythonOperator(
         task_id="prepare_batches",
         python_callable=create_batches,
+        op_kwargs={'batch_size': 1000, 'num_tasks': 10},
         provide_context=True
     )
 
@@ -119,7 +114,8 @@ with DAG(
                 return
             
             batch = batches[task_id]
-            analyze_repositories(batch, run_id=kwargs['run_id'])
+            run_id = kwargs.get('run_id', 'manual_run')
+            analyze_repositories(batch, run_id)
 
         batch_processing_tasks = [
             PythonOperator(
@@ -128,7 +124,7 @@ with DAG(
                 provide_context=True,
                 op_kwargs={'task_id': i}
             )
-            for i in range(10)  # 10 tasks
+            for i in range(10)
         ]
 
     prepare_batches_task >> process_batches_group
