@@ -10,7 +10,7 @@ default_args = {
 }
 
 dag = DAG(
-    'log_message_dag',
+    'dynamic_repository_processing',
     default_args=default_args,
     description='A DAG that accepts a string parameter and logs it',
     schedule_interval=None,
