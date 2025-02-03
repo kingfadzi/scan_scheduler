@@ -63,10 +63,11 @@ def fetch_repositories(payload, batch_size=1000):
         batch = session.query(Repository).from_statement(text(final_query)).all()
         if not batch:
             break
+        for repo in batch:
+            session.expunge(repo)
         yield batch
         offset += batch_size
-    # session.close()
-
+    session.close()
 
 def create_batches(payload, batch_size=1000, num_tasks=5):
     all_repos = []
