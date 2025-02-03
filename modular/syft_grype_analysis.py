@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from modular.models import Session, GrypeResult
 from modular.execution_decorator import analyze_execution
 from modular.config import Config
-from modular.base_logger import BaseLogger  # Assuming BaseLogger is correctly implemented and available
+from modular.base_logger import BaseLogger
 import logging
 
 class SyftAndGrypeAnalyzer(BaseLogger):
@@ -97,7 +97,6 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 file_path = locations[0].get("path", "N/A") if locations else "N/A"
                 language = artifact.get("language", "Unknown")
 
-                # Extract fix metadata
                 fix_data = vulnerability.get("fix", {})
                 fix_versions_list = fix_data.get("versions", [])
                 fix_versions = ", ".join(fix_versions_list)

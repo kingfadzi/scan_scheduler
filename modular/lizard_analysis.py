@@ -6,18 +6,18 @@ from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert
 from modular.models import Session, LizardSummary
 from modular.execution_decorator import analyze_execution
-from modular.base_logger import BaseLogger  # Import BaseLogger
+from modular.base_logger import BaseLogger
 
 
 class LizardAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("LizardAnalyzer")
-        self.logger.setLevel(logging.DEBUG)  # Set default logging level to WARN
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Lizard Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        """Run lizard analysis and persist only the summary results."""
+
         self.logger.info(f"Starting lizard analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
 
@@ -28,7 +28,6 @@ class LizardAnalyzer(BaseLogger):
 
         self.logger.debug(f"Repository directory found: {repo_dir}")
 
-        # Run lizard analysis command
         self.logger.info(f"Executing lizard command in directory: {repo_dir}")
         try:
             with open(analysis_file, "w") as outfile:
@@ -50,7 +49,6 @@ class LizardAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        # Parse and persist the language analysis results
         self.logger.info(f"Parsing lizard output for repo_id: {repo.repo_id}")
         try:
             processed_metrics = self.parse_and_persist_lizard_results(repo.repo_id, analysis_file, session)
@@ -112,7 +110,7 @@ class LizardAnalyzer(BaseLogger):
             raise
 
     def save_lizard_summary(self, session, repo_id, summary):
-        """Persist lizard summary metrics."""
+
         self.logger.debug(f"Saving lizard summary metrics for repo_id: {repo_id}")
         try:
             session.execute(

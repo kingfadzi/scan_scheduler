@@ -16,10 +16,6 @@ class GradleSnippetBuilder(BaseLogger):
             return self._modern_snippet(task_name)
 
     def _legacy_snippet(self, task_name):
-        """
-        Legacy snippet that uses resolvedConfiguration and references project.allprojects in doLast.
-        This can trigger deprecation warnings in Gradle 7–8, but is needed for older Gradle <7.
-        """
         return f"""
 task {task_name} {{
     outputs.upToDateWhen {{ false }}
@@ -59,10 +55,6 @@ task {task_name} {{
 """
 
     def _modern_snippet(self, task_name):
-        """
-        Modern snippet for Gradle ≥7 or ≥8. Avoids references to Task.project at execution time.
-        Uses resolutionResult and captures rootProject.allprojects at configuration time.
-        """
         return f"""
 task {task_name} {{
     def allProjectsList = gradle.rootProject.allprojects

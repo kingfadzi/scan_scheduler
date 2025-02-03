@@ -106,12 +106,9 @@ class CloningAnalyzer(BaseLogger):
 if __name__ == "__main__":
     session = Session()
 
-    # Fetch a sample repository (status="NEW", just for demo)
-    # repositories = session.query(Repository).filter_by(status="NEW").limit(1).all()
-
     repositories = (
         session.query(Repository)
-        .join(RepoMetrics, Repository.repo_id == RepoMetrics.repo_id)  # Explicit join condition
+        .join(RepoMetrics, Repository.repo_id == RepoMetrics.repo_id)
         .filter(RepoMetrics.activity_status == 'ACTIVE')
         .limit(1)
         .all()

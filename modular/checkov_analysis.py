@@ -4,14 +4,14 @@ from sqlalchemy.dialects.postgresql import insert
 from modular.models import Session, CheckovSummary
 from modular.execution_decorator import analyze_execution
 from subprocess import run, DEVNULL
-from modular.base_logger import BaseLogger  # BaseLogger for logging configuration
+from modular.base_logger import BaseLogger
 import logging
 
 class CheckovAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("CheckovAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Set default logging level to WARN
+        self.logger.setLevel(logging.WARN)
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -39,8 +39,8 @@ class CheckovAnalyzer(BaseLogger):
                     ],
                     check=False,
                     text=True,
-                    stdout=DEVNULL,  # Suppress stdout
-                    stderr=error_log  # Redirect stderr to log file
+                    stdout=DEVNULL,
+                    stderr=error_log
                 )
 
             results_file = os.path.join(output_dir, "results_json.json")

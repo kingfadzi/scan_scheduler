@@ -10,9 +10,6 @@ from modular.config import Config
 from modular.base_logger import BaseLogger  # Import the BaseLogger
 
 class TrivyAnalyzer(BaseLogger):
-    """
-    Analyzer for running Trivy scans and persisting results.
-    """
 
     def __init__(self):
         self.logger = self.get_logger("TrivyAnalyzer")
@@ -29,7 +26,6 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
-            # self.prepare_trivyignore(repo_dir)
 
             result = subprocess.run(
                 ["trivy", "repo", "--skip-db-update", "--skip-java-db-update", "--offline-scan", "--format", "json", repo_dir],
@@ -69,7 +65,7 @@ class TrivyAnalyzer(BaseLogger):
         return f"{total_vulnerabilities} vulnerabilities found."
 
     def prepare_trivyignore(self, repo_dir):
-        """Copy the global .trivyignore file to the repository if it doesn't exist."""
+
         trivyignore_path = os.path.join(repo_dir, ".trivyignore")
 
         if os.path.exists(trivyignore_path):

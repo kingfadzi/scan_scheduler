@@ -1,5 +1,3 @@
-# modular/utils/query_builder.py
-
 def build_query(payload):
     filter_mapping = {
         'repo_id': 'bitbucket_repositories.repo_id',
@@ -31,7 +29,7 @@ def build_query(payload):
     filters = []
     for key, column in filter_mapping.items():
         if key in payload:
-            values = payload[key]  # All payload values are arrays.
+            values = payload[key]
             if not values:
                 continue
             if key == 'repo_id':
@@ -48,7 +46,6 @@ def build_query(payload):
     return base_query
 
 if __name__ == "__main__":
-    # Example payload for testing the query builder independently.
     payload_example = {
         'repo_id': ['abc'],
         'host_name': ['github.com'],

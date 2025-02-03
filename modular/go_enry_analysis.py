@@ -8,9 +8,6 @@ from modular.execution_decorator import analyze_execution
 from modular.base_logger import BaseLogger
 
 class GoEnryAnalyzer(BaseLogger):
-    """
-    Analyzer for performing language analysis using go-enry and persisting results.
-    """
 
     def __init__(self):
         self.logger = self.get_logger("GoEnryAnalyzer")
@@ -18,7 +15,6 @@ class GoEnryAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Go Enry Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        """Perform language analysis using go-enry and persist results."""
         self.logger.info(f"Starting language analysis for repository: {repo.repo_name} (ID: {repo.repo_id})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
 
@@ -61,14 +57,7 @@ class GoEnryAnalyzer(BaseLogger):
         return f"{processed_languages} languages processed"
 
     def parse_and_persist_enry_results(self, repo_id, analysis_file_path, session):
-        """
-        Parse the go-enry analysis output and persist the results to the database.
 
-        :param repo_id: Repository ID being analyzed.
-        :param analysis_file_path: Path to the go-enry analysis output file.
-        :param session: Database session for saving results.
-        :return: Number of languages processed.
-        """
         try:
             self.logger.info(f"Reading analysis file at: {analysis_file_path}")
             with open(analysis_file_path, "r") as f:

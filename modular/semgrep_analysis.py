@@ -12,9 +12,6 @@ from modular.base_logger import BaseLogger
 import configparser
 
 class SemgrepAnalyzer(BaseLogger):
-    """
-    Analyzer for running Semgrep and processing results.
-    """
 
     def __init__(self):
         self.logger = self.get_logger("SemgrepAnalyzer")
@@ -22,9 +19,7 @@ class SemgrepAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Semgrep Analysis")
     def run_analysis(self, repo, repo_dir, session, run_id=None):
-        """
-        Run Semgrep analysis dynamically based on the languages detected in the repository.
-        """
+
         self.logger.info(f"Starting Semgrep analysis for repo_id: {repo.repo_id}")
 
         try:
@@ -69,9 +64,7 @@ class SemgrepAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
     def get_languages_from_db(self, repo_id, session):
-        """
-        Query the `GoEnryAnalysis` table to retrieve all languages for a given repo_id.
-        """
+
         self.logger.info(f"Querying languages for repo_id: {repo_id}")
         stmt = select(GoEnryAnalysis.language).where(GoEnryAnalysis.repo_id == repo_id)
         result = session.execute(stmt).fetchall()
@@ -106,9 +99,7 @@ class SemgrepAnalyzer(BaseLogger):
         return command
 
     def save_semgrep_results(self, session, repo_id, semgrep_data):
-        """
-        Save Semgrep findings to the database using upsert logic to avoid duplicates.
-        """
+
         self.logger.info(f"Saving Semgrep findings for repo_id: {repo_id}")
         total_upserts = 0
 

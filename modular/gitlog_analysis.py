@@ -8,9 +8,6 @@ from modular.base_logger import BaseLogger  # Import BaseLogger for logging
 import logging
 
 class GitLogAnalyzer(BaseLogger):
-    """
-    Analyzer for calculating and persisting Git repository metrics.
-    """
 
     def __init__(self):
         self.logger = self.get_logger("GitLogAnalyzer")
@@ -18,15 +15,7 @@ class GitLogAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Git Log Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        """
-        Calculate and persist repository metrics.
 
-        :param repo_dir: Directory path of the repository to be analyzed.
-        :param repo: Repository object containing metadata like repo_id and repo_slug.
-        :param session: Database session to persist the results.
-        :param run_id: DAG run ID passed for tracking.
-        :return: Success message with all processed metrics or raises an exception on failure.
-        """
         self.logger.info(f"Starting metrics calculation for repository: {repo.repo_name} (ID: {repo.repo_id})")
 
         if not os.path.exists(repo_dir):
@@ -118,12 +107,7 @@ class GitLogAnalyzer(BaseLogger):
         )
 
     def get_repo_object(self, repo_dir):
-        """
-        Retrieve the Git repository object using GitPython.
 
-        :param repo_dir: Path to the repository directory.
-        :return: Repo object or None if the repository cannot be accessed.
-        """
         try:
             repo_obj = Repo(repo_dir)
             return repo_obj

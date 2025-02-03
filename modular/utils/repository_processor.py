@@ -1,5 +1,3 @@
-# modular/processing/repository_processor.py
-
 import logging
 from datetime import datetime
 from sqlalchemy import text
@@ -78,7 +76,7 @@ def create_batches(payload, batch_size=1000, num_tasks=5):
 
 def main():
     sample_payload = {
-        # 'repo_id': ['abc'],  # example: will use LIKE '%abc%'
+        # 'repo_id': ['abc'],  # use LIKE '%abc%'
         'host_name': ['github.com'],
         'activity_status': ['ACTIVE'],
         # 'tc': ['some_tc_value'],

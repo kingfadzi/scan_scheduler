@@ -12,20 +12,15 @@ class AnalysisLogger(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 def analyze_execution(session_factory, stage=None):
-    """
-    Decorator to track and log analysis execution details (status, duration, etc.) to the database.
 
-    :param session_factory: Callable that provides a database session (e.g., Session).
-    :param stage: Optional stage name for the function (e.g., "Trivy Analysis").
-    """
     decorator_logger = AnalysisLogger().logger
 
     def decorator(func):
-        @functools.wraps(func)  # functools is imported here
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             session = session_factory()
             method_name = func.__name__
-            run_id = kwargs.get("run_id", "N/A")  # Optional run_id from kwargs
+            run_id = kwargs.get("run_id", "N/A")
 
             # If the method is an instance method, args[0] is `self`
             self_instance = args[0] if len(args) > 0 and hasattr(args[0], "__class__") else None
@@ -44,11 +39,11 @@ def analyze_execution(session_factory, stage=None):
                 session.close()
                 raise ValueError(f"Expected attribute 'repo_id' missing in repo object: {repo}")
 
-            repo_id = repo.repo_id  # Access repo_id directly from repo object
+            repo_id = repo.repo_id
             start_time = time.time()
 
             try:
-                # Log initial processing state to the database
+
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
@@ -66,11 +61,9 @@ def analyze_execution(session_factory, stage=None):
                     f"(Repo ID: {repo_id})..."
                 )
 
-                # Execute the actual function
                 result_message = func(*args, **kwargs)
                 elapsed_time = time.time() - start_time
 
-                # Log success to the database
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
@@ -96,7 +89,6 @@ def analyze_execution(session_factory, stage=None):
                 elapsed_time = time.time() - start_time
                 error_message = str(e)
 
-                # Log failure to the database
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
