@@ -1,5 +1,6 @@
-def build_query(payload):
+# modular/utils/query_builder.py
 
+def build_query(payload):
     filter_mapping = {
         'repo_id': 'bitbucket_repositories.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
@@ -10,13 +11,17 @@ def build_query(payload):
         'app_id': 'combined_repo_metrics.app_id',
         'number_of_contributors': 'combined_repo_metrics.number_of_contributors'
     }
-
-    select_cols = ["bitbucket_repositories.*"]
+    select_cols = [
+        "bitbucket_repositories.repo_id as repo_id",
+        "bitbucket_repositories.repo_name as repo_name",
+        "bitbucket_repositories.status as status",
+        "bitbucket_repositories.comment as comment",
+        "bitbucket_repositories.updated_on as updated_on"
+    ]
     for key, col in filter_mapping.items():
         if key != 'repo_id':
-            select_cols.append(col)
+            select_cols.append(f"{col} as {key}")
     select_clause = "SELECT " + ", ".join(select_cols)
-
     base_query = f"""
         {select_clause}
         FROM bitbucket_repositories
@@ -27,7 +32,7 @@ def build_query(payload):
     filters = []
     for key, column in filter_mapping.items():
         if key in payload:
-            values = payload[key]
+            values = payload[key]  # All payload values are arrays.
             if not values:
                 continue
             if key == 'repo_id':
@@ -44,15 +49,17 @@ def build_query(payload):
     return base_query
 
 if __name__ == "__main__":
+    # Example payload for testing the query builder independently.
     payload_example = {
-        'repo_id': ['crAPI'],
+        'repo_id': ['abc'],
         'host_name': ['github.com'],
         'activity_status': ['ACTIVE'],
-        #'tc': ['some_tc_value'],
-        'main_language': ['Java','HTML'],
-        'classification_label': ['Code -> Small'],
-        #'app_id': ['555'],
-        #'number_of_contributors': [5]
+        'tc': ['some_tc_value'],
+        'main_language': ['Python'],
+        'classification_label': ['A'],
+        'app_id': ['555'],
+        'number_of_contributors': [5]
     }
     query = build_query(payload_example)
-    print("Constructed Query:", query)
+    print("Constructed Query:")
+    print(query)
