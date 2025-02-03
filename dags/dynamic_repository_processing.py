@@ -6,6 +6,8 @@ from modular.models import Session, Repository, AnalysisExecutionLog, CombinedRe
 from modular.cloning import CloningAnalyzer
 from modular.kantra_analysis import KantraAnalyzer
 from modular.utils.query_builder import build_query
+from sqlalchemy import text
+from modular.models import Repository
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -61,7 +63,7 @@ def fetch_repositories(payload, batch_size=1000):
     while True:
         final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
         logger.info(f"Executing query: {final_query}")
-        batch = session.execute(final_query).fetchall()
+        batch = session.query(Repository).from_statement(text(final_query)).all()
         if not batch:
             break
         yield batch
