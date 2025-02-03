@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from airflow import DAG
-from airflow.decorators import task, get_current_context
+from airflow.operators.python import get_current_context
 from modular.utils.repository_processor import create_batches, analyze_repositories
 
 logging.basicConfig(level=logging.DEBUG)
