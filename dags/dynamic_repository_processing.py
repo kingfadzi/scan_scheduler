@@ -12,16 +12,17 @@ def log_sql_query(**kwargs):
     Extracts and logs the SQL query from the API request (dag_run.conf).
     """
     dag_run = kwargs.get('dag_run')
+    
     if not dag_run:
-        logger.error("No dag_run object found. Cannot extract SQL query.")
+        logger.error("❌ No dag_run object found. Cannot extract SQL query.")
         return
 
     sql_query = dag_run.conf.get('sql')
-    if not sql_query:
-        logger.info("No SQL query provided.")
-        return
 
-    logger.info(f"Received SQL query: {sql_query}")
+    if not sql_query:
+        logger.info("ℹ️ No SQL query provided.")
+    else:
+        logger.info(f"✅ Received SQL query: {sql_query}")
 
 # Default DAG arguments
 default_args = {
@@ -41,5 +42,7 @@ with DAG(
     log_sql_task = PythonOperator(
         task_id="log_sql_query",
         python_callable=log_sql_query,
-        provide_context=True  # Ensures we get `dag_run`
+        op_kwargs={'dag_run': '{{ dag_run }}'}  # Explicitly pass dag_run
     )
+
+    log_sql_task  # Explicitly link task to DAG
