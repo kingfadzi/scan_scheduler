@@ -77,7 +77,7 @@ def create_batches(payload, batch_size=1000, num_tasks=5):
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2023, 12, 1),
-    'retries': 1
+    'retries': 0
 }
 
 with DAG(
