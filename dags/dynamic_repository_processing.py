@@ -22,26 +22,28 @@ with DAG(
 
     @task
     def get_payload(**kwargs):
-        # Retrieve payload from dag_run.conf; if missing, return an empty dict.
         dag_run = kwargs.get('dag_run')
         return dag_run.conf if dag_run and dag_run.conf else {}
 
     @task
+    def get_run_id(**kwargs):
+        # Extract run_id from the context if available; otherwise use a default.
+        # This task returns a concrete value that can be used downstream.
+        return kwargs.get('run_id', "default_run_id")
+
+    @task
     def get_batches(payload: dict, batch_size: int = 1000, num_tasks: int = 5):
-        # Use your decoupled business logic to create batches
         batches = create_batches(payload, batch_size=batch_size, num_tasks=num_tasks)
         logger.info(f"Created {len(batches)} batches.")
         return batches
 
     @task
     def process_batch(batch, run_id: str):
-        # Process one batch using your business logic.
         analyze_repositories(batch, run_id=run_id)
 
     payload = get_payload()
+    run_id = get_run_id()  # This returns a concrete value, not a templated variable.
     batches = get_batches(payload)
-    # The run_id can be passed from context or templated; here we use a templated string.
-    run_id = "{{ run_id }}"
 
-    # Dynamically map the process_batch task over the list of batches.
-    process_batch.expand(batch=batches, run_id=run_id)
+    # Using partial to set the constant run_id and then expand over batches.
+    process_batch.partial(run_id=run_id).expand(batch=batches)
