@@ -1,0 +1,14 @@
+apache-airflow==2.10.4
+atlassian_python_api==3.41.16
+GitPython==3.1.43
+pandas==2.2.3
+python_dateutil==2.9.0.post0
+python_gitlab==5.3.0
+pytz==2024.2
+PyYAML==6.0.2
+Requests==2.32.3
+SQLAlchemy==1.4.54
+lizard
+psycopg2-binary
+python-dotenv
+semgrep
