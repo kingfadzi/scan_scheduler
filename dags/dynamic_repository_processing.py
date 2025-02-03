@@ -3,53 +3,75 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def log_payload(**kwargs):
+def build_query(payload):
+    base_query = """
+        SELECT bitbucket_repositories.*
+        FROM bitbucket_repositories
+        JOIN combined_repo_metrics 
+          ON combined_repo_metrics.repo_id = bitbucket_repositories.repo_id
+        WHERE 1=1
     """
-    Extracts and logs the received payload from dag_run.conf.
-    """
-    dag_run = kwargs.get('dag_run')
 
+    # Map payload keys to their respective columns.
+    # Note: repo_id comes from bitbucket_repositories; all other fields come from combined_repo_metrics.
+    filter_mapping = {
+        'repo_id': 'bitbucket_repositories.repo_id',
+        'host_name': 'combined_repo_metrics.host_name',
+        'activity_status': 'combined_repo_metrics.activity_status',
+        'tc': 'combined_repo_metrics.tc',
+        'main_language': 'combined_repo_metrics.main_language',
+        'classification_label': 'combined_repo_metrics.classification_label',
+        'app_id': 'combined_repo_metrics.app_id',
+        'number_of_contributors': 'combined_repo_metrics.number_of_contributors'
+    }
+
+    filters = []
+    for key, column in filter_mapping.items():
+        if key in payload:
+            value = payload[key]
+            # Handle list values: generate an IN clause.
+            if isinstance(value, list):
+                if value:  # Only add filter if the list is not empty.
+                    formatted_values = ", ".join(
+                        f"'{v}'" if isinstance(v, str) else str(v)
+                        for v in value
+                    )
+                    filters.append(f"{column} IN ({formatted_values})")
+            else:
+                # Handle single value: add an equality check.
+                if isinstance(value, str):
+                    filters.append(f"{column} = '{value}'")
+                else:
+                    filters.append(f"{column} = {value}")
+
+    if filters:
+        base_query += " AND " + " AND ".join(filters)
+
+    return base_query
+
+def log_query(**kwargs):
+    dag_run = kwargs.get('dag_run')
     if not dag_run:
         logger.error("Missing dag_run context")
         return
 
-    payload = dag_run.conf  # Extract entire payload
-
+    payload = dag_run.conf
     if not payload:
-        logger.info("No payload provided.")
-        return
+        logger.info("No payload provided; constructing query with no filters.")
+        payload = {}
 
-    # Log received payload
-    logger.info(f"Received payload: {payload}")
+    query = build_query(payload)
+    logger.info(f"Constructed Query: {query}")
 
-    # Extract and log individual fields (handling missing keys)
-    fields = [
-        "repo_id",
-        "host_name",
-        "activity_status",
-        "tc",
-        "main_language",
-        "classification_label",
-        "app_id",
-        "number_of_contributors"
-    ]
-
-    for field in fields:
-        values = payload.get(field, [])
-        logger.info(f"{field}: {values}")
-
-# Default DAG arguments
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2023, 12, 1),
-    'retries': 0  # Disable retries
+    'retries': 0
 }
 
-# Define DAG
 with DAG(
         'dynamic_repository_processing',
         default_args=default_args,
@@ -57,9 +79,9 @@ with DAG(
         catchup=False,
 ) as dag:
 
-    log_payload_task = PythonOperator(
-        task_id="log_payload",
-        python_callable=log_payload
+    log_query_task = PythonOperator(
+        task_id="log_query",
+        python_callable=log_query
     )
 
-    log_payload_task
+    log_query_task
