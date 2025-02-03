@@ -14,7 +14,7 @@ def build_query(payload):
     select_cols = [
         "bitbucket_repositories.repo_id as repo_id",
         "bitbucket_repositories.status as status",
-        "bitbucket_repositories.status as clone_url_ssh",
+        "bitbucket_repositories.clone_url_ssh as clone_url_ssh",
         "bitbucket_repositories.updated_on as updated_on"
     ]
     for key, col in filter_mapping.items():
