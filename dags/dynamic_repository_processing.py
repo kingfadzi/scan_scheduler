@@ -1,35 +1,64 @@
-from datetime import datetime
+import logging
 from airflow import DAG
-from airflow.models.param import Param
 from airflow.operators.python import PythonOperator
+from datetime import datetime
 
-# Define the DAG with a string parameter
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def log_payload(**kwargs):
+    """
+    Extracts and logs the received payload from dag_run.conf.
+    """
+    dag_run = kwargs.get('dag_run')
+
+    if not dag_run:
+        logger.error("Missing dag_run context")
+        return
+
+    payload = dag_run.conf  # Extract entire payload
+
+    if not payload:
+        logger.info("No payload provided.")
+        return
+
+    # Log received payload
+    logger.info(f"Received payload: {payload}")
+
+    # Extract and log individual fields (handling missing keys)
+    fields = [
+        "crm.host_name",
+        "crm.activity_status",
+        "crm.tc",
+        "crm.main_language",
+        "crm.classification_label",
+        "r.app_id",
+        "crm.number_of_contributors"
+    ]
+
+    for field in fields:
+        values = payload.get(field, [])
+        logger.info(f"{field}: {values}")
+
+# Default DAG arguments
 default_args = {
     'owner': 'airflow',
-    'start_date': datetime(2024, 1, 1),
+    'start_date': datetime(2023, 12, 1),
+    'retries': 0  # Disable retries
 }
 
-dag = DAG(
-    'dynamic_repository_processing',
-    default_args=default_args,
-    description='A DAG that accepts a string parameter and logs it',
-    schedule_interval=None,
-    catchup=False,
-    params={
-        'query': Param('Default message', type='string', description='Message to log')
-    }
-)
+# Define DAG
+with DAG(
+        'dynamic_repository_processing',
+        default_args=default_args,
+        schedule_interval=None,
+        catchup=False,
+) as dag:
 
-def log_message(**context):
-    # Retrieve the message parameter
-    query = context['params']['query']
-
-    # Log the message
-    context['ti'].log.info(f"Received message: {query}")
-
-with dag:
-    log_task = PythonOperator(
-        task_id='dynamic_repository_processing',
-        python_callable=log_message,
-        provide_context=True
+    log_payload_task = PythonOperator(
+        task_id="log_payload",
+        python_callable=log_payload
     )
+
+    log_payload_task
