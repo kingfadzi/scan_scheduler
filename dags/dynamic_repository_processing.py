@@ -52,8 +52,10 @@ def determine_final_status(repo, run_id, session):
     session.add(repo)
     session.commit()
 
+from sqlalchemy import text
+
 def fetch_repositories(payload, batch_size=1000):
-    session = Session()
+    session = Session(expire_on_commit=False)
     offset = 0
     base_query = build_query(payload)
     logger.info(f"Built query: {base_query}")
@@ -66,6 +68,7 @@ def fetch_repositories(payload, batch_size=1000):
         yield batch
         offset += batch_size
     session.close()
+
 
 def create_batches(payload, batch_size=1000, num_tasks=5):
     all_repos = []
