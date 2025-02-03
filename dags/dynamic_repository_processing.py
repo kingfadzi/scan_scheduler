@@ -1,6 +1,7 @@
 import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.utils.task_group import TaskGroup
 from datetime import datetime
 from modular.cloning import CloningAnalyzer
 from modular.gitlog_analysis import GitLogAnalyzer
@@ -27,17 +28,7 @@ def analyze_repositories(batch, run_id, **kwargs):
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
             logger.debug(f"Repository cloned to: {repo_dir}")
 
-            # Uncomment to enable additional analysis tools
-            # LizardAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            # ClocAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            # GoEnryAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            # GitLogAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-
             TrivyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-
-            # SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            # CheckovAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            # SemgrepAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
             logger.error(f"Error processing repository {repo.repo_name}: {e}")
@@ -51,44 +42,9 @@ def analyze_repositories(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"Repository directory {repo_dir} cleaned up.")
 
-        determine_final_status(repo, run_id, session)
-
     session.close()
 
-def determine_final_status(repo, run_id, session):
-    """
-    Determine the final status of a repository after all analysis runs.
-    """
-    logger.info(f"Determining final status for repository {repo.repo_name} (ID: {repo.repo_id}) with run_id: {run_id}")
-
-    analysis_statuses = (
-        session.query(AnalysisExecutionLog.status)
-        .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo.repo_id)
-        .filter(AnalysisExecutionLog.status != "PROCESSING")
-        .all()
-    )
-
-    if not analysis_statuses:
-        repo.status = "ERROR"
-        repo.comment = "No analysis records found for this run ID."
-    elif any(status == "FAILURE" for (status,) in analysis_statuses):
-        repo.status = "FAILURE"
-    elif all(status == "SUCCESS" for (status,) in analysis_statuses):
-        repo.status = "SUCCESS"
-        repo.comment = "All analysis steps completed successfully."
-    else:
-        repo.status = "UNKNOWN"
-
-    repo.updated_on = datetime.utcnow()
-    session.add(repo)
-    session.commit()
-    logger.info(f"Final status for repository {repo.repo_name}: {repo.status} ({repo.comment})")
-
 def fetch_repositories(batch_size=1000, sql_query=None):
-    """
-    Fetch repositories dynamically based on the SQL query provided.
-    If no query is provided, do nothing.
-    """
     if not sql_query:
         logger.info("No SQL query provided. Skipping repository fetching.")
         return []
@@ -108,10 +64,7 @@ def fetch_repositories(batch_size=1000, sql_query=None):
     finally:
         session.close()
 
-def create_batches(batch_size=1000, num_tasks=10, dag_run=None):
-    """
-    Fetch repositories dynamically based on SQL query from dag_run.conf.
-    """
+def create_batches(ti, batch_size=1000, num_tasks=10, dag_run=None):
     if not dag_run:
         logger.error("dag_run object is missing. No repositories will be processed.")
         return []
@@ -130,7 +83,9 @@ def create_batches(batch_size=1000, num_tasks=10, dag_run=None):
 
     task_batches = [all_repositories[i::num_tasks] for i in range(num_tasks)]
     logger.info(f"Created {len(task_batches)} batches for processing.")
-    return task_batches
+
+    # Store batch data in XCom
+    ti.xcom_push(key='batches', value=task_batches)
 
 # Default DAG arguments
 default_args = {
@@ -139,7 +94,7 @@ default_args = {
     'retries': 1
 }
 
-# Define the DAG with dynamic SQL support
+# Define DAG
 with DAG(
         'dynamic_repository_processing',
         default_args=default_args,
@@ -148,35 +103,32 @@ with DAG(
         catchup=False,
 ) as dag:
 
-    def prepare_batches(**kwargs):
-        return create_batches(batch_size=1000, num_tasks=10, dag_run=kwargs.get('dag_run'))
-
     prepare_batches_task = PythonOperator(
         task_id="prepare_batches",
-        python_callable=prepare_batches,
+        python_callable=create_batches,
         provide_context=True
     )
 
-    def process_batches(**kwargs):
-        batches = kwargs['ti'].xcom_pull(task_ids="prepare_batches")
-        if not batches:
-            logger.info("No tasks created because no repositories were fetched.")
-            return
+    with TaskGroup(group_id="process_batches_group") as process_batches_group:
+        def process_batch(task_id, **kwargs):
+            ti = kwargs['ti']
+            batches = ti.xcom_pull(task_ids="prepare_batches", key="batches")
+            
+            if not batches or task_id >= len(batches):
+                logger.info(f"Skipping process_batch_{task_id} as there is no data.")
+                return
+            
+            batch = batches[task_id]
+            analyze_repositories(batch, run_id=kwargs['run_id'])
 
-        for task_id, batch in enumerate(batches):
+        batch_processing_tasks = [
             PythonOperator(
-                task_id=f"process_batch_{task_id}",
-                python_callable=analyze_repositories,
-                op_kwargs={
-                    'batch': batch,
-                    'run_id': kwargs['run_id']
-                },
-            ).execute(kwargs)
+                task_id=f"process_batch_{i}",
+                python_callable=process_batch,
+                provide_context=True,
+                op_kwargs={'task_id': i}
+            )
+            for i in range(10)  # 10 tasks
+        ]
 
-    process_batches_task = PythonOperator(
-        task_id="process_batches",
-        python_callable=process_batches,
-        provide_context=True
-    )
-
-    prepare_batches_task >> process_batches_task
+    prepare_batches_task >> process_batches_group
