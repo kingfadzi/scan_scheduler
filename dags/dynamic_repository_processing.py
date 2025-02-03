@@ -16,16 +16,16 @@ dag = DAG(
     schedule_interval=None,
     catchup=False,
     params={
-        'message': Param('Default message', type='string', description='Message to log')
+        'query': Param('Default message', type='string', description='Message to log')
     }
 )
 
 def log_message(**context):
     # Retrieve the message parameter
-    message = context['params']['message']
+    query = context['params']['query']
 
     # Log the message
-    context['ti'].log.info(f"Received message: {message}")
+    context['ti'].log.info(f"Received message: {query}")
 
 with dag:
     log_task = PythonOperator(
