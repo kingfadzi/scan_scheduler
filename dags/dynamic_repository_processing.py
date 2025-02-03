@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.decorators import task
 from modular.utils.repository_processor import create_batches, analyze_repositories
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,22 +17,31 @@ with DAG(
         'dynamic_repository_processing',
         default_args=default_args,
         schedule_interval=None,
-        max_active_tasks=5,
         catchup=False,
 ) as dag:
 
-    def process_batches(**kwargs):
+    @task
+    def get_payload(**kwargs):
+        # Retrieve payload from dag_run.conf; if missing, return an empty dict.
         dag_run = kwargs.get('dag_run')
-        payload = dag_run.conf if dag_run and dag_run.conf else {}
-        batches = create_batches(payload, batch_size=5, num_tasks=5)
-        run_id = kwargs.get('run_id') or '{{ run_id }}'
-        for i, batch in enumerate(batches):
-            logger.info(f"Processing batch {i} with {len(batch)} repositories")
-            analyze_repositories(batch, run_id=run_id)
+        return dag_run.conf if dag_run and dag_run.conf else {}
 
-    process_task = PythonOperator(
-        task_id="process_batches",
-        python_callable=process_batches,
-    )
+    @task
+    def get_batches(payload: dict, batch_size: int = 1000, num_tasks: int = 5):
+        # Use your decoupled business logic to create batches
+        batches = create_batches(payload, batch_size=batch_size, num_tasks=num_tasks)
+        logger.info(f"Created {len(batches)} batches.")
+        return batches
 
-    process_task
+    @task
+    def process_batch(batch, run_id: str):
+        # Process one batch using your business logic.
+        analyze_repositories(batch, run_id=run_id)
+
+    payload = get_payload()
+    batches = get_batches(payload)
+    # The run_id can be passed from context or templated; here we use a templated string.
+    run_id = "{{ run_id }}"
+
+    # Dynamically map the process_batch task over the list of batches.
+    process_batch.expand(batch=batches, run_id=run_id)
