@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -52,23 +53,36 @@ def determine_final_status(repo, run_id, session):
     session.add(repo)
     session.commit()
 
-from sqlalchemy import text
+@contextmanager
+def session_scope():
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 def fetch_repositories(payload, batch_size=1000):
-    session = Session(expire_on_commit=False)
-    offset = 0
     base_query = build_query(payload)
     logger.info(f"Built query: {base_query}")
-    while True:
-        final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-        logger.info(f"Executing query: {final_query}")
-        batch = session.query(Repository).from_statement(text(final_query)).all()
-        if not batch:
-            break
-        yield batch
-        offset += batch_size
-    session.close()
 
+    with session_scope() as session:
+        offset = 0
+        while True:
+            try:
+                final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+                logger.info(f"Executing query: {final_query}")
+                batch = session.query(Repository).from_statement(text(final_query)).all()
+                if not batch:
+                    break
+                yield batch
+                offset += batch_size
+            except Exception as e:
+                logger.error(f"Error fetching repositories: {str(e)}")
+                raise
 
 def create_batches(payload, batch_size=1000, num_tasks=5):
     all_repos = []
