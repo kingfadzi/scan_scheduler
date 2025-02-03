@@ -1,21 +1,21 @@
 import logging
 from datetime import datetime
 from airflow import DAG
-from airflow.operators.python import get_current_context
 from airflow.decorators import task
+from airflow.operators.python import get_current_context
 from modular.utils.repository_processor import create_batches, analyze_repositories
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2023, 12, 1),
-    'retries': 0,
+    "owner": "airflow",
+    "start_date": datetime(2023, 12, 1),
+    "retries": 0,
 }
 
 with DAG(
-        'dynamic_repository_processing',
+        "dynamic_repository_processing",
         default_args=default_args,
         schedule_interval=None,
         catchup=False,
@@ -34,7 +34,6 @@ with DAG(
 
     @task
     def process_batch(batch):
-        # Retrieve the run_id from the task context at runtime.
         context = get_current_context()
         run_id = context["dag_run"].run_id
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
@@ -42,5 +41,4 @@ with DAG(
 
     payload = get_payload()
     batches = get_batches(payload)
-    # Dynamically map process_batch over the list of batches.
     process_batch.expand(batch=batches)
