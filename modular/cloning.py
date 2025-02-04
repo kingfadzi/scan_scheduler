@@ -95,9 +95,9 @@ class CloningAnalyzer(BaseLogger):
 
 
     def cleanup_repository_directory(self, repo_dir):
-        """
-        Remove the cloned repository directory to free up space.
-        """
+
+        self.logger.info(f"Cleaning up repo_dir: {repo_dir}")
+
         if os.path.exists(repo_dir):
             subprocess.run(f"rm -rf {repo_dir}", shell=True, check=True)
             self.logger.info(f"Cleaned up repository directory: {repo_dir}")
