@@ -56,7 +56,7 @@ with DAG(
         failed_states=["failed", "upstream_failed"],
         execution_date_fn=get_external_execution_date,
         check_existence=True,
-        mode="poke",
+        mode="poke",  # poke mode so failures are detected immediately
         poke_interval=15,
         timeout=3600,
     )
