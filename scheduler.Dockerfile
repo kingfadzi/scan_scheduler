@@ -8,6 +8,8 @@ ENV AIRFLOW_DAGS_FOLDER=${AIRFLOW_HOME}/dags
 
 USER root
 
+RUN mkdir -p $AIRFLOW_DAGS_FOLDER/sql
+
 COPY --chown=airflow:airflow ./dags $AIRFLOW_DAGS_FOLDER
 COPY --chown=airflow:airflow ./modular $AIRFLOW_DAGS_FOLDER/modular
 COPY --chown=airflow:airflow ./sql $AIRFLOW_DAGS_FOLDER/sql

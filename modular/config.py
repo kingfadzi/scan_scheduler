@@ -44,4 +44,4 @@ class Config:
     TRUSTSTORE_PATH = os.getenv("TRUSTSTORE_PATH", "")
     TRUSTSTORE_PASSWORD = os.getenv("TRUSTSTORE_PASSWORD", "")
 
-    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "/home/airflow/airflow/sql")
+    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "/home/airflow/airflow/dags/sql")
