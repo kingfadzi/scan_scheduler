@@ -46,26 +46,25 @@ with DAG(
     processed = process_batch.expand(batch=batches)
     finalize = DummyOperator(task_id="finalize")
 
-    # When finalize is reached, trigger downstream DAGs.
     trigger_component_patterns = TriggerDagRunOperator(
         task_id="trigger_component_patterns",
         trigger_dag_id="component_patterns",
         reset_dag_run=True,
-        conf="{{ dag_run.conf }}",
+        conf="{{ dag_run.conf | tojson }}",
     )
 
     trigger_standards_assessment = TriggerDagRunOperator(
         task_id="trigger_standards_assessment",
         trigger_dag_id="standards_assessment",
         reset_dag_run=True,
-        conf="{{ dag_run.conf }}",
+        conf="{{ dag_run.conf | tojson }}",
     )
 
     trigger_vulnerability_metrics = TriggerDagRunOperator(
         task_id="trigger_vulnerability_metrics",
         trigger_dag_id="vulnerability_metrics",
         reset_dag_run=True,
-        conf="{{ dag_run.conf }}",
+        conf="{{ dag_run.conf | tojson }}",
     )
 
     processed >> finalize
