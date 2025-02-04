@@ -15,6 +15,7 @@ from modular.syft_grype_analysis import SyftAndGrypeAnalyzer
 from modular.trivy_analysis import TrivyAnalyzer
 from modular.checkov_analysis import CheckovAnalyzer
 from modular.semgrep_analysis import SemgrepAnalyzer
+from modular.config import Config
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -177,9 +178,8 @@ def create_batches(payload, batch_size=1000, num_tasks=5):
 def execute_sql_script(script_file_path):
     session = Session()
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.abspath(os.path.join(current_dir, ".."))
-        sql_script_file_path = os.path.join(project_root, script_file_path)
+
+        sql_script_file_path = os.path.join(Config.SQL_SCRIPTS_DIR, script_file_path)
 
         with open(sql_script_file_path, "r") as file:
             sql_script = file.read()
