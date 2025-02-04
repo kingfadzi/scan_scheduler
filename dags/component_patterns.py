@@ -15,7 +15,7 @@ default_args = {
 }
 
 with DAG(
-        "dynamic_repository_processing",
+        "component_patterns",
         default_args=default_args,
         schedule_interval=None,
         catchup=False,
