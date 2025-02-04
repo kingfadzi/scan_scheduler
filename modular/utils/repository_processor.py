@@ -1,5 +1,7 @@
 import logging
+import os
 from datetime import datetime
+
 from sqlalchemy import text
 from modular.models import Session, Repository, AnalysisExecutionLog
 from modular.cloning import CloningAnalyzer
@@ -43,8 +45,10 @@ def analyze_fundamentals(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"[Fundamentals] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
-    session.close()
 
+    execute_sql_script(session, "combined_repo_metrics.sql")
+
+    session.close()
 
 def analyze_vulnerabilities(batch, run_id, **kwargs):
 
@@ -169,6 +173,24 @@ def create_batches(payload, batch_size=1000, num_tasks=5):
     for batch in fetch_repositories(payload, batch_size):
         all_repos.extend(batch)
     return [all_repos[i::num_tasks] for i in range(num_tasks)]
+
+def execute_sql_script(script_file_path):
+    session = Session()
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.abspath(os.path.join(current_dir, ".."))
+        sql_script_file_path = os.path.join(project_root, script_file_path)
+
+        with open(sql_script_file_path, "r") as file:
+            sql_script = file.read()
+
+        logger.info(f"Executing SQL script from {sql_script_file_path}.")
+        session.execute(sql_script)
+        session.commit()
+        logger.info("SQL script executed successfully.")
+    except Exception as e:
+        logger.error(f"Error executing SQL script: {e}")
+        session.rollback()
 
 def main():
     sample_payload = {
