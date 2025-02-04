@@ -34,7 +34,7 @@ with DAG(
         task_id="trigger_fundamental_metrics",
         trigger_dag_id="fundamental_metrics",
         reset_dag_run=True,
-        conf="{{ ti.xcom_pull(task_ids='get_payload') }}",
+        conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
     wait_for_fundamentals = ExternalTaskSensor(
@@ -51,21 +51,21 @@ with DAG(
         task_id="trigger_component_patterns",
         trigger_dag_id="component_patterns",
         reset_dag_run=True,
-        conf="{{ ti.xcom_pull(task_ids='get_payload') }}",
+        conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
     trigger_standards_assessment = TriggerDagRunOperator(
         task_id="trigger_standards_assessment",
         trigger_dag_id="standards_assessment",
         reset_dag_run=True,
-        conf="{{ ti.xcom_pull(task_ids='get_payload') }}",
+        conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
     trigger_vulnerability_metrics = TriggerDagRunOperator(
         task_id="trigger_vulnerability_metrics",
         trigger_dag_id="vulnerability_metrics",
         reset_dag_run=True,
-        conf="{{ ti.xcom_pull(task_ids='get_payload') }}",
+        conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
     payload >> trigger_fundamentals
