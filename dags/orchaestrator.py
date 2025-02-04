@@ -30,7 +30,7 @@ with DAG(
 
     payload = get_payload()
 
-    trigger_fundamentals = TriggerDagRunOperator(
+    trigger_fundamental = TriggerDagRunOperator(
         task_id="trigger_fundamental_metrics",
         trigger_dag_id="fundamental_metrics",
         reset_dag_run=True,
@@ -42,6 +42,7 @@ with DAG(
         external_dag_id="fundamental_metrics",
         external_task_id=None,
         allowed_states=["success"],
+        # Here we simply expect the external run to have the same execution_date.
         execution_date_fn=lambda dt: dt,
         timeout=600,
         poke_interval=30,
@@ -69,6 +70,10 @@ with DAG(
         conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
-    payload >> trigger_fundamentals
-    trigger_fundamentals >> wait_for_fundamentals
-    wait_for_fundamentals >> [trigger_component_patterns, trigger_standards_assessment, trigger_vulnerability_metrics]
+    payload >> trigger_fundamental
+    trigger_fundamental >> wait_for_fundamental
+    wait_for_fundamental >> [
+        trigger_component_patterns,
+        trigger_standards_assessment,
+        trigger_vulnerability_metrics,
+    ]
