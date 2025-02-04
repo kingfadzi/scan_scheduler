@@ -31,15 +31,15 @@ with DAG(
     payload = get_payload()
 
     trigger_fundamentals = TriggerDagRunOperator(
-        task_id="trigger_fundamentals_metrics",
-        trigger_dag_id="fundamentals_metrics",
+        task_id="trigger_fundamental_metrics",
+        trigger_dag_id="fundamental_metrics",
         reset_dag_run=True,
         conf="{{ ti.xcom_pull(task_ids='get_payload') }}",
     )
 
     wait_for_fundamentals = ExternalTaskSensor(
-        task_id="wait_for_fundamentals_metrics",
-        external_dag_id="fundamentals_metrics",
+        task_id="wait_for_fundamental_metrics",
+        external_dag_id="fundamental_metrics",
         external_task_id=None,
         allowed_states=["success"],
         timeout=600,
