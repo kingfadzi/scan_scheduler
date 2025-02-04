@@ -55,8 +55,8 @@ with DAG(
         allowed_states=["success"],
         failed_states=["failed", "upstream_failed"],
         execution_date_fn=get_external_execution_date,
-        check_existence=True,
-        mode="poke",  # poke mode so failures are detected immediately
+        check_existence=False,  # Try setting this to False if the sensor is having trouble finding the task
+        mode="poke",            # Use poke mode so that failures are reported immediately
         poke_interval=15,
         timeout=3600,
     )
