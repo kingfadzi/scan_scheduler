@@ -3,6 +3,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from modular.utils.repository_processor import create_batches, analyze_fundamentals
 
 logging.basicConfig(level=logging.DEBUG)
@@ -44,4 +45,28 @@ with DAG(
     batches = get_batches(payload)
     processed = process_batch.expand(batch=batches)
     finalize = DummyOperator(task_id="finalize")
+
+    # When finalize is reached, trigger downstream DAGs.
+    trigger_component_patterns = TriggerDagRunOperator(
+        task_id="trigger_component_patterns",
+        trigger_dag_id="component_patterns",
+        reset_dag_run=True,
+        conf="{{ dag_run.conf }}",
+    )
+
+    trigger_standards_assessment = TriggerDagRunOperator(
+        task_id="trigger_standards_assessment",
+        trigger_dag_id="standards_assessment",
+        reset_dag_run=True,
+        conf="{{ dag_run.conf }}",
+    )
+
+    trigger_vulnerability_metrics = TriggerDagRunOperator(
+        task_id="trigger_vulnerability_metrics",
+        trigger_dag_id="vulnerability_metrics",
+        reset_dag_run=True,
+        conf="{{ dag_run.conf }}",
+    )
+
     processed >> finalize
+    finalize >> [trigger_component_patterns, trigger_standards_assessment, trigger_vulnerability_metrics]
