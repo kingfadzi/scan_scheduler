@@ -12,6 +12,7 @@ from modular.trivy_analysis import TrivyAnalyzer
 from modular.checkov_analysis import CheckovAnalyzer
 from modular.semgrep_analysis import SemgrepAnalyzer
 from modular.models import Session, Repository, AnalysisExecutionLog, RepoMetrics
+from modular.kantra_analysis import KantraAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -39,7 +40,7 @@ def analyze_repositories(batch, run_id, **kwargs):
             #SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
             #CheckovAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
             #SemgrepAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-
+            KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
             logger.error(f"Error processing repository {repo.repo_name}: {e}")

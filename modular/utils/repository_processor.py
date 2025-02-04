@@ -5,29 +5,122 @@ from modular.models import Session, Repository, AnalysisExecutionLog
 from modular.cloning import CloningAnalyzer
 from modular.kantra_analysis import KantraAnalyzer
 from modular.utils.query_builder import build_query
+from modular.gitlog_analysis import GitLogAnalyzer
+from modular.go_enry_analysis import GoEnryAnalyzer
+from modular.lizard_analysis import LizardAnalyzer
+from modular.cloc_analysis import ClocAnalyzer
+from modular.syft_grype_analysis import SyftAndGrypeAnalyzer
+from modular.trivy_analysis import TrivyAnalyzer
+from modular.checkov_analysis import CheckovAnalyzer
+from modular.semgrep_analysis import SemgrepAnalyzer
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-def analyze_repositories(batch, run_id):
+def analyze_fundamentals(batch, run_id, **kwargs):
+
     session = Session()
-    attached_batch = [session.merge(repo) for repo in batch]
-    for repo in attached_batch:
+    for repo in batch:
         repo_dir = None
         try:
-            logger.info(f"Processing: {repo.repo_name} ({repo.repo_id})")
+            logger.info(f"[Fundamentals] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
-            KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            logger.debug(f"[Fundamentals] Repository cloned to: {repo_dir}")
+
+            LizardAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            ClocAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            GoEnryAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            GitLogAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+
         except Exception as e:
-            logger.error(f"Error for {repo.repo_name}: {e}")
+            logger.error(f"[Fundamentals] Error processing repository {repo.repo_name}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
             session.add(repo)
             session.commit()
         finally:
-            if repo_dir:
-                CloningAnalyzer().cleanup_repository_directory(repo_dir)
+            CloningAnalyzer().cleanup_repository_directory(repo_dir)
+            logger.debug(f"[Fundamentals] Repository directory {repo_dir} cleaned up.")
+        determine_final_status(repo, run_id, session)
+    session.close()
+
+
+def analyze_vulnerabilities(batch, run_id, **kwargs):
+
+    session = Session()
+    for repo in batch:
+        repo_dir = None
+        try:
+            logger.info(f"[Vulnerabilities] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+            logger.debug(f"[Vulnerabilities] Repository cloned to: {repo_dir}")
+
+            TrivyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+
+        except Exception as e:
+            logger.error(f"[Vulnerabilities] Error processing repository {repo.repo_name}: {e}")
+            repo.status = "ERROR"
+            repo.comment = str(e)
+            repo.updated_on = datetime.utcnow()
+            session.add(repo)
+            session.commit()
+        finally:
+            CloningAnalyzer().cleanup_repository_directory(repo_dir)
+            logger.debug(f"[Vulnerabilities] Repository directory {repo_dir} cleaned up.")
+        determine_final_status(repo, run_id, session)
+    session.close()
+
+
+def analyze_standards_assessment(batch, run_id, **kwargs):
+
+    session = Session()
+    for repo in batch:
+        repo_dir = None
+        try:
+            logger.info(f"[Standards Assessment] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+            logger.debug(f"[Standards Assessment] Repository cloned to: {repo_dir}")
+
+            CheckovAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            SemgrepAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+
+        except Exception as e:
+            logger.error(f"[Standards Assessment] Error processing repository {repo.repo_name}: {e}")
+            repo.status = "ERROR"
+            repo.comment = str(e)
+            repo.updated_on = datetime.utcnow()
+            session.add(repo)
+            session.commit()
+        finally:
+            CloningAnalyzer().cleanup_repository_directory(repo_dir)
+            logger.debug(f"[Standards Assessment] Repository directory {repo_dir} cleaned up.")
+        determine_final_status(repo, run_id, session)
+    session.close()
+
+def analyze_component_patterns(batch, run_id, **kwargs):
+
+    session = Session()
+    for repo in batch:
+        repo_dir = None
+        try:
+            logger.info(f"[Component Patterns] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+            logger.debug(f"[Component Patterns] Repository cloned to: {repo_dir}")
+
+            KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+
+        except Exception as e:
+            logger.error(f"[Component Patterns] Error processing repository {repo.repo_name}: {e}")
+            repo.status = "ERROR"
+            repo.comment = str(e)
+            repo.updated_on = datetime.utcnow()
+            session.add(repo)
+            session.commit()
+        finally:
+            CloningAnalyzer().cleanup_repository_directory(repo_dir)
+            logger.debug(f"[Component Patterns] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
     session.close()
 

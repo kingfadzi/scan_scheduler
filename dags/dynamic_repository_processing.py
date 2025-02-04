@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.python import get_current_context
-from modular.utils.repository_processor import create_batches, analyze_repositories
+from modular.utils.repository_processor import create_batches, analyze_component_patterns
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ with DAG(
         context = get_current_context()
         run_id = context["dag_run"].run_id
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
-        analyze_repositories(batch, run_id=run_id)
+        analyze_component_patterns(batch, run_id=run_id)
 
     payload = get_payload()
     batches = get_batches(payload)
