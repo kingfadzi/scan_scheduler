@@ -3,7 +3,7 @@ import json
 from sqlalchemy.dialects.postgresql import insert
 from modular.models import Session, CheckovSummary
 from modular.execution_decorator import analyze_execution
-from subprocess import run, DEVNULL
+from subprocess import run, DEVNULL, TimeoutExpired, CalledProcessError
 from modular.base_logger import BaseLogger
 import logging
 
@@ -15,17 +15,19 @@ class CheckovAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Checkov analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
-
+        self.logger.info(
+            f"Starting Checkov analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})."
+        )
         if not os.path.exists(repo_dir):
             raise FileNotFoundError(f"Repository directory does not exist: {repo_dir}")
 
+        results_file = self._run_checkov_command(repo_dir, repo)
+        return self._process_checkov_results(repo, session, results_file)
+
+    def _run_checkov_command(self, repo_dir, repo):
         output_dir = os.path.join(repo_dir, "checkov_results")
         os.makedirs(output_dir, exist_ok=True)
-
-        # Define log file for errors
         error_log_file = os.path.join(output_dir, "checkov_errors.log")
-
         try:
             self.logger.info(f"Executing Checkov command for repo_id: {repo.repo_id}")
             with open(error_log_file, "w") as error_log:
@@ -40,31 +42,41 @@ class CheckovAnalyzer(BaseLogger):
                     check=False,
                     text=True,
                     stdout=DEVNULL,
-                    stderr=error_log
+                    stderr=error_log,
+                    timeout=60
                 )
-
-            results_file = os.path.join(output_dir, "results_json.json")
-            if not os.path.isfile(results_file):
-                raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
-
-            summary = self.parse_and_process_checkov_output(repo.repo_id, results_file, session)
-
+        except TimeoutExpired as e:
+            msg = f"Checkov command timed out for repo_id {repo.repo_id} after 60 seconds."
+            self.logger.error(msg)
+            raise RuntimeError(msg) from e
         except Exception as e:
-            error_message = f"Error during Checkov execution for repo_id {repo.repo_id}: {e}"
-            self.logger.exception(error_message)
-            raise RuntimeError(error_message)
+            msg = f"Error executing Checkov command for repo_id: {repo.repo_id}. Error: {str(e)}"
+            self.logger.error(msg)
+            raise RuntimeError(msg) from e
 
-        return f"{summary}"
+        results_file = os.path.join(output_dir, "results_json.json")
+        if not os.path.isfile(results_file):
+            raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
+        return results_file
+
+
+    def _process_checkov_results(self, repo, session, results_file):
+        try:
+            self.parse_and_process_checkov_output(repo.repo_id, results_file, session)
+            with open(results_file, "r") as file:
+                return file.read()
+        except json.JSONDecodeError as e:
+            msg = f"Failed to parse Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
+            self.logger.error(msg)
+            raise ValueError(msg) from e
+        except Exception as e:
+            msg = f"Error processing Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
+            self.logger.error(msg)
+            raise RuntimeError(msg) from e
+
 
     def parse_and_process_checkov_output(self, repo_id, checkov_output_path, session):
-        """
-        Parse the Checkov output and process the results.
 
-        :param repo_id: Repository ID being analyzed.
-        :param checkov_output_path: Path to the Checkov output JSON file.
-        :param session: Database session for saving results.
-        :return: A summary string containing processed check types or a general summary.
-        """
         def process_summary(check_type, summary):
             """Helper function to save summary data."""
             self.save_checkov_results(
@@ -115,11 +127,9 @@ class CheckovAnalyzer(BaseLogger):
             raise RuntimeError(f"Unexpected error processing Checkov output for repo_id {repo_id}.") from e
 
     def save_checkov_results(self, session, repo_id, check_type, passed, failed, skipped, parsing_errors, resource_count):
-        """
-        Save Checkov results to the database in CheckovSummary table.
-        """
+
         try:
-            # Save summary to CheckovSummary
+
             session.execute(
                 insert(CheckovSummary).values(
                     repo_id=repo_id,
@@ -146,7 +156,7 @@ class CheckovAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.exception(f"Error saving Checkov summary for repo_id {repo_id}, check_type {check_type}")
-            raise  # Raise exception if saving results fails
+            raise
 
 
 if __name__ == "__main__":

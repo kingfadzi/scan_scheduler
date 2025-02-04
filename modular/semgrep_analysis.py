@@ -36,7 +36,14 @@ class SemgrepAnalyzer(BaseLogger):
                 return message
 
             self.logger.info(f"Executing Semgrep command: {' '.join(semgrep_command)}")
-            result = subprocess.run(semgrep_command, capture_output=True, text=True, check=True)
+
+            result = subprocess.run(
+                semgrep_command,
+                timeout=120,
+                capture_output=True,
+                text=True,
+                check=True
+            )
 
             semgrep_data = json.loads(result.stdout.strip())
 
@@ -47,6 +54,11 @@ class SemgrepAnalyzer(BaseLogger):
             message = f"Semgrep analysis completed for repo_id: {repo.repo_id} with {findings_count} findings."
             self.logger.info(message)
             return message
+
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Semgrep command timed out after {e.timeout} seconds for repo {repo.repo_id}."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
 
         except subprocess.CalledProcessError as e:
             error_message = f"Semgrep command failed for repo_id: {repo.repo_id}. Error: {e.stderr.strip()}"

@@ -76,6 +76,10 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"[Vulnerabilities] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
+
+    execute_sql_script("combined_repo_metrics.sql")
+    execute_sql_script("combined_repo_metrics_kpis.sql")
+
     session.close()
 
 
@@ -104,6 +108,9 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"[Standards Assessment] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
+
+    execute_sql_script("combined_repo_metrics.sql")
+
     session.close()
 
 def analyze_component_patterns(batch, run_id, **kwargs):
@@ -130,6 +137,9 @@ def analyze_component_patterns(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"[Component Patterns] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
+
+    execute_sql_script("combined_repo_metrics_components.sql")
+
     session.close()
 
 def determine_final_status(repo, run_id, session):
