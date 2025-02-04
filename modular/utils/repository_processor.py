@@ -105,14 +105,14 @@ def analyze_component_patterns(batch, run_id, **kwargs):
     for repo in batch:
         repo_dir = None
         try:
-            logger.info(f"[Component Patterns] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            logger.info(f"[Component Patterns] Processing repository: {repo.repo_id} (ID: {repo.repo_id})")
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
             logger.debug(f"[Component Patterns] Repository cloned to: {repo_dir}")
 
             KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
-            logger.error(f"[Component Patterns] Error processing repository {repo.repo_name}: {e}")
+            logger.error(f"[Component Patterns] Error processing repository {repo.repo_id}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
