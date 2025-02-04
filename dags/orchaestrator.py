@@ -37,11 +37,12 @@ with DAG(
         conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
-    wait_for_fundamentals = ExternalTaskSensor(
+    wait_for_fundamental = ExternalTaskSensor(
         task_id="wait_for_fundamental_metrics",
         external_dag_id="fundamental_metrics",
         external_task_id=None,
         allowed_states=["success"],
+        execution_date_fn=lambda dt: dt,
         timeout=600,
         poke_interval=30,
         mode="reschedule",
