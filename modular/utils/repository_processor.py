@@ -46,7 +46,7 @@ def analyze_fundamentals(batch, run_id, **kwargs):
             logger.debug(f"[Fundamentals] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
 
-    execute_sql_script(session, "combined_repo_metrics.sql")
+    execute_sql_script("combined_repo_metrics.sql")
 
     session.close()
 
