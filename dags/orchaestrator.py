@@ -38,18 +38,22 @@ with DAG(
         conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
-    def get_external_execution_date(**context):
-        """Dynamically find latest execution date of external DAG"""
+    def get_external_execution_date(execution_date, **kwargs):
+        ti = kwargs["ti"]
+        triggered_run_id = ti.xcom_pull(task_ids="trigger_fundamental_metrics")
         from airflow.models import DagRun
-        external_dag_id = "fundamental_metrics"
-        return DagRun.find(dag_id=external_dag_id, state=State.SUCCESS)[-1].execution_date
+        triggered_runs = DagRun.find(dag_id="fundamental_metrics", run_id=triggered_run_id)
+        if not triggered_runs:
+            raise ValueError(f"No DagRun found for fundamental_metrics with run_id: {triggered_run_id}")
+        triggered_run = triggered_runs[0]
+        ti.log.info(f"Found external DagRun execution_date: {triggered_run.execution_date}")
+        return triggered_run.execution_date
 
     wait_for_fundamental = ExternalTaskSensor(
         task_id="wait_for_fundamental_finalize",
         external_dag_id="fundamental_metrics",
         external_task_id="finalize",
-        allowed_states=["success"],
-        failed_states=["failed", "upstream_failed"],
+        allowed_states=[State.SUCCESS, State.SKIPPED],
         execution_date_fn=get_external_execution_date,
         check_existence=False,  # Try setting this to False if the sensor is having trouble finding the task
         mode="poke",            # Use poke mode so that failures are reported immediately
