@@ -37,23 +37,15 @@ with DAG(
         conf="{{ ti.xcom_pull(task_ids='get_payload') | tojson }}",
     )
 
-    def get_external_execution_date(**context):
-        # Fetch the execution date of the triggered DAG run
-        ti = context["ti"]
-        triggered_run_id = ti.xcom_pull(task_ids="trigger_fundamental_metrics")
-        from airflow.models import DagRun
-        triggered_run = DagRun.find(dag_id="fundamental_metrics", run_id=triggered_run_id)[0]
-        return triggered_run.execution_date
-
     wait_for_fundamental = ExternalTaskSensor(
-        task_id="wait_for_fundamental_metrics",
+        task_id="wait_for_fundamental_finalize",
         external_dag_id="fundamental_metrics",
-        execution_date_fn=get_external_execution_date,
-        timeout=300,
+        external_task_id="finalize",
+        allowed_states=["success"],
+        timeout=600,
         poke_interval=30,
-        mode="reschedule"
+        mode="reschedule",
     )
-
 
     trigger_component_patterns = TriggerDagRunOperator(
         task_id="trigger_component_patterns",

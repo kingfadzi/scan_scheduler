@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
-from airflow.operators.python import get_current_context
+from airflow.operators.dummy import DummyOperator
 from modular.utils.repository_processor import create_batches, analyze_fundamentals
 
 logging.basicConfig(level=logging.DEBUG)
@@ -34,6 +34,7 @@ with DAG(
 
     @task
     def process_batch(batch):
+        from airflow.operators.python import get_current_context
         context = get_current_context()
         run_id = context["dag_run"].run_id
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
@@ -41,4 +42,6 @@ with DAG(
 
     payload = get_payload()
     batches = get_batches(payload)
-    process_batch.expand(batch=batches)
+    processed = process_batch.expand(batch=batches)
+    finalize = DummyOperator(task_id="finalize")
+    processed >> finalize
