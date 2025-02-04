@@ -41,7 +41,11 @@ with DAG(
         ti = kwargs["ti"]
         triggered_run_id = ti.xcom_pull(task_ids="trigger_fundamental_metrics")
         from airflow.models import DagRun
-        triggered_run = DagRun.find(dag_id="fundamental_metrics", run_id=triggered_run_id)[0]
+        triggered_runs = DagRun.find(dag_id="fundamental_metrics", run_id=triggered_run_id)
+        if not triggered_runs:
+            raise ValueError(f"No DagRun found for fundamental_metrics with run_id: {triggered_run_id}")
+        triggered_run = triggered_runs[0]
+        ti.log.info(f"Found external DagRun execution_date: {triggered_run.execution_date}")
         return triggered_run.execution_date
 
     wait_for_fundamental = ExternalTaskSensor(
