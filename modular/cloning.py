@@ -95,12 +95,15 @@ class CloningAnalyzer(BaseLogger):
 
 
     def cleanup_repository_directory(self, repo_dir):
+        if repo_dir is not None and os.path.exists(repo_dir):
+            try:
+                subprocess.run(["rm", "-rf", repo_dir], check=True)
+                self.logger.info(f"Cleaned up repository directory: {repo_dir}")
+            except subprocess.CalledProcessError as e:
+                self.logger.error(f"Failed to clean up repository directory: {repo_dir}. Error: {e}")
+        else:
+            self.logger.warning("Repository directory is None or does not exist. Skipping cleanup.")
 
-        self.logger.info(f"Cleaning up repo_dir: {repo_dir}")
-
-        if os.path.exists(repo_dir):
-            subprocess.run(f"rm -rf {repo_dir}", shell=True, check=True)
-            self.logger.info(f"Cleaned up repository directory: {repo_dir}")
 
 
 if __name__ == "__main__":
