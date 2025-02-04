@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 def analyze_fundamentals(batch, run_id, **kwargs):
-
     session = Session()
-    for repo in batch:
+    attached_batch = [session.merge(repo) for repo in batch]
+    for repo in attached_batch:
         repo_dir = None
         try:
             logger.info(f"[Fundamentals] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
@@ -49,7 +49,8 @@ def analyze_fundamentals(batch, run_id, **kwargs):
 def analyze_vulnerabilities(batch, run_id, **kwargs):
 
     session = Session()
-    for repo in batch:
+    attached_batch = [session.merge(repo) for repo in batch]
+    for repo in attached_batch:
         repo_dir = None
         try:
             logger.info(f"[Vulnerabilities] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
@@ -76,7 +77,8 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
 def analyze_standards_assessment(batch, run_id, **kwargs):
 
     session = Session()
-    for repo in batch:
+    attached_batch = [session.merge(repo) for repo in batch]
+    for repo in attached_batch:
         repo_dir = None
         try:
             logger.info(f"[Standards Assessment] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
@@ -102,7 +104,8 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
 def analyze_component_patterns(batch, run_id, **kwargs):
 
     session = Session()
-    for repo in batch:
+    attached_batch = [session.merge(repo) for repo in batch]
+    for repo in attached_batch:
         repo_dir = None
         try:
             logger.info(f"[Component Patterns] Processing repository: {repo.repo_id} (ID: {repo.repo_id})")
