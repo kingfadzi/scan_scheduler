@@ -6,6 +6,7 @@ from modular.execution_decorator import analyze_execution
 from subprocess import run, DEVNULL, TimeoutExpired, CalledProcessError
 from modular.base_logger import BaseLogger
 import logging
+from modular.config import Config
 
 class CheckovAnalyzer(BaseLogger):
 
@@ -43,10 +44,10 @@ class CheckovAnalyzer(BaseLogger):
                     text=True,
                     stdout=DEVNULL,
                     stderr=error_log,
-                    timeout=60
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
         except TimeoutExpired as e:
-            msg = f"Checkov command timed out for repo_id {repo.repo_id} after 60 seconds."
+            msg = f"Checkov command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(msg)
             raise RuntimeError(msg) from e
         except Exception as e:

@@ -39,7 +39,7 @@ class SemgrepAnalyzer(BaseLogger):
 
             result = subprocess.run(
                 semgrep_command,
-                timeout=60,
+                timeout=Config.DEFAULT_PROCESS_TIMEOUT,
                 capture_output=True,
                 text=True,
                 check=True

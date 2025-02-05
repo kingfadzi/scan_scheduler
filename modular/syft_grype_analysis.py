@@ -33,11 +33,11 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=60
+                timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
-        except subprocess.TimeoutExpired:
-            error_message = f"Syft command timed out for repo_id {repo.repo_id} after 60 seconds."
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
