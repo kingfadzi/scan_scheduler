@@ -121,10 +121,8 @@ def analyze_component_patterns(batch, run_id, **kwargs):
         try:
             logger.info(f"[Component Patterns] Processing repository: {repo.repo_id} (ID: {repo.repo_id})")
 
-            analyze_component_dir = "analyze_component"
-            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_component_dir)
-
-            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+            analyze_components_dir = "analyze_components"
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_components_dir)
 
             logger.debug(f"[Component Patterns] Repository cloned to: {repo_dir}")
 

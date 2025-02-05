@@ -68,7 +68,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return grype_data
+        return json.dumps(grype_data)
 
     def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
