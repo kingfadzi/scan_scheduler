@@ -20,7 +20,6 @@ WITH all_repos AS (
     UNION
     SELECT repo_id FROM bitbucket_repositories
 ),
-
 cloc_agg AS (
     SELECT
         repo_id,
@@ -32,7 +31,6 @@ cloc_agg AS (
     WHERE language != 'SUM'
     GROUP BY repo_id
 ),
-
 checkov_agg AS (
     SELECT
         repo_id,
@@ -53,7 +51,6 @@ checkov_agg AS (
     FROM checkov_summary
     GROUP BY repo_id
 ),
-
 trivy_agg AS (
     SELECT
         repo_id,
@@ -65,22 +62,20 @@ trivy_agg AS (
     FROM trivy_vulnerability
     GROUP BY repo_id
 ),
-
 semgrep_agg AS (
     SELECT
         repo_id,
         COUNT(*) AS total_semgrep_findings,
         COUNT(*) FILTER (WHERE category = 'best-practice')   AS cat_best_practice,
-        COUNT(*) FILTER (WHERE category = 'compatibility')   AS cat_compatibility,
-        COUNT(*) FILTER (WHERE category = 'correctness')     AS cat_correctness,
-        COUNT(*) FILTER (WHERE category = 'maintainability') AS cat_maintainability,
-        COUNT(*) FILTER (WHERE category = 'performance')     AS cat_performance,
-        COUNT(*) FILTER (WHERE category = 'portability')     AS cat_portability,
-        COUNT(*) FILTER (WHERE category = 'security')        AS cat_security
+        COUNT(*) FILTER (WHERE category = 'compatibility')     AS cat_compatibility,
+        COUNT(*) FILTER (WHERE category = 'correctness')       AS cat_correctness,
+        COUNT(*) FILTER (WHERE category = 'maintainability')   AS cat_maintainability,
+        COUNT(*) FILTER (WHERE category = 'performance')       AS cat_performance,
+        COUNT(*) FILTER (WHERE category = 'portability')       AS cat_portability,
+        COUNT(*) FILTER (WHERE category = 'security')          AS cat_security
     FROM semgrep_results
     GROUP BY repo_id
 ),
-
 go_enry_agg AS (
     SELECT
         g.repo_id,
@@ -95,46 +90,29 @@ go_enry_agg AS (
     FROM go_enry_analysis g
     GROUP BY g.repo_id
 ),
-
 all_languages_agg AS (
     SELECT
         repo_id,
         STRING_AGG(language, ', ' ORDER BY language) AS all_languages
     FROM go_enry_analysis
     GROUP BY repo_id
-),
-
-business_app_agg AS (
-    SELECT
-        rbm.project_key,
-        rbm.repo_slug,
-        rbm.component_id,
-        vcm_ba.web_url,
-        STRING_AGG(DISTINCT bam.business_app_identifier, ', ' ORDER BY bam.business_app_identifier) AS business_app_identifiers,
-        bam.transaction_cycle
-    FROM repo_business_mapping rbm
-    JOIN business_app_mapping bam ON rbm.component_id = bam.component_id
-    -- For business_app_agg we join version_control_mapping to get web_url (alias as vcm_ba)
-    JOIN version_control_mapping vcm_ba ON lower(rbm.project_key) = lower(vcm_ba.project_key)
-                                       AND lower(rbm.repo_slug) = lower(vcm_ba.repo_slug)
-    GROUP BY rbm.project_key, rbm.repo_slug, rbm.component_id, vcm_ba.web_url, bam.transaction_cycle
 )
-
 SELECT
     -- Repository identifier
     r.repo_id,
 
-    -- Bitbucket and Business App fields
+    -- Bitbucket fields (from bitbucket_repositories alias b)
     b.host_name,
     b.project_key,
     b.repo_slug,
-    bapp.component_id,
-    bapp.business_app_identifiers AS app_id,
-    bapp.transaction_cycle AS tc,
-    vcm.web_url,  -- from version_control_mapping join (see below)
     b.clone_url_ssh,
     b.status,
     b.comment,
+
+    -- Business App data from app_component_repo_mapping (aliased as ac)
+    ac.transaction_cycle AS tc,
+    ac.app_identifiers AS app_id,
+    ac.web_url,
 
     -- Lizard fields
     l.total_nloc                    AS executable_lines_of_code,
@@ -222,12 +200,11 @@ FROM all_repos r
          LEFT JOIN all_languages_agg al ON r.repo_id = al.repo_id
          LEFT JOIN repo_metrics rm ON r.repo_id = rm.repo_id
          LEFT JOIN bitbucket_repositories b ON r.repo_id = b.repo_id
-         LEFT JOIN business_app_agg bapp ON lower(b.project_key) = lower(bapp.project_key)
-    AND lower(b.repo_slug) = lower(bapp.repo_slug)
-         LEFT JOIN version_control_mapping vcm ON lower(b.project_key) = lower(vcm.project_key)
-    AND lower(b.repo_slug) = lower(vcm.repo_slug)
+    -- Join to app_component_repo_mapping to get tc, app_id, and web_url
+         LEFT JOIN app_component_repo_mapping ac ON r.repo_id = ac.repo_id
 ORDER BY r.repo_id;
 
+-- Create indexes on the materialized view
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_host_name ON combined_repo_metrics (host_name);
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_activity_status ON combined_repo_metrics (activity_status);
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_tc ON combined_repo_metrics (tc);
