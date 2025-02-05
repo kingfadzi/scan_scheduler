@@ -1,3 +1,4 @@
+import json
 import shutil
 import os
 import yaml
@@ -69,7 +70,7 @@ class KantraAnalyzer(BaseLogger):
                 shutil.rmtree(output_dir, ignore_errors=True)
                 self.logger.info(f"Deleted Kantra output directory to save space: {output_dir}")
 
-        return analysis_data
+        return json.dumps(analysis_data)
 
     def build_kantra_command(self, repo_dir, output_dir):
         return (
