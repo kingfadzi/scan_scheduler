@@ -62,13 +62,13 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
         self.logger.info(f"Reading Grype results from disk for repo_id: {repo.repo_id}.")
         try:
-            processed_vulnerabilities = self.parse_and_save_grype_results(grype_file_path, repo.repo_id, session)
+            grype_data = self.parse_and_save_grype_results(grype_file_path, repo.repo_id, session)
         except Exception as e:
             error_message = f"Error while parsing or saving Grype results for repository {repo.repo_name}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return f"{processed_vulnerabilities} vulnerabilities processed"
+        return grype_data
 
     def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
@@ -132,7 +132,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
             session.commit()
             self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
-            return processed_vulnerabilities
+            return grype_data
 
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")

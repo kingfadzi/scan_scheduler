@@ -53,7 +53,8 @@ class ClocAnalyzer(BaseLogger):
             self.logger.exception(f"Error during CLOC execution for repo_id {repo.repo_id}: {e}")
             raise
 
-        return f"{processed_languages} languages processed."
+        return json.dumps(cloc_data)
+        #return f"{processed_languages} languages processed."
 
     def save_cloc_results(self, session, repo_id, results):
 

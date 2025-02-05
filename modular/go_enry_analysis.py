@@ -17,14 +17,12 @@ class GoEnryAnalyzer(BaseLogger):
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting language analysis for repository: {repo.repo_name} (ID: {repo.repo_id})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
-
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
         else:
             self.logger.debug(f"Repository directory found: {repo_dir}")
-
         self.logger.info(f"Running go-enry in directory: {repo_dir}")
         try:
             with open(analysis_file, "w") as outfile:
@@ -40,21 +38,28 @@ class GoEnryAnalyzer(BaseLogger):
             error_message = f"Error running go-enry for repository {repo.repo_name}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
-
         if not os.path.exists(analysis_file):
             error_message = f"Language analysis file not found for repository {repo.repo_name}. Expected at: {analysis_file}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
-
         self.logger.info(f"Parsing language analysis results from file: {analysis_file}")
         try:
-            processed_languages = self.parse_and_persist_enry_results(repo.repo_id, analysis_file, session)
+            self.parse_and_persist_enry_results(repo.repo_id, analysis_file, session)
         except Exception as e:
             error_message = f"Error while parsing or saving analysis results for repository {repo.repo_name}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
+        return self._read_analysis_file(analysis_file, repo)
 
-        return f"{processed_languages} languages processed"
+    def _read_analysis_file(self, analysis_file, repo):
+        try:
+            with open(analysis_file, "r") as infile:
+                file_contents = infile.read()
+        except Exception as e:
+            error_message = f"Error reading analysis file {analysis_file} for repository {repo.repo_name}: {e}"
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+        return file_contents
 
     def parse_and_persist_enry_results(self, repo_id, analysis_file_path, session):
 

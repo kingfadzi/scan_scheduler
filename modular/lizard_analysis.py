@@ -15,9 +15,18 @@ class LizardAnalyzer(BaseLogger):
         self.logger = self.get_logger("LizardAnalyzer")
         self.logger.setLevel(logging.DEBUG)
 
+    def _read_analysis_file(self, analysis_file, repo):
+        try:
+            with open(analysis_file, "r") as infile:
+                file_contents = infile.read()
+        except Exception as e:
+            error_message = f"Error reading analysis file {analysis_file} for repository {repo.repo_name}: {e}"
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+        return file_contents
+
     @analyze_execution(session_factory=Session, stage="Lizard Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-
         self.logger.info(f"Starting lizard analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
 
@@ -27,7 +36,6 @@ class LizardAnalyzer(BaseLogger):
             raise FileNotFoundError(error_message)
 
         self.logger.debug(f"Repository directory found: {repo_dir}")
-
         self.logger.info(f"Executing lizard command in directory: {repo_dir}")
         try:
             with open(analysis_file, "w") as outfile:
@@ -57,13 +65,8 @@ class LizardAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return (
-            f"{processed_metrics['total_nloc']} total NLOC, "
-            f"{processed_metrics['total_ccn']} total CCN, "
-            f"{processed_metrics['total_token_count']} total tokens, "
-            f"{processed_metrics['function_count']} functions, "
-            f"average CCN: {processed_metrics['avg_ccn']}."
-        )
+        return self._read_analysis_file(analysis_file, repo)
+
 
     def parse_and_persist_lizard_results(self, repo_id, analysis_file_path, session):
 

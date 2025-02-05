@@ -62,7 +62,7 @@ class TrivyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return f"{total_vulnerabilities} vulnerabilities found."
+        return trivy_data
 
     def prepare_trivyignore(self, repo_dir):
 
