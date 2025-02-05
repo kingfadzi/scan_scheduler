@@ -127,6 +127,7 @@ class TrivyAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.exception(f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}")
+            error_message = f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}"
             raise RuntimeError(error_message)
 
 
