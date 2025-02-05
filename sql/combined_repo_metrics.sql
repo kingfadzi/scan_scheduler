@@ -3,24 +3,22 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 DROP MATERIALIZED VIEW IF EXISTS combined_repo_metrics CASCADE;
 
 CREATE MATERIALIZED VIEW combined_repo_metrics AS
-WITH all_repos AS (
-    SELECT DISTINCT repo_id FROM (
-        SELECT repo_id FROM lizard_summary
-        UNION ALL
-        SELECT repo_id FROM cloc_metrics
-        UNION ALL
-        SELECT repo_id FROM checkov_summary
-        UNION ALL
-        SELECT repo_id FROM trivy_vulnerability
-        UNION ALL
-        SELECT repo_id FROM semgrep_results
-        UNION ALL
-        SELECT repo_id FROM repo_metrics
-        UNION ALL
-        SELECT repo_id FROM go_enry_analysis
-        UNION ALL
-        SELECT repo_id FROM bitbucket_repositories
-    ) subquery
+all_repos AS (
+    SELECT repo_id FROM lizard_summary
+    UNION
+    SELECT repo_id FROM cloc_metrics
+    UNION
+    SELECT repo_id FROM checkov_summary
+    UNION
+    SELECT repo_id FROM trivy_vulnerability
+    UNION
+    SELECT repo_id FROM semgrep_results
+    UNION
+    SELECT repo_id FROM repo_metrics
+    UNION
+    SELECT repo_id FROM go_enry_analysis
+    UNION
+    SELECT repo_id FROM bitbucket_repositories
 ),
 
 cloc_agg AS (
