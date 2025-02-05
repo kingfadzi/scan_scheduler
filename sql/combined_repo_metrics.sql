@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 DROP MATERIALIZED VIEW IF EXISTS combined_repo_metrics CASCADE;
 
 CREATE MATERIALIZED VIEW combined_repo_metrics AS
-all_repos AS (
+WITH all_repos AS (
     SELECT repo_id FROM lizard_summary
     UNION
     SELECT repo_id FROM cloc_metrics
