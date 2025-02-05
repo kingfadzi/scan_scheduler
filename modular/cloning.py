@@ -16,33 +16,46 @@ class CloningAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Clone Repository")
-    def clone_repository(self, repo, timeout_seconds=300, run_id=None):
-
+    def clone_repository(self, repo, timeout_seconds=300, run_id=None, sub_dir=None):
         self.logger.info(f"Starting cloning for repo: {repo.repo_id}")
 
         base_dir = Config.CLONED_REPOSITORIES_DIR
-        repo_dir = f"{base_dir}/{repo.repo_slug}"
-        os.makedirs(base_dir, exist_ok=True)
+        repo_dir = os.path.join(base_dir, repo.repo_slug)
+        if sub_dir:
+            repo_dir = os.path.join(repo_dir, sub_dir)
 
-        # Ensure the URL is in SSH format
+        os.makedirs(os.path.dirname(repo_dir), exist_ok=True)
+
         clone_url = self.ensure_ssh_url(repo)
         repo.clone_url_ssh = clone_url
 
         with clone_semaphore:
             try:
-                ssh_command = "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+                ssh_command = (
+                    "ssh -o StrictHostKeyChecking=no "
+                    "-o UserKnownHostsFile=/dev/null "
+                    "-o BatchMode=yes"
+                )
+                clone_command = (
+                    f"rm -rf {repo_dir} && "
+                    f"GIT_SSH_COMMAND='{ssh_command}' git clone {clone_url} {repo_dir}"
+                )
                 subprocess.run(
-                    f"rm -rf {repo_dir} && GIT_SSH_COMMAND='{ssh_command}' git clone {clone_url} {repo_dir}",
+                    clone_command,
                     shell=True,
                     check=True,
                     timeout=timeout_seconds,
                     capture_output=True,
                     text=True,
                 )
-                self.logger.info(f"Successfully cloned repository '{repo.repo_name}' to {repo_dir}.")
+                self.logger.info(
+                    f"Successfully cloned repository '{repo.repo_name}' to {repo_dir}."
+                )
                 return repo_dir
             except subprocess.TimeoutExpired:
-                error_msg = f"Cloning repository {repo.repo_name} took too long (>{timeout_seconds}s)."
+                error_msg = (
+                    f"Cloning repository {repo.repo_name} took too long (>{timeout_seconds}s)."
+                )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
             except subprocess.CalledProcessError as e:
@@ -52,7 +65,6 @@ class CloningAnalyzer(BaseLogger):
                 )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
-
 
     def ensure_ssh_url(self, repo):
         clone_url_ssh = repo.clone_url_ssh

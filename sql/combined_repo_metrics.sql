@@ -110,6 +110,7 @@ SELECT
     b.comment,
 
     -- Business App data from app_component_repo_mapping (aliased as ac)
+    ac.component_id,
     ac.transaction_cycle AS tc,
     ac.app_identifiers AS app_id,
     ac.web_url,

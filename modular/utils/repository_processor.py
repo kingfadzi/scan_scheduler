@@ -27,7 +27,8 @@ def analyze_fundamentals(batch, run_id, **kwargs):
         repo_dir = None
         try:
             logger.info(f"[Fundamentals] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
-            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+            analyze_fundamentals_dir = "analyze_fundamentals"
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_fundamentals_dir)
             logger.debug(f"[Fundamentals] Repository cloned to: {repo_dir}")
 
             LizardAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
@@ -47,8 +48,6 @@ def analyze_fundamentals(batch, run_id, **kwargs):
             logger.debug(f"[Fundamentals] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
 
-    execute_sql_script("refresh_views.sql")
-
     session.close()
 
 def analyze_vulnerabilities(batch, run_id, **kwargs):
@@ -59,7 +58,10 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
         repo_dir = None
         try:
             logger.info(f"[Vulnerabilities] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
-            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+
+            analyze_vulnerabilities_dir = "analyze_vulnerabilities"
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_vulnerabilities_dir)
+
             logger.debug(f"[Vulnerabilities] Repository cloned to: {repo_dir}")
 
             TrivyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
@@ -77,10 +79,7 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
             logger.debug(f"[Vulnerabilities] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
 
-    execute_sql_script("refresh_views.sql")
-
     session.close()
-
 
 def analyze_standards_assessment(batch, run_id, **kwargs):
 
@@ -90,7 +89,10 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
         repo_dir = None
         try:
             logger.info(f"[Standards Assessment] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
-            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+
+            analyze_standards_dir = "analyze_standards"
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_standards_dir)
+
             logger.debug(f"[Standards Assessment] Repository cloned to: {repo_dir}")
 
             CheckovAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
@@ -108,8 +110,6 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
             logger.debug(f"[Standards Assessment] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
 
-    execute_sql_script("refresh_views.sql")
-
     session.close()
 
 def analyze_component_patterns(batch, run_id, **kwargs):
@@ -120,7 +120,12 @@ def analyze_component_patterns(batch, run_id, **kwargs):
         repo_dir = None
         try:
             logger.info(f"[Component Patterns] Processing repository: {repo.repo_id} (ID: {repo.repo_id})")
+
+            analyze_component_dir = "analyze_component"
+            repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_component_dir)
+
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id)
+
             logger.debug(f"[Component Patterns] Repository cloned to: {repo_dir}")
 
             KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
@@ -136,8 +141,6 @@ def analyze_component_patterns(batch, run_id, **kwargs):
             CloningAnalyzer().cleanup_repository_directory(repo_dir)
             logger.debug(f"[Component Patterns] Repository directory {repo_dir} cleaned up.")
         determine_final_status(repo, run_id, session)
-
-    execute_sql_script("refresh_views.sql")
 
     session.close()
 

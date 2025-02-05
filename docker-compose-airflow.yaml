@@ -15,7 +15,7 @@ services:
       - /home/airflow/airflow/logs:size=500M,mode=177
       - /home/airflow/airflow/output:size=500M,mode=177
     environment:
-      CLONED_REPOSITORIES_DIR: /home/airflow/cloned_repositories
+      CLONED_REPOSITORIES_DIR: /home/airflow/airflow/cloned_repositories
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}

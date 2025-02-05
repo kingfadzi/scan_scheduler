@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
-from airflow.operators.dummy import DummyOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from modular.utils.repository_processor import create_batches, analyze_fundamentals
 
@@ -41,10 +40,17 @@ with DAG(
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
         analyze_fundamentals(batch, run_id=run_id)
 
+    @task(task_id="refresh_views")
+    def refresh_views():
+        from modular.utils.repository_processor import execute_sql_script
+        script_file = "refresh_views.sql"
+        execute_sql_script(script_file)
+        logger.info(f"Executed SQL script: {script_file}")
+
+    # Define the DAG tasks
     payload = get_payload()
     batches = get_batches(payload)
     processed = process_batch.expand(batch=batches)
-    finalize = DummyOperator(task_id="finalize")
 
     trigger_component_patterns = TriggerDagRunOperator(
         task_id="trigger_component_patterns",
@@ -67,5 +73,10 @@ with DAG(
         conf="{{ dag_run.conf | tojson }}",
     )
 
-    processed >> finalize
-    finalize >> [trigger_component_patterns, trigger_standards_assessment, trigger_vulnerability_metrics]
+    refresh_views_task = refresh_views()
+
+    processed >> refresh_views_task >> [
+        trigger_component_patterns,
+        trigger_standards_assessment,
+        trigger_vulnerability_metrics,
+    ]
