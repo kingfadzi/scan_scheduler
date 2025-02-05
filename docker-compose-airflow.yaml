@@ -55,6 +55,8 @@ services:
       AIRFLOW_ADMIN_EMAIL: admin@example.com
       AIRFLOW_ADMIN_PASSWORD: password
 
+      DEFAULT_PROCESS_TIMEOUT: ${DEFAULT_PROCESS_TIMEOUT}
+
     restart: always
     volumes:
       - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro

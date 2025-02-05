@@ -33,8 +33,13 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=60
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
+        except subprocess.TimeoutExpired:
+            error_message = f"Syft command timed out for repo_id {repo.repo_id} after 60 seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
             error_message = f"Syft command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
             self.logger.error(error_message)
@@ -48,8 +53,13 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=60
             )
             self.logger.debug(f"Grype results written to: {grype_file_path}")
+        except subprocess.TimeoutExpired:
+            error_message = f"Grype command timed out for repo_id {repo.repo_id} after 60 seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
             error_message = f"Grype command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
             self.logger.error(error_message)
@@ -69,6 +79,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
         return json.dumps(grype_data)
+
 
     def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")

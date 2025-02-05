@@ -26,14 +26,18 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
-
             result = subprocess.run(
                 ["trivy", "repo", "--skip-db-update", "--skip-java-db-update", "--offline-scan", "--format", "json", repo_dir],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                timeout=60  # 60-second timeout added here
             )
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
+        except subprocess.TimeoutExpired:
+            error_message = f"Trivy command timed out for repo_id {repo.repo_id} after 60 seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
             error_message = (f"Trivy command failed for repo_id {repo.repo_id}. "
                              f"Return code: {e.returncode}. Error: {e.stderr.strip()}")
@@ -63,6 +67,7 @@ class TrivyAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
         return json.dumps(trivy_data)
+
 
     def prepare_trivyignore(self, repo_dir):
 
