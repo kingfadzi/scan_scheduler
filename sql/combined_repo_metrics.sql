@@ -98,10 +98,8 @@ all_languages_agg AS (
     GROUP BY repo_id
 )
 SELECT
-    -- Repository identifier
     r.repo_id,
 
-    -- Bitbucket fields (from bitbucket_repositories alias b)
     b.host_name,
     b.project_key,
     b.repo_slug,
@@ -109,26 +107,22 @@ SELECT
     b.status,
     b.comment,
 
-    -- Business App data from app_component_repo_mapping (aliased as ac)
     ac.component_id,
     ac.transaction_cycle AS tc,
     ac.app_identifiers AS app_id,
     ac.web_url,
 
-    -- Lizard fields
     l.total_nloc                    AS executable_lines_of_code,
     l.avg_ccn                       AS avg_cyclomatic_complexity,
     l.total_token_count,
     l.function_count,
     l.total_ccn                     AS total_cyclomatic_complexity,
 
-    -- CLOC fields
     c.source_code_file_count,
     c.total_blank,
     c.total_comment,
     c.total_lines_of_code,
 
-    -- Checkov fields
     ck.iac_ansible,
     ck.iac_azure_pipelines,
     ck.iac_bitbucket_pipelines,
@@ -144,14 +138,12 @@ SELECT
     ck.iac_terraform,
     ck.iac_terraform_plan,
 
-    -- Trivy fields
     t.total_trivy_vulns,
     t.trivy_critical,
     t.trivy_high,
     t.trivy_medium,
     t.trivy_low,
 
-    -- Semgrep fields
     s.total_semgrep_findings,
     s.cat_best_practice,
     s.cat_compatibility,
@@ -161,12 +153,10 @@ SELECT
     s.cat_portability,
     s.cat_security,
 
-    -- go-enry fields
     e.language_count,
     e.main_language,
     al.all_languages,
 
-    -- repo_metrics fields
     rm.repo_size_bytes,
     rm.file_count,
     rm.total_commits,
@@ -201,11 +191,9 @@ FROM all_repos r
          LEFT JOIN all_languages_agg al ON r.repo_id = al.repo_id
          LEFT JOIN repo_metrics rm ON r.repo_id = rm.repo_id
          LEFT JOIN bitbucket_repositories b ON r.repo_id = b.repo_id
-    -- Join to app_component_repo_mapping to get tc, app_id, and web_url
          LEFT JOIN app_component_repo_mapping ac ON r.repo_id = ac.repo_id
 ORDER BY r.repo_id;
 
--- Create indexes on the materialized view
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_host_name ON combined_repo_metrics (host_name);
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_activity_status ON combined_repo_metrics (activity_status);
 CREATE INDEX IF NOT EXISTS idx_combined_repo_metrics_tc ON combined_repo_metrics (tc);
