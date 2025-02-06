@@ -125,8 +125,7 @@ RUN mkdir -p \
       /home/airflow/airflow/output \
       /home/airflow/.ssh \
       /home/airflow/.m2 \
-      /home/airflow/.gradle && \
-    chmod 700 /home/airflow/.ssh
+      /home/airflow/.gradle
 
 COPY --chown=airflow:airflow ./airflow.cfg $AIRFLOW_HOME/airflow.cfg
 
@@ -145,6 +144,9 @@ RUN chown airflow:airflow -R /home/airflow/.trivy
 RUN chown airflow:airflow -R /home/airflow/.syft
 RUN chown airflow:airflow -R /home/airflow/.m2
 RUN chown airflow:airflow -R /home/airflow/.gradle
+RUN chown airflow:airflow -R /home/airflow/.ssh
+
+RUN chmod 700 /home/airflow/.ssh
 
 RUN mkdir -p /home/airflow/.pip && \
     if [ -n "$GLOBAL_CERT" ]; then \
