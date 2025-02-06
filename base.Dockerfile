@@ -137,9 +137,9 @@ RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
  && chown -R airflow:airflow /usr/local/bin \
  && chmod -R +x /usr/local/bin
 
-RUN chown airflow:airflow -R /home/airflow/cloned_repositories
-RUN chown airflow:airflow -R /home/airflow/output
-RUN chown airflow:airflow -R /home/airflow/logs
+RUN chown airflow:airflow -R /home/airflow/airflow/cloned_repositories
+RUN chown airflow:airflow -R /home/airflow/airflow/output
+RUN chown airflow:airflow -R /home/airflow/airflow/logs
 RUN chown airflow:airflow -R /home/airflow/.cache
 RUN chown airflow:airflow -R /home/airflow/.grype
 RUN chown airflow:airflow -R /home/airflow/.kantra
