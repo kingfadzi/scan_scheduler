@@ -124,8 +124,15 @@ RUN mkdir -p \
       /home/airflow/airflow/cloned_repositories \
       /home/airflow/airflow/output \
       /home/airflow/.ssh && \
-    chown -R airflow:airflow /home/airflow && \
     chmod 700 /home/airflow/.ssh
+
+RUN chown airflow:airflow -R /home/airflow/.cache
+RUN chown airflow:airflow -R /home/airflow/.gradle
+RUN chown airflow:airflow -R /home/airflow/.grype
+RUN chown airflow:airflow -R /home/airflow/.kantra
+RUN chown airflow:airflow -R /home/airflow/.pip
+RUN chown airflow:airflow -R /home/airflow/.semgrep
+RUN chown airflow:airflow -R /home/airflow/.trivy
 
 COPY --chown=airflow:airflow ./airflow.cfg $AIRFLOW_HOME/airflow.cfg
 
