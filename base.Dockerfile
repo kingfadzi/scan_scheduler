@@ -126,14 +126,6 @@ RUN mkdir -p \
       /home/airflow/.ssh && \
     chmod 700 /home/airflow/.ssh
 
-RUN chown airflow:airflow -R /home/airflow/.cache
-RUN chown airflow:airflow -R /home/airflow/.gradle
-RUN chown airflow:airflow -R /home/airflow/.grype
-RUN chown airflow:airflow -R /home/airflow/.kantra
-RUN chown airflow:airflow -R /home/airflow/.pip
-RUN chown airflow:airflow -R /home/airflow/.semgrep
-RUN chown airflow:airflow -R /home/airflow/.trivy
-
 COPY --chown=airflow:airflow ./airflow.cfg $AIRFLOW_HOME/airflow.cfg
 
 RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
@@ -142,6 +134,12 @@ RUN wget --progress=dot:giga -O /tmp/tools.tar.gz "${TOOLS_TARBALL_URL}" \
  && rm /tmp/tools.tar.gz \
  && chown -R airflow:airflow /usr/local/bin \
  && chmod -R +x /usr/local/bin
+
+RUN chown airflow:airflow -R /home/airflow/.cache
+RUN chown airflow:airflow -R /home/airflow/.grype
+RUN chown airflow:airflow -R /home/airflow/.kantra
+RUN chown airflow:airflow -R /home/airflow/.semgrep
+RUN chown airflow:airflow -R /home/airflow/.trivy
 
 RUN mkdir -p /home/airflow/.pip && \
     if [ -n "$GLOBAL_CERT" ]; then \
