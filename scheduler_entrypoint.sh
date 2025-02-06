@@ -22,6 +22,12 @@ if [ -f /tmp/keys/known_hosts ]; then
     chown airflow:airflow /home/airflow/.ssh/known_hosts
 fi
 
+if [ -f /tmp/keys/java.cacerts ]; then
+    cp /tmp/keys/java.cacerts /home/airflow/java.cacerts
+    chmod 755 /home/airflow/java.cacerts
+    chown airflow:airflow /home/airflow/java.cacerts
+fi
+
 if [ -d /home/airflow/.ssh ]; then
     chmod 700 /home/airflow/.ssh
     chown airflow:airflow /home/airflow/.ssh
