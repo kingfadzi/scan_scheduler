@@ -59,10 +59,10 @@ services:
 
     restart: always
     volumes:
-      - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519
-      - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub
-      - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts
-      - ${USER_HOME}/java.cacerts:/tmp/keys/java.cacerts
+      - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro,Z
+      - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub:ro,Z
+      - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts:ro,Z
+      - ${USER_HOME}/java.cacerts:/tmp/keys/java.cacerts:ro,Z
       - ${GRADLE_CACHE_PATH}:/home/airflow/.gradle
       - ${M2_CACHE_PATH}:/home/airflow/.m2
 

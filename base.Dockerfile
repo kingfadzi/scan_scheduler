@@ -152,6 +152,9 @@ RUN chown airflow:airflow -R /home/airflow/.gradle
 RUN chown airflow:airflow -R /home/airflow/.ssh
 
 RUN chmod 700 /home/airflow/.ssh
+RUN chmod 755 /home/airflow/.m2
+RUN chmod 755 /home/airflow/.gradle
+
 
 RUN mkdir -p /home/airflow/.pip && \
     if [ -n "$GLOBAL_CERT" ]; then \
