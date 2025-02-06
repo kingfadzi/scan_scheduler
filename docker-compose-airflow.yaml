@@ -63,7 +63,8 @@ services:
       - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub:ro
       - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts:ro
       - ${USER_HOME}/java.cacerts:/tmp/keys/java.cacerts:ro
-      - ${USER_HOME}/.gradle:/home/airflow/.gradle
+      - ${GRADLE_CACHE_PATH}:/home/airflow/.gradle
+      - ${M2_CACHE_PATH}:/home/airflow/.m2
 
     networks:
       - default
