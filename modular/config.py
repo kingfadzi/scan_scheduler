@@ -46,4 +46,4 @@ class Config:
 
     SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "/home/airflow/airflow/dags/sql")
 
-    DEFAULT_PROCESS_TIMEOUT = os.getenv("DEFAULT_PROCESS_TIMEOUT", 60)
+    DEFAULT_PROCESS_TIMEOUT = int(os.getenv("DEFAULT_PROCESS_TIMEOUT", 60))
