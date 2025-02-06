@@ -1,3 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+DROP MATERIALIZED VIEW IF EXISTS app_component_repo_mapping CASCADE;
+
 CREATE MATERIALIZED VIEW app_component_repo_mapping AS
 WITH distinct_business_apps AS (
     SELECT DISTINCT component_id, identifier
@@ -39,3 +43,5 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE INDEX idx_app_component_repo_mapping_transaction_cycle_trgm
     ON app_component_repo_mapping USING gin (transaction_cycle gin_trgm_ops);
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY app_component_repo_mapping;
