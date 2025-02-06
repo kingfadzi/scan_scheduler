@@ -36,12 +36,7 @@ GROUP BY
 HAVING
     COUNT(dba.identifier) > 0;
 
-CREATE INDEX idx_app_component_repo_mapping_repo_id
+CREATE UNIQUE INDEX idx_app_component_repo_mapping_repo_id
     ON app_component_repo_mapping (repo_id);
-
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
-CREATE INDEX idx_app_component_repo_mapping_transaction_cycle_trgm
-    ON app_component_repo_mapping USING gin (transaction_cycle gin_trgm_ops);
 
 REFRESH MATERIALIZED VIEW CONCURRENTLY app_component_repo_mapping;
