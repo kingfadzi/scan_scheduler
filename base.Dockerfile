@@ -140,6 +140,7 @@ RUN chown airflow:airflow -R /home/airflow/.grype
 RUN chown airflow:airflow -R /home/airflow/.kantra
 RUN chown airflow:airflow -R /home/airflow/.semgrep
 RUN chown airflow:airflow -R /home/airflow/.trivy
+RUN chown airflow:airflow -R /home/airflow/.syft
 
 RUN mkdir -p /home/airflow/.pip && \
     if [ -n "$GLOBAL_CERT" ]; then \
