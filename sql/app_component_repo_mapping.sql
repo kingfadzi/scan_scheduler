@@ -9,9 +9,8 @@ WITH distinct_business_apps AS (
     WHERE mapping_type = 'it_business_application'
 )
 SELECT
-    -- Remove the first segment (org/) from repo_slug
-    (vc.project_key || '/' ||
-     REGEXP_REPLACE(vc.repo_slug, '^[^/]+/', '', 'g')) AS repo_id,
+    -- Remove the first segment (org/) from repo_slug, keeping only sub/subN/repo
+    REGEXP_REPLACE(vc.repo_slug, '^[^/]+/', '', '') AS repo_id,
 
     vc.component_id,
     vc.component_name,
@@ -29,7 +28,6 @@ WHERE
   AND COALESCE(vc.project_key, '') <> ''
   AND COALESCE(vc.repo_slug, '') <> ''
 GROUP BY
-    vc.project_key,
     vc.repo_slug,
     vc.component_id,
     vc.component_name,
