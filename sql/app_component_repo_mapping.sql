@@ -6,18 +6,13 @@ CREATE MATERIALIZED VIEW app_component_repo_mapping AS
 WITH distinct_business_apps AS (
     SELECT DISTINCT component_id, identifier
     FROM component_mapping
-    WHERE mapping_type = 'business_application'
+    WHERE mapping_type = 'it_business_application'
 )
 SELECT
-    -- Extract last two segments of repo_slug and remove '.git'
-    (vc.project_key || '/' || 
-     REGEXP_REPLACE(
-        SPLIT_PART(vc.repo_slug, '/', array_length(string_to_array(vc.repo_slug, '/'), 1) - 1)
-        || '/' ||
-        SPLIT_PART(vc.repo_slug, '/', array_length(string_to_array(vc.repo_slug, '/'), 1)),
-        '\.git$', '', 'g'
-    )) AS repo_id,
-    
+    -- Remove the first segment (org/) from repo_slug
+    (vc.project_key || '/' ||
+     REGEXP_REPLACE(vc.repo_slug, '^[^/]+/', '', 'g')) AS repo_id,
+
     vc.component_id,
     vc.component_name,
     string_agg(DISTINCT vc.transaction_cycle, ', ') AS transaction_cycle,
@@ -27,8 +22,8 @@ SELECT
     string_agg(DISTINCT dba.identifier, ', ') AS app_identifiers
 FROM
     component_mapping vc
-LEFT JOIN distinct_business_apps dba
-    ON vc.component_id = dba.component_id
+        LEFT JOIN distinct_business_apps dba
+                  ON vc.component_id = dba.component_id
 WHERE
     vc.mapping_type = 'version_control'
   AND COALESCE(vc.project_key, '') <> ''
