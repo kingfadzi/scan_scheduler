@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from cyclonedx.model.bom import Bom
-from sqlalchemy.dialects.postgresql import insert, JSON
+from sqlalchemy.dialects.postgresql import insert
 from modular.models import Dependency, Session
 from packageurl import PackageURL
 from sqlalchemy import String, Integer
@@ -58,11 +58,7 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
                 "language": properties.get("syft:package:language"),
                 "package_type": properties.get("syft:package:type"),
                 "metadata_type": properties.get("syft:package:metadataType"),
-                "location": properties.get("syft:location"),
             }
-
-            # Serialize any dict values
-            dep_data = {k: json.dumps(v) if isinstance(v, dict) else v for k, v in dep_data.items()}
 
             stmt = insert(Dependency).values(
                 repo_id=Integer(dep_data['repo_id']),
@@ -74,8 +70,7 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
                 found_by=String(dep_data['found_by']),
                 language=String(dep_data['language']),
                 package_type=String(dep_data['package_type']),
-                metadata_type=String(dep_data['metadata_type']),
-                location=JSON(dep_data['location'])
+                metadata_type=String(dep_data['metadata_type'])
             ).on_conflict_do_update(
                 index_elements=['repo_id', 'name', 'version'],
                 set_={
@@ -86,7 +81,6 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
                     "language": String(dep_data['language']),
                     "package_type": String(dep_data['package_type']),
                     "metadata_type": String(dep_data['metadata_type']),
-                    "location": JSON(dep_data['location']),
                 }
             )
             
