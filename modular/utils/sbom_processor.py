@@ -3,6 +3,7 @@ from pathlib import Path
 from cyclonedx.model.bom import Bom
 from sqlalchemy import insert
 from modular.models import Dependency, Session
+from sqlalchemy.dialects.postgresql import insert
 
 def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
     """
