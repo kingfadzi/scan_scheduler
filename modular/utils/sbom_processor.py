@@ -21,23 +21,20 @@ def print_bom_contents(bom: Bom):
     print(f"  Version: {bom.version}")
     print(f"  Serial Number: {bom.serial_number}")
 
-    # If bom.dependencies exists and has items
     if hasattr(bom, 'dependencies') and bom.dependencies:
-        # Collect all references in dependencies
+        # Collect all component references in direct dependencies
         direct_dependencies_refs = {dep.ref for dep in bom.dependencies}
     else:
         direct_dependencies_refs = set()
 
-    print("\nComponents:")
+    print("\nDirect Components:")
     for component in bom.components:
-        # Check if component's bom_ref is in direct_dependencies_refs
-        dependency_type = "Direct" if component.bom_ref in direct_dependencies_refs else "Transient"
-        print(f"  Name: {component.name}")
-        print(f"  Version: {component.version}")
-        print(f"  Type: {component.type}")
-        print(f"  PURL: {component.purl}")
-        print(f"  Dependency Type: {dependency_type}")
-        print("  ---")
+        if component.bom_ref in direct_dependencies_refs:
+            print(f"  Name: {component.name}")
+            print(f"  Version: {component.version}")
+            print(f"  Type: {component.type}")
+            print(f"  PURL: {component.purl}")
+            print("  ---")
 
 def main():
     sbom_file_path = Path('sbom.json')  # Update this path to your SBOM file
