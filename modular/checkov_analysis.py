@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 from cyclonedx.model.bom import Bom
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert, JSON
 from modular.models import Dependency, Session
 from packageurl import PackageURL
+from sqlalchemy import String, Integer
 
 def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
     """
@@ -44,7 +45,7 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
 
             # Ensure that purl is stored as a string.
             purl_obj = getattr(component, "purl", None)
-            purl_str = purl_obj.to_string() if isinstance(purl_obj, PackageURL) else str(purl_obj) if purl_obj else None
+            purl_str = str(purl_obj) if purl_obj else None
 
             dep_data = {
                 "repo_id": repo_id,
@@ -60,28 +61,36 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
                 "location": properties.get("syft:location"),
             }
 
-            stmt = (
-                insert(Dependency)
-                .values(**dep_data)
-                .on_conflict_do_update(
-                    index_elements=['repo_id', 'name', 'version'],
-                    set_={
-                        "type": dep_data["type"],
-                        "cpe": dep_data["cpe"],
-                        "purl": dep_data["purl"],
-                        "found_by": dep_data["found_by"],
-                        "language": dep_data["language"],
-                        "package_type": dep_data["package_type"],
-                        "metadata_type": dep_data["metadata_type"],
-                        "location": dep_data["location"],
-                    }
-                )
+            # Serialize any dict values
+            dep_data = {k: json.dumps(v) if isinstance(v, dict) else v for k, v in dep_data.items()}
+
+            stmt = insert(Dependency).values(
+                repo_id=Integer(dep_data['repo_id']),
+                name=String(dep_data['name']),
+                version=String(dep_data['version']),
+                type=String(dep_data['type']),
+                cpe=String(dep_data['cpe']),
+                purl=String(dep_data['purl']),
+                found_by=String(dep_data['found_by']),
+                language=String(dep_data['language']),
+                package_type=String(dep_data['package_type']),
+                metadata_type=String(dep_data['metadata_type']),
+                location=JSON(dep_data['location'])
+            ).on_conflict_do_update(
+                index_elements=['repo_id', 'name', 'version'],
+                set_={
+                    "type": String(dep_data['type']),
+                    "cpe": String(dep_data['cpe']),
+                    "purl": String(dep_data['purl']),
+                    "found_by": String(dep_data['found_by']),
+                    "language": String(dep_data['language']),
+                    "package_type": String(dep_data['package_type']),
+                    "metadata_type": String(dep_data['metadata_type']),
+                    "location": JSON(dep_data['location']),
+                }
             )
             
-            # Convert any PackageURL objects to strings in the parameters
-            params = {k: v.to_string() if isinstance(v, PackageURL) else v for k, v in dep_data.items()}
-            
-            session.execute(stmt, params)
+            session.execute(stmt)
 
         try:
             session.commit()
