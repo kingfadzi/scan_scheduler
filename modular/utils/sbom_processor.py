@@ -21,12 +21,17 @@ def print_bom_contents(bom: Bom):
     print(f"  Version: {bom.version}")
     print(f"  Serial Number: {bom.serial_number}")
 
-    # Determine direct dependencies by checking which components are referenced in dependencies
-    direct_dependencies = {dep.dependent for dep in bom.dependencies}
+    # If bom.dependencies exists and has items
+    if hasattr(bom, 'dependencies') and bom.dependencies:
+        # Collect all references in dependencies
+        direct_dependencies_refs = {dep.ref for dep in bom.dependencies}
+    else:
+        direct_dependencies_refs = set()
 
     print("\nComponents:")
     for component in bom.components:
-        dependency_type = "Transient" if component.bom_ref not in direct_dependencies else "Direct"
+        # Check if component's bom_ref is in direct_dependencies_refs
+        dependency_type = "Direct" if component.bom_ref in direct_dependencies_refs else "Transient"
         print(f"  Name: {component.name}")
         print(f"  Version: {component.version}")
         print(f"  Type: {component.type}")
