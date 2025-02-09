@@ -4,7 +4,7 @@ import json
 
 def load_and_parse_sbom(file_path: Path) -> Bom | None:
     try:
-        with open(file_path, 'r') as f:
+        with file_path.open('r') as f:
             json_data = json.load(f)
         bom = Bom.from_json(json_data)
         return bom
@@ -26,14 +26,21 @@ def print_bom_contents(bom: Bom):
 
     print("\nComponents:")
     for component in bom.components:
+        # Displaying basic component information
         print(f"  Name: {component.name}")
         print(f"  Version: {component.version}")
-        print(f"  Type: {component.type.name if component.type else 'N/A'}")  # Ensure type is displayed correctly
+        print(f"  Type: {component.type.name if component.type else 'N/A'}")
+
+        # Additional details including language and type of dependencies
         print(f"  PURL: {component.purl if component.purl else 'N/A'}")
+        language = component.properties.get('language', 'N/A') if component.properties else 'N/A'
+        print(f"  Language: {language}")
+        dependency_type = component.properties.get('dependencyType', 'N/A') if component.properties else 'N/A'
+        print(f"  Dependency Type: {dependency_type}")
         print("  ---")
 
 def main():
-    sbom_file_path = Path('/tmp/scan_scheduler/sbom.json')  # Update this path to your SBOM file
+    sbom_file_path = Path('sbom.json')  # Looks for 'sbom.json' in the current working directory
 
     bom = load_and_parse_sbom(sbom_file_path)
     
