@@ -19,16 +19,17 @@ def load_and_parse_sbom(file_path: Path) -> Bom | None:
         return None
 
 def print_bom_contents(bom: Bom):
-    print(f"SBOM Metadata:")
-    print(f"  Version: {bom.metadata.version if bom.metadata else 'N/A'}")
-    print(f"  Serial Number: {bom.metadata.serial_number if bom.metadata else 'N/A'}")
+    print("SBOM Metadata:")
+    if bom.metadata:
+        serial_number = bom.metadata.serial_number if hasattr(bom.metadata, 'serial_number') else 'N/A'
+        print(f"  Serial Number: {serial_number}")
 
     print("\nComponents:")
     for component in bom.components:
         print(f"  Name: {component.name}")
         print(f"  Version: {component.version}")
-        print(f"  Type: {component.type}")
-        print(f"  PURL: {component.purl}")
+        print(f"  Type: {component.type.name if component.type else 'N/A'}")  # Ensure type is displayed correctly
+        print(f"  PURL: {component.purl if component.purl else 'N/A'}")
         print("  ---")
 
 def main():
