@@ -4,7 +4,7 @@ import json
 
 def load_and_parse_sbom(file_path: Path) -> Bom | None:
     try:
-        with open(file_path, 'r') as f:
+        with file_path.open('r') as f:
             json_data = json.load(f)
         bom = Bom.from_json(json_data)
         return bom
@@ -33,7 +33,7 @@ def print_bom_contents(bom: Bom):
         print("  ---")
 
 def main():
-    sbom_file_path = Path('sbom.json')  # Update this path to your SBOM file
+    sbom_file_path = Path('sbom.json')  # Looks for 'sbom.json' in the current working directory
 
     bom = load_and_parse_sbom(sbom_file_path)
     
