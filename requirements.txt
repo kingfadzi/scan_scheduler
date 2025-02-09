@@ -12,4 +12,4 @@ lizard
 psycopg2-binary
 python-dotenv
 semgrep
-cyclonedx-python-lib
+cyclonedx-bom
