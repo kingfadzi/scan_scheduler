@@ -26,16 +26,21 @@ def print_bom_contents(bom: Bom):
 
     print("\nComponents:")
     for component in bom.components:
-        # Displaying basic component information
         print(f"  Name: {component.name}")
         print(f"  Version: {component.version}")
         print(f"  Type: {component.type.name if component.type else 'N/A'}")
-
-        # Additional details including language and type of dependencies
         print(f"  PURL: {component.purl if component.purl else 'N/A'}")
-        language = component.properties.get('language', 'N/A') if component.properties else 'N/A'
+
+        # Process SortedSet of properties to find language and dependencyType
+        language = 'N/A'
+        dependency_type = 'N/A'
+        for prop in component.properties:
+            if prop.name == 'language':
+                language = prop.value
+            elif prop.name == 'dependencyType':
+                dependency_type = prop.value
+
         print(f"  Language: {language}")
-        dependency_type = component.properties.get('dependencyType', 'N/A') if component.properties else 'N/A'
         print(f"  Dependency Type: {dependency_type}")
         print("  ---")
 
