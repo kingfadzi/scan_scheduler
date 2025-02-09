@@ -1,187 +1,95 @@
-import os
 import json
+from pathlib import Path
+from cyclonedx.model.bom import Bom
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, CheckovSummary
-from modular.execution_decorator import analyze_execution
-from subprocess import run, DEVNULL, TimeoutExpired, CalledProcessError
-from modular.base_logger import BaseLogger
-import logging
-from modular.config import Config
+from modular.models import Dependency, Session
 
-class CheckovAnalyzer(BaseLogger):
+def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
+    """
+    Load an SBOM file, parse its components, and upsert them as dependencies
+    into the database.
 
-    def __init__(self):
-        self.logger = self.get_logger("CheckovAnalyzer")
-        self.logger.setLevel(logging.WARN)
+    :param sbom_file: The file path to the SBOM JSON file.
+    :param repo_id: Identifier for the repository (default is 1).
+    """
+    path = Path(sbom_file)
 
-    @analyze_execution(session_factory=Session, stage="Checkov Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(
-            f"Starting Checkov analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})."
-        )
-        if not os.path.exists(repo_dir):
-            raise FileNotFoundError(f"Repository directory does not exist: {repo_dir}")
-
-        results_file = self._run_checkov_command(repo_dir, repo)
-        return self._process_checkov_results(repo, session, results_file)
-
-    def _run_checkov_command(self, repo_dir, repo):
-        output_dir = os.path.join(repo_dir, "checkov_results")
-        os.makedirs(output_dir, exist_ok=True)
-        error_log_file = os.path.join(output_dir, "checkov_errors.log")
-        try:
-            self.logger.info(f"Executing Checkov command for repo_id: {repo.repo_id}")
-            with open(error_log_file, "w") as error_log:
-                run(
-                    [
-                        "checkov",
-                        "--directory", repo_dir,
-                        "--output", "json",
-                        "--output-file-path", output_dir,
-                        "--skip-download"
-                    ],
-                    check=False,
-                    text=True,
-                    stdout=DEVNULL,
-                    stderr=error_log,
-                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
-                )
-        except TimeoutExpired as e:
-            msg = f"Checkov command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
-            self.logger.error(msg)
-            raise RuntimeError(msg) from e
-        except Exception as e:
-            msg = f"Error executing Checkov command for repo_id: {repo.repo_id}. Error: {str(e)}"
-            self.logger.error(msg)
-            raise RuntimeError(msg) from e
-
-        results_file = os.path.join(output_dir, "results_json.json")
-        if not os.path.isfile(results_file):
-            raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
-        return results_file
-
-
-    def _process_checkov_results(self, repo, session, results_file):
-        try:
-            self.parse_and_process_checkov_output(repo.repo_id, results_file, session)
-            with open(results_file, "r") as file:
-                return file.read()
-        except json.JSONDecodeError as e:
-            msg = f"Failed to parse Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
-            self.logger.error(msg)
-            raise ValueError(msg) from e
-        except Exception as e:
-            msg = f"Error processing Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
-            self.logger.error(msg)
-            raise RuntimeError(msg) from e
-
-
-    def parse_and_process_checkov_output(self, repo_id, checkov_output_path, session):
-
-        def process_summary(check_type, summary):
-            """Helper function to save summary data."""
-            self.save_checkov_results(
-                session,
-                repo_id,
-                check_type=check_type,
-                passed=summary.get("passed", 0),
-                failed=summary.get("failed", 0),
-                skipped=summary.get("skipped", 0),
-                parsing_errors=summary.get("parsing_errors", 0),
-                resource_count=summary.get("resource_count", 0),
-            )
-
-        try:
-            self.logger.info(f"Reading Checkov output file at: {checkov_output_path}")
-            with open(checkov_output_path, "r") as file:
-                checkov_data = json.load(file)
-
-            if not checkov_data:
-                raise ValueError(f"Checkov output is empty for repo_id {repo_id}.")
-
-            self.logger.info(f"Checkov output successfully parsed for repo_id: {repo_id}.")
-
-            if isinstance(checkov_data, dict) and "check_type" not in checkov_data:  # No IaC components found
-                process_summary("no-checks", checkov_data)
-                return "No IaC components found. Summary saved."
-
-            elif isinstance(checkov_data, dict):  # One check performed
-                process_summary(checkov_data["check_type"], checkov_data["summary"])
-                return f"Processed single check type: {checkov_data['check_type']}."
-
-            elif isinstance(checkov_data, list):  # Multiple checks performed
-                check_types = []
-                for check in checkov_data:
-                    process_summary(check["check_type"], check["summary"])
-                    check_types.append(check["check_type"])
-                return f"Processed multiple check types: {', '.join(check_types)}."
-
-            else:
-                raise ValueError(f"Unexpected format in Checkov output for repo_id {repo_id}.")
-
-        except (json.JSONDecodeError, ValueError) as e:
-            self.logger.error(f"Error parsing Checkov JSON output for repo_id {repo_id}: {e}")
-            raise RuntimeError(f"Failed to parse Checkov output for repo_id {repo_id}.") from e
-
-        except Exception as e:
-            self.logger.exception(f"Unexpected error processing Checkov output for repo_id {repo_id}: {e}")
-            raise RuntimeError(f"Unexpected error processing Checkov output for repo_id {repo_id}.") from e
-
-    def save_checkov_results(self, session, repo_id, check_type, passed, failed, skipped, parsing_errors, resource_count):
-
-        try:
-
-            session.execute(
-                insert(CheckovSummary).values(
-                    repo_id=repo_id,
-                    check_type=check_type,
-                    passed=passed,
-                    failed=failed,
-                    skipped=skipped,
-                    parsing_errors=parsing_errors,
-                    resource_count=resource_count,
-                ).on_conflict_do_update(
-                    index_elements=["repo_id", "check_type"],
-                    set_={
-                        "passed": passed,
-                        "failed": failed,
-                        "skipped": skipped,
-                        "parsing_errors": parsing_errors,
-                        "resource_count": resource_count,
-                    },
-                )
-            )
-
-            session.commit()
-            self.logger.info(f"Checkov summary for {check_type} committed to the database for repo_id: {repo_id}")
-
-        except Exception as e:
-            self.logger.exception(f"Error saving Checkov summary for repo_id {repo_id}, check_type {check_type}")
-            raise
-
-
-if __name__ == "__main__":
-    repo_slug = "sonar-metrics"
-    repo_id = "sonar-metrics"
-    repo_dir = f"/tmp/WebGoat"
-
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-
-    # Create a mock repo object
-    repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
-
-    # Initialize a database session
-    session = Session()
-
-    analyzer = CheckovAnalyzer()
-
+    # Load the SBOM JSON file.
     try:
-        analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo.repo_id}")
-        # Explicitly pass the repo object
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
-        analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
+        with path.open('r') as f:
+            sbom_json = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: SBOM file '{sbom_file}' not found.")
+        return
+    except json.JSONDecodeError:
+        print(f"Error: File '{sbom_file}' is not a valid JSON file.")
+        return
     except Exception as e:
-        analyzer.logger.error(f"Error during standalone Checkov analysis: {e}")
+        print(f"Error reading SBOM file '{sbom_file}': {e}")
+        return
+
+    # Parse the SBOM using CycloneDX.
+    try:
+        bom = Bom.from_json(sbom_json)
+    except Exception as e:
+        print(f"Error parsing SBOM: {e}")
+        return
+
+    # Upsert each component from the SBOM as a dependency.
+    with Session() as session:
+        for component in bom.components:
+            # Create a dictionary of property names and values for easy lookup.
+            properties = {prop.name: prop.value for prop in component.properties}
+
+            # Ensure that purl is stored as a string.
+            purl_obj = getattr(component, "purl", None)
+            purl_str = str(purl_obj) if purl_obj else None
+
+            dep_data = {
+                "repo_id": repo_id,
+                "name": component.name,
+                "version": component.version,
+                "type": str(component.type) if component.type else None,
+                "cpe": component.cpe,
+                "purl": purl_str,
+                "found_by": properties.get("syft:package:foundBy"),
+                "language": properties.get("syft:package:language"),
+                "package_type": properties.get("syft:package:type"),
+                "metadata_type": properties.get("syft:package:metadataType"),
+                "location": properties.get("syft:location"),
+            }
+
+            stmt = (
+                insert(Dependency)
+                .values(**dep_data)
+                .on_conflict_do_update(
+                    index_elements=['repo_id', 'name', 'version'],
+                    set_={
+                        "type": dep_data["type"],
+                        "cpe": dep_data["cpe"],
+                        "purl": dep_data["purl"],
+                        "found_by": dep_data["found_by"],
+                        "language": dep_data["language"],
+                        "package_type": dep_data["package_type"],
+                        "metadata_type": dep_data["metadata_type"],
+                        "location": dep_data["location"],
+                    }
+                )
+            )
+            session.execute(stmt)
+        try:
+            session.commit()
+            print("Successfully persisted dependencies to the database.")
+        except Exception as e:
+            session.rollback()
+            print(f"Error committing dependencies: {e}")
+
+
+def main():
+    # Use the current working directory for the sbom.json file.
+    sbom_file_path = Path.cwd() / "sbom.json"
+    persist_dependencies(str(sbom_file_path))
+
+
+if __name__ == '__main__':
+    main()
