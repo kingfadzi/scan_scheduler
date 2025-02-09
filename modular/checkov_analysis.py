@@ -3,6 +3,7 @@ from pathlib import Path
 from cyclonedx.model.bom import Bom
 from sqlalchemy.dialects.postgresql import insert
 from modular.models import Dependency, Session
+from packageurl import PackageURL
 
 def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
     """
@@ -43,7 +44,7 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
 
             # Ensure that purl is stored as a string.
             purl_obj = getattr(component, "purl", None)
-            purl_str = str(purl_obj) if purl_obj else None
+            purl_str = purl_obj.to_string() if isinstance(purl_obj, PackageURL) else str(purl_obj) if purl_obj else None
 
             dep_data = {
                 "repo_id": repo_id,
@@ -84,12 +85,10 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
             session.rollback()
             print(f"Error committing dependencies: {e}")
 
-
 def main():
     # Use the current working directory for the sbom.json file.
     sbom_file_path = Path.cwd() / "sbom.json"
     persist_dependencies(str(sbom_file_path))
-
 
 if __name__ == '__main__':
     main()
