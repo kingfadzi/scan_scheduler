@@ -1,56 +1,91 @@
-from cyclonedx.model.bom import Bom
-from pathlib import Path
 import json
+from pathlib import Path
+from cyclonedx.model.bom import Bom
+from sqlalchemy import insert
+from modular.models import Dependency, Session
 
-def load_and_parse_sbom(file_path: Path) -> Bom | None:
+def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
+    """
+    Load an SBOM file, parse its components, and upsert them as dependencies
+    into the database.
+
+    :param sbom_file: The file path to the SBOM JSON file.
+    :param repo_id: Identifier for the repository (default is 1).
+    """
+    path = Path(sbom_file)
+
+    # Load the SBOM JSON file.
     try:
-        with file_path.open('r') as f:
-            json_data = json.load(f)
-        bom = Bom.from_json(json_data)
-        return bom
+        with path.open('r') as f:
+            sbom_json = json.load(f)
     except FileNotFoundError:
-        print(f"Error: '{file_path}' file not found.")
-        return None
+        print(f"Error: SBOM file '{sbom_file}' not found.")
+        return
     except json.JSONDecodeError:
-        print(f"Error: '{file_path}' is not a valid JSON file.")
-        return None
+        print(f"Error: File '{sbom_file}' is not a valid JSON file.")
+        return
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return None
+        print(f"Error reading SBOM file '{sbom_file}': {e}")
+        return
 
-def print_bom_contents(bom: Bom):
-    print("SBOM Metadata:")
-    if bom.metadata:
-        serial_number = bom.metadata.serial_number if hasattr(bom.metadata, 'serial_number') else 'N/A'
-        print(f"  Serial Number: {serial_number}")
+    # Parse the SBOM using CycloneDX.
+    try:
+        bom = Bom.from_json(sbom_json)
+    except Exception as e:
+        print(f"Error parsing SBOM: {e}")
+        return
 
-    print("\nComponents:")
-    for component in bom.components:
-        print(f"  Name: {component.name}")
-        print(f"  Version: {component.version}")
-        print(f"  Type: {component.type.name if component.type else 'N/A'}")
-        print(f"  CPE: {component.cpe if component.cpe else 'N/A'}")
+    # Upsert each component from the SBOM as a dependency.
+    with Session() as session:
+        for component in bom.components:
+            # Create a dictionary of property names and values for easy lookup.
+            properties = {prop.name: prop.value for prop in component.properties}
+            dep_data = {
+                "repo_id": repo_id,
+                "name": component.name,
+                "version": component.version,
+                "type": str(component.type) if component.type else None,
+                "cpe": component.cpe,
+                "purl": getattr(component, "purl", None),
+                "found_by": properties.get("syft:package:foundBy"),
+                "language": properties.get("syft:package:language"),
+                "package_type": properties.get("syft:package:type"),
+                "metadata_type": properties.get("syft:package:metadataType"),
+                "location": properties.get("syft:location"),
+            }
 
-        # Extract and print properties
-        property_output = {}
-        for prop in component.properties:
-            property_output[prop.name] = prop.value
+            # Use an upsert (insert or update) based on the unique combination of repo_id, name, and version.
+            stmt = (
+                insert(Dependency)
+                .values(**dep_data)
+                .on_conflict_do_update(
+                    index_elements=['repo_id', 'name', 'version'],
+                    set_={
+                        "type": dep_data["type"],
+                        "cpe": dep_data["cpe"],
+                        "purl": dep_data["purl"],
+                        "found_by": dep_data["found_by"],
+                        "language": dep_data["language"],
+                        "package_type": dep_data["package_type"],
+                        "metadata_type": dep_data["metadata_type"],
+                        "location": dep_data["location"],
+                    }
+                )
+            )
+            session.execute(stmt)
+        try:
+            session.commit()
+            print("Successfully persisted dependencies to the database.")
+        except Exception as e:
+            session.rollback()
+            print(f"Error committing dependencies: {e}")
 
-        # Display properties of interest if available
-        print("  Properties:")
-        for key in ['syft:package:foundBy', 'syft:package:language', 'syft:package:type', 'syft:package:metadataType', 'syft:location']:
-            print(f"    {key}: {property_output.get(key, 'N/A')}")
-        print("  ---")
 
 def main():
-    sbom_file_path = Path.cwd() / 'sbom.json'  # Load SBOM from the current working directory
+    # Use the current working directory for the sbom.json file.
+    sbom_file_path = Path.cwd() / "sbom.json"
+    persist_dependencies(str(sbom_file_path))
 
-    bom = load_and_parse_sbom(sbom_file_path)
-    
-    if bom:
-        print_bom_contents(bom)
-    else:
-        print("Failed to process the SBOM.")
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

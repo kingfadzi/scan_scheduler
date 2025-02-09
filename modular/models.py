@@ -310,3 +310,28 @@ class ViolationLabel(Base):
     __tablename__ = "kantra_violation_labels"
     violation_id = Column(Integer, primary_key=True)
     label_id = Column(Integer, primary_key=True)
+
+
+class Dependency(Base):
+    __tablename__ = 'dependencies'
+    
+    # Primary key for the table
+    id = Column(Integer, primary_key=True)
+    
+    # Fields based on the SBOM component properties
+    repo_id = Column(Integer, nullable=False)
+    name = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    type = Column(String, nullable=True)
+    cpe = Column(String, nullable=True)
+    purl = Column(String, nullable=True)
+    found_by = Column(String, nullable=True)
+    language = Column(String, nullable=True)
+    package_type = Column(String, nullable=True)
+    metadata_type = Column(String, nullable=True)
+    location = Column(Text, nullable=True)
+    
+    # Unique constraint to avoid duplicate entries based on these fields
+    __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
+
+    
