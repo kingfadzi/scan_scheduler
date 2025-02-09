@@ -1,15 +1,12 @@
 from cyclonedx.model.bom import Bom
-from cyclonedx import parser as cdx_parser
-
+from cyclonedx.parser import json as cdx_json
 from pathlib import Path
 
 def load_and_parse_sbom(file_path):
     # Load and parse the JSON SBOM file
     with open(file_path, 'r') as f:
         sbom_contents = f.read()
-    
-    parser = cdx_parser.json.JsonParser(sbom_contents)
-
+    parser = cdx_json.JsonParser(sbom_contents)
     bom = parser.parse()
     return bom
 
