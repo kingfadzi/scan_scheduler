@@ -31,13 +31,15 @@ def print_bom_contents(bom: Bom):
         print(f"  Type: {component.type.name if component.type else 'N/A'}")
         print(f"  PURL: {component.purl if component.purl else 'N/A'}")
 
-        # Process SortedSet of properties to find language and dependencyType
+        # Initialize defaults
         language = 'N/A'
         dependency_type = 'N/A'
+
+        # Check if properties exist and process them
         for prop in component.properties:
-            if prop.name == 'language':
+            if prop.name == 'syft:package:language':
                 language = prop.value
-            elif prop.name == 'dependencyType':
+            if prop.name == 'syft:package:type':
                 dependency_type = prop.value
 
         print(f"  Language: {language}")
@@ -45,7 +47,7 @@ def print_bom_contents(bom: Bom):
         print("  ---")
 
 def main():
-    sbom_file_path = Path('sbom.json')  # Looks for 'sbom.json' in the current working directory
+    sbom_file_path = Path.cwd() / 'sbom.json'  # Load SBOM from the current working directory
 
     bom = load_and_parse_sbom(sbom_file_path)
     
