@@ -29,21 +29,17 @@ def print_bom_contents(bom: Bom):
         print(f"  Name: {component.name}")
         print(f"  Version: {component.version}")
         print(f"  Type: {component.type.name if component.type else 'N/A'}")
-        print(f"  PURL: {component.purl if component.purl else 'N/A'}")
+        print(f"  CPE: {component.cpe if component.cpe else 'N/A'}")
 
-        # Initialize defaults
-        language = 'N/A'
-        dependency_type = 'N/A'
-
-        # Check if properties exist and process them
+        # Extract and print properties
+        property_output = {}
         for prop in component.properties:
-            if prop.name == 'syft:package:language':
-                language = prop.value
-            if prop.name == 'syft:package:type':
-                dependency_type = prop.value
+            property_output[prop.name] = prop.value
 
-        print(f"  Language: {language}")
-        print(f"  Dependency Type: {dependency_type}")
+        # Display properties of interest if available
+        print("  Properties:")
+        for key in ['syft:package:foundBy', 'syft:package:language', 'syft:package:type', 'syft:package:metadataType', 'syft:location']:
+            print(f"    {key}: {property_output.get(key, 'N/A')}")
         print("  ---")
 
 def main():
