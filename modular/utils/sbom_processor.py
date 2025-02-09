@@ -1,44 +1,41 @@
-from cyclonedx.model import Component
-from cyclonedx.parser import XmlParser, JsonParser
 from cyclonedx.model.bom import Bom
 from pathlib import Path
+import json
 
-def load_and_parse_sbom(file_path):
-    # Load and parse the JSON SBOM file
+def load_and_parse_sbom(file_path: Path) -> Bom | None:
     try:
         with open(file_path, 'r') as f:
-            sbom_contents = f.read()
-        bom = Bom.from_text(sbom_contents, parser=JsonParser)
+            json_data = json.load(f)
+        bom = Bom.from_json(json_data)
         return bom
     except FileNotFoundError:
         print(f"Error: '{file_path}' file not found.")
+    except json.JSONDecodeError:
+        print(f"Error: '{file_path}' is not a valid JSON file.")
     except Exception as e:
-        print(f"An error occurred while parsing the SBOM: {str(e)}")
+        print(f"An error occurred: {str(e)}")
     return None
 
-def deduplicate_components(bom):
-    # Dictionary to hold unique components based on name and version
-    unique_components = {}
-    # Loop over each component in the BOM
+def print_bom_contents(bom: Bom):
+    print(f"SBOM Metadata:")
+    print(f"  Version: {bom.version}")
+    print(f"  Serial Number: {bom.serial_number}")
+
+    print("\nComponents:")
     for component in bom.components:
-        key = (component.name, component.version)
-        if key not in unique_components:
-            unique_components[key] = component
-    return list(unique_components.values())
+        print(f"  Name: {component.name}")
+        print(f"  Version: {component.version}")
+        print(f"  Type: {component.type}")
+        print(f"  PURL: {component.purl}")
+        print("  ---")
 
 def main():
     sbom_file_path = Path('sbom.json')  # Update this path to your SBOM file
 
-    # Parse the SBOM
     bom = load_and_parse_sbom(sbom_file_path)
     
     if bom:
-        # Deduplicate components
-        unique_components = deduplicate_components(bom)
-
-        # Print unique components and their properties
-        for component in unique_components:
-            print(f"Name: {component.name}, Version: {component.version}, Type: {component.type}")
+        print_bom_contents(bom)
     else:
         print("Failed to process the SBOM.")
 
