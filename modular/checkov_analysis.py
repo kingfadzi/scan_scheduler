@@ -77,7 +77,12 @@ def persist_dependencies(sbom_file: str, repo_id: int = 1) -> None:
                     }
                 )
             )
-            session.execute(stmt)
+            
+            # Convert any PackageURL objects to strings in the parameters
+            params = {k: v.to_string() if isinstance(v, PackageURL) else v for k, v in dep_data.items()}
+            
+            session.execute(stmt, params)
+
         try:
             session.commit()
             print("Successfully persisted dependencies to the database.")
