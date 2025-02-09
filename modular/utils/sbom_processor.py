@@ -1,12 +1,13 @@
 from cyclonedx.model.bom import Bom
-from cyclonedx.parser.json import JsonParser
+from cyclonedx.parser import json as cdx_json
 from pathlib import Path
 
 def load_and_parse_sbom(file_path):
     # Load and parse the JSON SBOM file
     with open(file_path, 'r') as f:
         sbom_contents = f.read()
-    bom = JsonParser(sbom_contents).parse()
+    parser = cdx_json.JsonParser(sbom_contents)
+    bom = parser.parse()
     return bom
 
 def deduplicate_components(bom):
@@ -20,7 +21,7 @@ def deduplicate_components(bom):
     return list(unique_components.values())
 
 def main():
-    sbom_file_path = 'path_to_your_sbom.json'  # Update this path to your SBOM file
+    sbom_file_path = Path('path_to_your_sbom.json')  # Update this path to your SBOM file
 
     # Parse the SBOM
     bom = load_and_parse_sbom(sbom_file_path)
