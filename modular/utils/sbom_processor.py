@@ -10,31 +10,26 @@ def load_and_parse_sbom(file_path: Path) -> Bom | None:
         return bom
     except FileNotFoundError:
         print(f"Error: '{file_path}' file not found.")
+        return None
     except json.JSONDecodeError:
         print(f"Error: '{file_path}' is not a valid JSON file.")
+        return None
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-    return None
+        return None
 
 def print_bom_contents(bom: Bom):
     print(f"SBOM Metadata:")
-    print(f"  Version: {bom.version}")
-    print(f"  Serial Number: {bom.serial_number}")
+    print(f"  Version: {bom.metadata.version if bom.metadata else 'N/A'}")
+    print(f"  Serial Number: {bom.metadata.serial_number if bom.metadata else 'N/A'}")
 
-    if hasattr(bom, 'dependencies') and bom.dependencies:
-        # Collect all component references in direct dependencies
-        direct_dependencies_refs = {dep.ref for dep in bom.dependencies}
-    else:
-        direct_dependencies_refs = set()
-
-    print("\nDirect Components:")
+    print("\nComponents:")
     for component in bom.components:
-        if component.bom_ref in direct_dependencies_refs:
-            print(f"  Name: {component.name}")
-            print(f"  Version: {component.version}")
-            print(f"  Type: {component.type}")
-            print(f"  PURL: {component.purl}")
-            print("  ---")
+        print(f"  Name: {component.name}")
+        print(f"  Version: {component.version}")
+        print(f"  Type: {component.type}")
+        print(f"  PURL: {component.purl}")
+        print("  ---")
 
 def main():
     sbom_file_path = Path('sbom.json')  # Update this path to your SBOM file
