@@ -117,7 +117,7 @@ if __name__ == "__main__":
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    helper = PythonEnvHelper()
+    helper = PythonHelper()
     repo_directory = "/home/fadzi/tools/dashboard"
     try:
         helper.process_repo(repo_directory)
