@@ -10,7 +10,16 @@ class MavenHelper(BaseLogger):
         self.logger = self.get_logger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
+    def process_repo(self, repo_dir):
+        """Entry point for repository processing with basic validation"""
+        self.logger.info(f"Processing repository at: {repo_dir}")
+        if not os.path.isdir(repo_dir):
+            self.logger.error(f"Invalid directory: {repo_dir}")
+            return None
+        return self.generate_effective_pom(repo_dir)
+
     def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
+        """Core method to generate effective POM"""
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 
@@ -21,6 +30,7 @@ class MavenHelper(BaseLogger):
         self.logger.info(f"Found pom.xml at {pom_path}")
         command_list = ["mvn", "help:effective-pom", f"-Doutput={output_file}"]
 
+        # Add truststore configuration if available
         if Config.TRUSTSTORE_PATH:
             command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
         if Config.TRUSTSTORE_PASSWORD:
@@ -46,6 +56,7 @@ class MavenHelper(BaseLogger):
             self.logger.error(f"Failed to generate effective-pom.xml: {e}")
             self.logger.debug(f"Stdout:\n{e.stdout}\nStderr:\n{e.stderr}")
 
+            # Fallback to raw pom.xml if available
             if os.path.isfile(pom_path):
                 self.logger.info("Falling back to raw pom.xml.")
                 return pom_path
@@ -68,7 +79,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     helper = MavenHelper()
     project_dir = "/path/to/maven/project"
-    result = helper.generate_effective_pom(project_dir)
+    result = helper.process_repo(project_dir)  # Updated to use process_repo
     if result:
         print(f"Effective POM generated at: {result}")
     else:

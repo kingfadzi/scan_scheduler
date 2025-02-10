@@ -51,7 +51,6 @@ def analyze_fundamentals(batch, run_id, **kwargs):
     session.close()
 
 def analyze_vulnerabilities(batch, run_id, **kwargs):
-
     session = Session()
     attached_batch = [session.merge(repo) for repo in batch]
     for repo in attached_batch:
@@ -61,9 +60,11 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
 
             analyze_vulnerabilities_dir = "analyze_vulnerabilities"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_vulnerabilities_dir)
-
             logger.debug(f"[Vulnerabilities] Repository cloned to: {repo_dir}")
 
+            # Added DependencyAnalyzer as first analysis step
+            DependencyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+            
             TrivyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
             SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
