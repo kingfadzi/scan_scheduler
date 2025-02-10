@@ -1,10 +1,10 @@
 import os
 import uuid
-from modular.base_logger import BaseLogger
+from modular.shared.base_logger import BaseLogger
 from modular.gradle.environment_manager import GradleEnvironmentManager
 from modular.gradle.snippet_builder import GradleSnippetBuilder
 from modular.gradle.gradle_runner import GradleRunner
-import logging
+
 
 class GradleHelper(BaseLogger):
     def __init__(self):

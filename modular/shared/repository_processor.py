@@ -3,19 +3,19 @@ import os
 from datetime import datetime
 
 from sqlalchemy import text
-from modular.models import Session, Repository, AnalysisExecutionLog
-from modular.cloning import CloningAnalyzer
-from modular.kantra_analysis import KantraAnalyzer
-from modular.utils.query_builder import build_query
-from modular.gitlog_analysis import GitLogAnalyzer
-from modular.go_enry_analysis import GoEnryAnalyzer
-from modular.lizard_analysis import LizardAnalyzer
-from modular.cloc_analysis import ClocAnalyzer
-from modular.syft_grype_analysis import SyftAndGrypeAnalyzer
-from modular.trivy_analysis import TrivyAnalyzer
-from modular.checkov_analysis import CheckovAnalyzer
-from modular.semgrep_analysis import SemgrepAnalyzer
-from modular.config import Config
+from modular.shared.models import Session, Repository, AnalysisExecutionLog
+from modular.analyzer.cloning import CloningAnalyzer
+from modular.analyzer.kantra_analysis import KantraAnalyzer
+from modular.shared.query_builder import build_query
+from modular.analyzer.gitlog_analysis import GitLogAnalyzer
+from modular.analyzer.go_enry_analysis import GoEnryAnalyzer
+from modular.analyzer.lizard_analysis import LizardAnalyzer
+from modular.analyzer.cloc_analysis import ClocAnalyzer
+from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
+from modular.analyzer.trivy_analysis import TrivyAnalyzer
+from modular.analyzer.checkov_analysis import CheckovAnalyzer
+from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
+from modular.shared.config import Config
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)

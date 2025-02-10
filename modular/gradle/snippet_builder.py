@@ -1,5 +1,5 @@
 import logging
-from modular.base_logger import BaseLogger
+from modular.shared.base_logger import BaseLogger
 
 class GradleSnippetBuilder(BaseLogger):
     def __init__(self):

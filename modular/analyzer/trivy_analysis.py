@@ -4,10 +4,10 @@ import logging
 import subprocess
 import shutil
 from sqlalchemy.dialects.postgresql import insert
-from modular.execution_decorator import analyze_execution
-from modular.models import Session, TrivyVulnerability
-from modular.config import Config
-from modular.base_logger import BaseLogger  # Import the BaseLogger
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.models import Session, TrivyVulnerability
+from modular.shared.config import Config
+from modular.shared.base_logger import BaseLogger  # Import the BaseLogger
 
 class TrivyAnalyzer(BaseLogger):
 

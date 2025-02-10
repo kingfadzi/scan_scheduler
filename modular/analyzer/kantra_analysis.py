@@ -1,4 +1,3 @@
-import json
 import shutil
 import os
 import yaml
@@ -7,10 +6,10 @@ import logging
 from sqlalchemy.dialects.postgresql import insert
 import json
 
-from modular.base_logger import BaseLogger
-from modular.execution_decorator import analyze_execution
-from modular.models import Session, Ruleset, Violation, Label, ViolationLabel
-from modular.config import Config
+from modular.shared.base_logger import BaseLogger
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.models import Session, Ruleset, Violation, Label, ViolationLabel
+from modular.shared.config import Config
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 
@@ -207,7 +206,7 @@ if __name__ == "__main__":
     mock_repo_slug = "sonar-metrics"
     mock_repo_dir = "/Users/fadzi/tools/gradle_projects/sonar-metrics"
 
-    from modular.models import Session
+    from modular.shared.models import Session
     try:
         session = Session()
     except Exception as e:

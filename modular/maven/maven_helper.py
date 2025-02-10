@@ -2,15 +2,15 @@ import os
 import logging
 import subprocess
 
-from modular.config import Config
-from modular.base_logger import BaseLogger
+from modular.shared.config import Config
+from modular.shared.base_logger import BaseLogger
 
 class MavenHelper(BaseLogger):
     def __init__(self):
         self.logger = self.get_logger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
-    def generate_effective_pom(self, repo_dir, output_file="effective-pom.xml"):
+    def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 

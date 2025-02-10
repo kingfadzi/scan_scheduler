@@ -2,9 +2,9 @@ import os
 import subprocess
 import json
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, ClocMetric
-from modular.execution_decorator import analyze_execution
-from modular.base_logger import BaseLogger
+from modular.shared.models import Session, ClocMetric
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.base_logger import BaseLogger
 import logging
 
 class ClocAnalyzer(BaseLogger):

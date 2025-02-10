@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine, Column, Integer, String, PrimaryKeyConstraint, Text, Float, DateTime, UniqueConstraint
+from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from modular.config import Config
+from modular.shared.config import Config
 
 # Construct the database URL using Config
 DB_URL = (
@@ -314,12 +314,9 @@ class ViolationLabel(Base):
 
 class Dependency(Base):
     __tablename__ = 'dependencies'
-    
-    # Primary key for the table
+
     id = Column(Integer, primary_key=True)
-    
-    # Fields based on the SBOM component properties
-    repo_id = Column(Integer, nullable=False)
+    repo_id = Column(String)
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
     type = Column(String, nullable=True)
@@ -330,8 +327,6 @@ class Dependency(Base):
     package_type = Column(String, nullable=True)
     metadata_type = Column(String, nullable=True)
     location = Column(Text, nullable=True)
-    
-    # Unique constraint to avoid duplicate entries based on these fields
+
     __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
 
-    

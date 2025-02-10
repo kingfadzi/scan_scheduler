@@ -2,13 +2,12 @@ import os
 import json
 import logging
 import subprocess
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import GoEnryAnalysis, SemgrepResult, Session
-from modular.execution_decorator import analyze_execution
-from modular.config import Config
-from modular.base_logger import BaseLogger
+from modular.shared.models import GoEnryAnalysis, SemgrepResult, Session
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.config import Config
+from modular.shared.base_logger import BaseLogger
 import configparser
 
 class SemgrepAnalyzer(BaseLogger):

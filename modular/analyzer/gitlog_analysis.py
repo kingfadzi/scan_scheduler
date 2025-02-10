@@ -2,9 +2,9 @@ import os
 from git import Repo, GitCommandError, InvalidGitRepositoryError
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, RepoMetrics
-from modular.execution_decorator import analyze_execution
-from modular.base_logger import BaseLogger  # Import BaseLogger for logging
+from modular.shared.models import Session, RepoMetrics
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.base_logger import BaseLogger  # Import BaseLogger for logging
 import logging
 
 class GitLogAnalyzer(BaseLogger):
@@ -53,7 +53,6 @@ class GitLogAnalyzer(BaseLogger):
 
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
 
-        # Log calculated metrics
         self.logger.info(f"Metrics for {repo.repo_name} (ID: {repo.repo_id}):")
         self.logger.info(f"  Total Size: {total_size} bytes")
         self.logger.info(f"  File Count: {file_count}")
@@ -64,7 +63,6 @@ class GitLogAnalyzer(BaseLogger):
         self.logger.info(f"  Active Branch Count: {active_branch_count}")
         self.logger.info(f"  Activity Status: {activity_status}")
 
-        # Persist metrics in the database
         session.execute(
             insert(RepoMetrics).values(
                 repo_id=repo.repo_id,

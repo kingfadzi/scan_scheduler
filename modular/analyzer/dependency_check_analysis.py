@@ -1,12 +1,11 @@
 import subprocess
-import csv
 import logging
 import os
 import json
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, DependencyCheckResult
-from modular.execution_decorator import analyze_execution  # Updated import
+from modular.shared.models import Session, DependencyCheckResult
+from modular.shared.execution_decorator import analyze_execution  # Updated import
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

@@ -3,7 +3,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from modular.utils.repository_processor import create_batches, analyze_fundamentals
+from modular.shared.repository_processor import create_batches, analyze_fundamentals
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ with DAG(
 
     @task(task_id="refresh_views")
     def refresh_views():
-        from modular.utils.repository_processor import execute_sql_script
+        from modular.shared.repository_processor import execute_sql_script
         script_file = "refresh_views.sql"
         execute_sql_script(script_file)
         logger.info(f"Executed SQL script: {script_file}")

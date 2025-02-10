@@ -3,9 +3,9 @@ import subprocess
 import logging  # Correctly retained
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, GoEnryAnalysis
-from modular.execution_decorator import analyze_execution
-from modular.base_logger import BaseLogger
+from modular.shared.models import Session, GoEnryAnalysis
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.base_logger import BaseLogger
 
 class GoEnryAnalyzer(BaseLogger):
 

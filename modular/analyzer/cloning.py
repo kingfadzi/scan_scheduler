@@ -2,10 +2,10 @@ import os
 import subprocess
 import threading
 import re
-from modular.models import Session, Repository, RepoMetrics
-from modular.execution_decorator import analyze_execution
-from modular.config import Config
-from modular.base_logger import BaseLogger
+from modular.shared.models import Session, Repository, RepoMetrics
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.config import Config
+from modular.shared.base_logger import BaseLogger
 import logging
 
 clone_semaphore = threading.Semaphore(10)

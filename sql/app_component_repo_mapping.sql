@@ -9,9 +9,7 @@ WITH distinct_business_apps AS (
     WHERE mapping_type = 'it_business_application'
 )
 SELECT
-    -- Remove "org/" from project_key and concatenate with repo_slug
     (REGEXP_REPLACE(vc.project_key, '^org/', '', '') || '/' || vc.repo_slug) AS repo_id,
-
     vc.component_id,
     vc.component_name,
     string_agg(DISTINCT vc.transaction_cycle, ', ') AS transaction_cycle,

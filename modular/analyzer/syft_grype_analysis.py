@@ -1,20 +1,21 @@
 import subprocess
-import csv
 import os
 import json
-from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert
-from modular.models import Session, GrypeResult
-from modular.execution_decorator import analyze_execution
-from modular.config import Config
-from modular.base_logger import BaseLogger
+from modular.shared.models import Session, GrypeResult
+from modular.shared.execution_decorator import analyze_execution
+from modular.shared.config import Config
+from modular.shared.base_logger import BaseLogger
 import logging
+
+from modular.shared.sbom_processor import SBOMProcessor
+
 
 class SyftAndGrypeAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("SyftAndGrypeAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Default logging level
+        self.logger.setLevel(logging.WARN)
 
     @analyze_execution(session_factory=Session, stage="Syft and Grype Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -36,6 +37,10 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
+
+            processor = SBOMProcessor()
+            processor.persist_dependencies(str(sbom_file_path))
+
         except subprocess.TimeoutExpired as e:
             error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)

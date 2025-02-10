@@ -2,8 +2,8 @@ import os
 import logging
 import subprocess
 
-from modular.base_logger import BaseLogger
-from modular.config import Config
+from modular.shared.base_logger import BaseLogger
+from modular.shared.config import Config
 from modular.gradle.environment_manager import GradleEnvironmentManager
 
 class GradleRunner(BaseLogger):

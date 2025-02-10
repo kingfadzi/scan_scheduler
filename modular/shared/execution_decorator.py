@@ -2,9 +2,9 @@ import functools
 import logging
 import time
 from datetime import datetime
-from modular.models import AnalysisExecutionLog
+from modular.shared.models import AnalysisExecutionLog
 
-from modular.base_logger import BaseLogger
+from modular.shared.base_logger import BaseLogger
 
 class AnalysisLogger(BaseLogger):
     def __init__(self):
