@@ -33,11 +33,10 @@ class PythonHelper:
 
         lines = Path(final_req_file).read_text().splitlines()
         dependencies = [
-            Dependency(repo_id=repo.repo_id, name=name, version=version)
+            Dependency(repo_id=repo.repo_id, name=name, version=version, package_type="pip")
             for line in lines if "==" in line
             for name, version in [line.split("==", 1)]
         ]
-
         return dependencies
 
 

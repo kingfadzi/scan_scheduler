@@ -3,7 +3,7 @@ import sys
 import logging
 import subprocess
 from pathlib import Path
-from modular.shared.models import Dependency  # Assuming you have a Dependency model like in PythonHelper
+from modular.shared.models import Dependency
 
 class GoHelper:
     def __init__(self):
@@ -11,7 +11,7 @@ class GoHelper:
         self.logger.setLevel(logging.INFO)
 
     def process_repo(self, repo_dir, repo):
-        """Processes a Go repository and extracts dependencies as Dependency objects."""
+
         self.logger.info(f"Processing repository at: {repo_dir}")
 
         go_mod = os.path.join(repo_dir, "go.mod")
@@ -37,7 +37,6 @@ class GoHelper:
         return self.parse_go_modules(repo_dir, repo)
 
     def parse_go_modules(self, repo_dir, repo):
-        """Runs 'go list -m all' and parses dependencies into a list of Dependency objects with repo_id."""
         try:
             result = subprocess.run(
                 ["go", "list", "-m", "all"],
@@ -48,16 +47,25 @@ class GoHelper:
             )
             dependencies = []
             lines = result.stdout.strip().split("\n")
-            for line in lines[1:]:  # Skip the first line (main module)
+            # Skip the first line as it represents the main module.
+            for line in lines[1:]:
                 parts = line.split()
                 module = parts[0]
                 version = parts[1] if len(parts) > 1 else "unknown"
-                dependencies.append(Dependency(repo_id=repo.repo_id, name=module, version=version))
+                dependencies.append(
+                    Dependency(
+                        repo_id=repo.repo_id,
+                        name=module,
+                        version=version,
+                        package_type="go"
+                    )
+                )
             return dependencies
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Failed to list Go modules: {e}")
             self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-            return []
+        return []
+
 
 # Define Repo class similar to PythonHelper
 class Repo:
@@ -71,8 +79,8 @@ if __name__ == "__main__":
     )
 
     helper = GoHelper()
-    repo_directory = "/Users/fadzi/tools/go_project"  # Replace with actual path
-    repo = Repo(repo_id="go_project")  # Replace with actual repo_id logic
+    repo_directory = "/Users/fadzi/tools/go_project"
+    repo = Repo(repo_id="go_project")
 
     try:
         dependencies = helper.process_repo(repo_directory, repo)

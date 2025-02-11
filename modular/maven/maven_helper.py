@@ -1,25 +1,31 @@
 import os
 import logging
 import subprocess
-
+import xml.etree.ElementTree as ET
 from modular.shared.config import Config
 from modular.shared.base_logger import BaseLogger
+from modular.shared.models import Dependency  # Assuming Dependency model is similar to other helpers
 
 class MavenHelper(BaseLogger):
     def __init__(self):
         self.logger = self.get_logger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
-    def process_repo(self, repo_dir):
-
+    def process_repo(self, repo_dir, repo):
+        """Processes a Maven repository and returns a list of dependencies with repo_id."""
         self.logger.info(f"Processing repository at: {repo_dir}")
         if not os.path.isdir(repo_dir):
             self.logger.error(f"Invalid directory: {repo_dir}")
-            return None
-        return self.generate_effective_pom(repo_dir)
+            return []
 
-    def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
+        effective_pom = self.generate_effective_pom(repo_dir)
+        if not effective_pom or not os.path.isfile(effective_pom):
+            return []
 
+        return self.parse_dependencies(effective_pom, repo)
+
+    def generate_effective_pom(self, repo_dir, output_file="effective-pom.xml"):
+        """Generates the effective POM using Maven."""
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 
@@ -35,8 +41,7 @@ class MavenHelper(BaseLogger):
         if Config.TRUSTSTORE_PASSWORD:
             command_list.append(f"-Djavax.net.ssl.trustStorePassword={Config.TRUSTSTORE_PASSWORD}")
 
-        cmd_str = " ".join(command_list)
-        self.logger.debug(f"Executing Maven command: {cmd_str}")
+        self.logger.debug(f"Executing Maven command: {' '.join(command_list)}")
 
         try:
             result = subprocess.run(
@@ -47,8 +52,6 @@ class MavenHelper(BaseLogger):
                 check=True
             )
             self.logger.info("Maven help:effective-pom completed successfully.")
-            if result.stdout:
-                self.logger.debug(f"Command output:\n{result.stdout.strip()}")
             return os.path.join(repo_dir, output_file)
 
         except subprocess.CalledProcessError as e:
@@ -62,24 +65,72 @@ class MavenHelper(BaseLogger):
             self.logger.warning(f"Could not fallback to raw pom.xml because it is missing at {pom_path}.")
             return None
 
-        except FileNotFoundError as e:
-            self.logger.error(f"File not found: {e}")
-            return None
+    def parse_dependencies(self, pom_file, repo):
+        dependencies = []
+        if not os.path.isfile(pom_file):
+            return dependencies
 
-        except PermissionError as e:
-            self.logger.error(f"Permission error: {e}")
-            return None
+        self.logger.info(f"Parsing dependencies from {pom_file}")
+        try:
+            tree = ET.parse(pom_file)
+            root = tree.getroot()
 
+            ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+
+            for dep in root.findall(".//m:dependency", ns):
+                group_id = (
+                    dep.find("m:groupId", ns).text
+                    if dep.find("m:groupId", ns) is not None
+                    else "unknown"
+                )
+                artifact_id = (
+                    dep.find("m:artifactId", ns).text
+                    if dep.find("m:artifactId", ns) is not None
+                    else "unknown"
+                )
+                version = (
+                    dep.find("m:version", ns).text
+                    if dep.find("m:version", ns) is not None
+                    else "unknown"
+                )
+
+                dependencies.append(
+                    Dependency(
+                        repo_id=repo.repo_id,
+                        name=f"{group_id}:{artifact_id}",
+                        version=version,
+                        package_type="maven"
+                    )
+                )
+
+            return dependencies
+
+        except ET.ParseError as e:
+            self.logger.error(f"Error parsing POM XML: {e}")
         except Exception as e:
-            self.logger.error(f"Unexpected error running Maven: {e}")
-            raise
+            self.logger.error(f"Unexpected error parsing POM: {e}")
+
+        return dependencies
+
+
+# Define Repo class similar to PythonHelper
+class Repo:
+    def __init__(self, repo_id):
+        self.repo_id = repo_id
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    repo_directory = "/Users/fadzi/tools/WebGoat"
+    repo = Repo(repo_id="maven_project")
     helper = MavenHelper()
-    project_dir = "/path/to/maven/project"
-    result = helper.process_repo(project_dir)  # Updated to use process_repo
-    if result:
-        print(f"Effective POM generated at: {result}")
-    else:
-        print("No effective POM generated.")
+
+    try:
+        dependencies = helper.process_repo(repo_directory, repo)
+        for dep in dependencies:
+            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+    except Exception as e:
+        print(f"An error occurred while processing the repository: {e}")

@@ -319,15 +319,7 @@ class Dependency(Base):
     repo_id = Column(String)
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
-    type = Column(String, nullable=True)
-    cpe = Column(String, nullable=True)
-    purl = Column(String, nullable=True)
-    found_by = Column(String, nullable=True)
-    language = Column(String, nullable=True)
-    package_type = Column(String, nullable=True)
-    metadata_type = Column(String, nullable=True)
-    dependency_type = Column(String, nullable=True)
-    location = Column(Text, nullable=True)
+    package_type = Column(String, nullable=False)
 
     __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
 

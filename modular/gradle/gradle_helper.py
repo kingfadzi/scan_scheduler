@@ -89,8 +89,14 @@ class GradleHelper(BaseLogger):
             parts = line.split(":")
             if len(parts) >= 3:
                 group, name, version = parts[0], parts[1], parts[2]
-                dependencies.append(Dependency(repo_id=repo.repo_id, name=f"{group}:{name}", version=version))
-
+                dependencies.append(
+                    Dependency(
+                        repo_id=repo.repo_id,
+                        name=f"{group}:{name}",
+                        version=version,
+                        package_type="gradle"
+                    )
+                )
         return dependencies
 
     def _fallback_dependencies(self, repo_dir, gradle_executable, output_file, gradle_version):
@@ -160,7 +166,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         repo_directory = sys.argv[1]
     else:
-        repo_directory = "/Users/fadzi/tools/Open-Vulnerability-Project"
+        repo_directory = "/Users/fadzi/tools/gradle_projects/gradle-simple"
 
     repo = Repo(repo_id="Open-Vulnerability-Project")  # Replace with actual repo_id logic
     helper = GradleHelper()
