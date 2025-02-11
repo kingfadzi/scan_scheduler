@@ -2,43 +2,81 @@ import os
 import sys
 import logging
 import subprocess
+from pathlib import Path
+from modular.shared.models import Dependency  # Assuming you have a Dependency model like in PythonHelper
 
 class GoHelper:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
-    def process_repo(self, repo_dir):
+    def process_repo(self, repo_dir, repo):
+        """Processes a Go repository and extracts dependencies as Dependency objects."""
+        self.logger.info(f"Processing repository at: {repo_dir}")
+
         go_mod = os.path.join(repo_dir, "go.mod")
         go_sum = os.path.join(repo_dir, "go.sum")
 
         if not os.path.isfile(go_mod):
             self.logger.error("No go.mod file found. Skipping repository.")
-            return
+            return []
 
-        if os.path.isfile(go_sum):
-            self.logger.info("go.sum file already exists. Skipping dependency resolution.")
-            return
+        if not os.path.isfile(go_sum):
+            self.logger.info("Generating go.sum using 'go mod tidy'.")
+            try:
+                subprocess.run(["go", "mod", "tidy"], cwd=repo_dir, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as e:
+                self.logger.error(f"'go mod tidy' failed: {e}")
+                self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+                return []
 
-        self.logger.info("Generating go.sum using 'go mod tidy'.")
-        try:
-            subprocess.run(["go", "mod", "tidy"], cwd=repo_dir, check=True, capture_output=True, text=True)
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"'go mod tidy' failed: {e}")
-            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-            return
-
-        if os.path.isfile(go_sum):
-            self.logger.info(f"go.sum file generated successfully at: {go_sum}")
-        else:
+        if not os.path.isfile(go_sum):
             self.logger.error("go.sum file was not generated after running 'go mod tidy'.")
+            return []
+
+        return self.parse_go_modules(repo_dir, repo)
+
+    def parse_go_modules(self, repo_dir, repo):
+        """Runs 'go list -m all' and parses dependencies into a list of Dependency objects with repo_id."""
+        try:
+            result = subprocess.run(
+                ["go", "list", "-m", "all"],
+                cwd=repo_dir,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            dependencies = []
+            lines = result.stdout.strip().split("\n")
+            for line in lines[1:]:  # Skip the first line (main module)
+                parts = line.split()
+                module = parts[0]
+                version = parts[1] if len(parts) > 1 else "unknown"
+                dependencies.append(Dependency(repo_id=repo.repo_id, name=module, version=version))
+            return dependencies
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Failed to list Go modules: {e}")
+            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            return []
+
+# Define Repo class similar to PythonHelper
+class Repo:
+    def __init__(self, repo_id):
+        self.repo_id = repo_id
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    if len(sys.argv) < 2:
-        print("Usage: python script.py /path/to/repo")
-        sys.exit(1)
-    repo_directory = sys.argv[1]
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
     helper = GoHelper()
-    helper.process_repo(repo_directory)
+    repo_directory = "/Users/fadzi/tools/go_project"  # Replace with actual path
+    repo = Repo(repo_id="go_project")  # Replace with actual repo_id logic
+
+    try:
+        dependencies = helper.process_repo(repo_directory, repo)
+        for dep in dependencies:
+            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+    except Exception as e:
+        print(f"An error occurred while processing the repository: {e}")

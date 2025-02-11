@@ -1,10 +1,12 @@
 import os
 import uuid
 import logging
+from pathlib import Path
 from modular.shared.base_logger import BaseLogger
 from modular.gradle.environment_manager import GradleEnvironmentManager
 from modular.gradle.snippet_builder import GradleSnippetBuilder
 from modular.gradle.gradle_runner import GradleRunner
+from modular.shared.models import Dependency  # Assuming Dependency model is similar to PythonHelper
 
 class GradleHelper(BaseLogger):
     def __init__(self):
@@ -15,20 +17,22 @@ class GradleHelper(BaseLogger):
         self.snippet_builder = GradleSnippetBuilder()
         self.runner = GradleRunner()
 
-    def process_repo(self, repo_dir):
+    def process_repo(self, repo_dir, repo):
+        """Processes a Gradle project and returns a list of dependencies with repo_id."""
         gradle_files = ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
         if not any(os.path.isfile(os.path.join(repo_dir, f)) for f in gradle_files):
             self.logger.info(f"No Gradle build files found in {repo_dir}. Skipping.")
-            return
+            return []
 
         output_file = "all-deps-nodupes.txt"
         self.logger.info(f"Generating resolved dependencies for {repo_dir}.")
         dependencies_file = self.generate_resolved_dependencies(repo_dir, output_file)
 
-        if dependencies_file:
-            self.logger.info(f"Dependencies file created: {dependencies_file}")
-        else:
+        if not dependencies_file or not os.path.isfile(dependencies_file):
             self.logger.error(f"Failed to generate dependencies for {repo_dir}")
+            return []
+
+        return self.parse_dependencies(dependencies_file, repo)
 
     def generate_resolved_dependencies(self, repo_dir, output_file="all-deps-nodupes.txt"):
         if not os.path.isdir(repo_dir):
@@ -67,6 +71,27 @@ class GradleHelper(BaseLogger):
             return self._fallback_dependencies(repo_dir, gradle_executable, output_file, gradle_version)
 
         return self._find_output_file(repo_dir, output_file)
+
+    def parse_dependencies(self, dependencies_file, repo):
+        """Parses the Gradle dependencies file and returns a list of Dependency objects with repo_id."""
+        dependencies = []
+        if not os.path.isfile(dependencies_file):
+            return dependencies
+
+        with open(dependencies_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#") or "---" in line:
+                continue
+
+            parts = line.split(":")
+            if len(parts) >= 3:
+                group, name, version = parts[0], parts[1], parts[2]
+                dependencies.append(Dependency(repo_id=repo.repo_id, name=f"{group}:{name}", version=version))
+
+        return dependencies
 
     def _fallback_dependencies(self, repo_dir, gradle_executable, output_file, gradle_version):
         cmd = [gradle_executable, "dependencies"]
@@ -121,6 +146,11 @@ class GradleHelper(BaseLogger):
                 return c
         return None
 
+# Define Repo class similar to PythonHelper
+class Repo:
+    def __init__(self, repo_id):
+        self.repo_id = repo_id
+
 if __name__ == "__main__":
     import sys
     import logging
@@ -128,9 +158,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     if len(sys.argv) > 1:
-        repo = sys.argv[1]
+        repo_directory = sys.argv[1]
     else:
-        repo = "/Users/fadzi/tools/Open-Vulnerability-Project"
+        repo_directory = "/Users/fadzi/tools/Open-Vulnerability-Project"
 
+    repo = Repo(repo_id="Open-Vulnerability-Project")  # Replace with actual repo_id logic
     helper = GradleHelper()
-    helper.process_repo(repo)
+
+    try:
+        dependencies = helper.process_repo(repo_directory, repo)
+        for dep in dependencies:
+            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+    except Exception as e:
+        print(f"An error occurred while processing the repository: {e}")
