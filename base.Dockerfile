@@ -77,7 +77,7 @@ RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
       requests \
       pandas \
       numpy \
-      lizard \
+      lizard==1.17.13 \
       semgrep \
       python-dotenv \
       checkov \
