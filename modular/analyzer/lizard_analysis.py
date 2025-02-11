@@ -13,7 +13,7 @@ class LizardAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("LizardAnalyzer")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
     def _read_analysis_file(self, analysis_file, repo):
         try:
@@ -42,7 +42,7 @@ class LizardAnalyzer(BaseLogger):
                 subprocess.run(
                     ["lizard", "--csv"],
                     stdout=outfile,
-                    stderr=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
                     check=True,
                     cwd=repo_dir
                 )
@@ -83,7 +83,7 @@ class LizardAnalyzer(BaseLogger):
 
             with open(analysis_file_path, 'r') as f:
                 file_contents = f.read()
-            # self.logger.debug(f"File contents:\n{file_contents}")
+            self.logger.debug(f"File contents:\n{file_contents}")
 
             valid_lines = []
             for line in file_contents.split('\n'):
