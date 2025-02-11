@@ -72,7 +72,7 @@ class TrivyAnalyzer(BaseLogger):
         
         try:
             subprocess.run(
-                ["trivy", "sbom", "--artifact-type", "fs",
+                ["trivy", "sbom",
                  "--format", "cyclonedx", "--offline-scan",
                  "--output", sbom_path, repo_dir],
                 capture_output=True,
