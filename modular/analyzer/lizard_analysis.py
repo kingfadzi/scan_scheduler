@@ -6,7 +6,8 @@ from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, LizardSummary
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
-
+import csv
+import io
 
 class LizardAnalyzer(BaseLogger):
 
@@ -77,28 +78,36 @@ class LizardAnalyzer(BaseLogger):
 
         try:
             self.logger.info(f"Reading lizard analysis file at: {analysis_file_path}")
+
+            # Read and log the entire file contents
             with open(analysis_file_path, 'r') as f:
-                reader = csv.DictReader(f, fieldnames=[
-                    "nloc", "ccn", "token_count", "param", "function_length", "location",
-                    "file_name", "function_name", "long_name", "start_line", "end_line"
-                ])
-                for row_number, row in enumerate(reader, start=1):
-                    self.logger.debug(f"Processing row {row_number}: {row}")
+                file_contents = f.read()
+            self.logger.debug(f"File contents:\n{file_contents}")
 
-                    if not all([row["nloc"], row["ccn"], row["token_count"]]):
-                        raise ValueError(f"Invalid data in row {row_number}: {row}")
+            # Process the file contents
+            csv_file = io.StringIO(file_contents)
+            reader = csv.DictReader(csv_file, fieldnames=[
+                "nloc", "ccn", "token_count", "param", "function_length", "location",
+                "file_name", "function_name", "long_name", "start_line", "end_line"
+            ])
 
-                    try:
-                        nloc = int(row["nloc"])
-                        ccn = int(row["ccn"])
-                        token_count = int(row["token_count"])
-                    except ValueError as ve:
-                        raise ValueError(f"Value conversion error in row {row_number}: {row} - {ve}")
+            for row_number, row in enumerate(reader, start=1):
+                self.logger.debug(f"Processing row {row_number}: {row}")
 
-                    summary["total_nloc"] += nloc
-                    summary["total_ccn"] += ccn
-                    summary["total_token_count"] += token_count
-                    summary["function_count"] += 1
+                if not all([row["nloc"], row["ccn"], row["token_count"]]):
+                    raise ValueError(f"Invalid data in row {row_number}: {row}")
+
+                try:
+                    nloc = int(row["nloc"])
+                    ccn = int(row["ccn"])
+                    token_count = int(row["token_count"])
+                except ValueError as ve:
+                    raise ValueError(f"Value conversion error in row {row_number}: {row} - {ve}")
+
+                summary["total_nloc"] += nloc
+                summary["total_ccn"] += ccn
+                summary["total_token_count"] += token_count
+                summary["function_count"] += 1
 
             if summary["function_count"] == 0:
                 raise ValueError("No valid functions found in the analysis file.")
@@ -115,6 +124,7 @@ class LizardAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error parsing lizard results for repository ID {repo_id}: {e}")
             raise
+
 
 
     def save_lizard_summary(self, session, repo_id, summary):
