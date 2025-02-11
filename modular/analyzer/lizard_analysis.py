@@ -13,7 +13,7 @@ class LizardAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("LizardAnalyzer")
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
 
     def _read_analysis_file(self, analysis_file, repo):
         try:
