@@ -63,9 +63,19 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
+            return {
+                "status": "success",
+                "summary": f"Analyzed dependencies for repo {repo.repo_id}",
+                "languages_analyzed": repo_languages,
+                "dependencies_found": len(dependencies)
+            }
+
+        except FileNotFoundError as e:
+            self.logger.error(str(e))
+            return {"status": "error", "summary": str(e)}
         except Exception as e:
             self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
-            raise
+            return {"status": "error", "summary": f"Error during dependency analysis: {str(e)}"}
 
     def detect_java_build_tool(self, repo_dir):
         maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
