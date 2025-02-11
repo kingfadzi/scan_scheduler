@@ -41,6 +41,8 @@ RUN npm install -g yarn
 # Install golang
 RUN dnf install golang -y
 
+RUN dnf group install -y "Development Tools"
+
 RUN dnf -y update && \
     dnf module reset -y python36 && \
     dnf install -y \
@@ -48,8 +50,8 @@ RUN dnf -y update && \
       nc \
       glibc-langpack-en \
       python3.11 \
-      python3-pip \
-      python3-devel \
+      python3.11-pip \
+      python3.11-devel \
       git \
       wget \
       unzip \

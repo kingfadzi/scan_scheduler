@@ -63,11 +63,9 @@ class GoHelper:
             return dependencies
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Failed to list Go modules: {e}")
-            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
         return []
 
-
-# Define Repo class similar to PythonHelper
 class Repo:
     def __init__(self, repo_id):
         self.repo_id = repo_id
@@ -79,7 +77,7 @@ if __name__ == "__main__":
     )
 
     helper = GoHelper()
-    repo_directory = "/Users/fadzi/tools/go_project"
+    repo_directory = "/Users/fadzi/tools/go_projetcs/ovaa"
     repo = Repo(repo_id="go_project")
 
     try:

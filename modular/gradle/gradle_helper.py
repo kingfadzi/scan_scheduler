@@ -166,7 +166,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         repo_directory = sys.argv[1]
     else:
-        repo_directory = "/Users/fadzi/tools/gradle_projects/gradle-simple"
+        repo_directory = "/Users/fadzi/tools/gradle_projects/ovaa"
 
     repo = Repo(repo_id="Open-Vulnerability-Project")  # Replace with actual repo_id logic
     helper = GradleHelper()

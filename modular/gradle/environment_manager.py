@@ -169,11 +169,11 @@ class GradleEnvironmentManager(BaseLogger):
         if major < 7:
             return Config.JAVA_11_HOME
 
-        if major < 8:
+        if major < 9:
             return Config.JAVA_17_HOME
 
-        if major == 8:
-            return Config.JAVA_21_HOME if minor >= 3 else Config.JAVA_17_HOME
+        #if major == 8:
+        #    return Config.JAVA_21_HOME if minor >= 3 else Config.JAVA_17_HOME
 
         self.logger.warning(f"Unrecognized Gradle version {gradle_version}. Defaulting to system JAVA_HOME.")
         return os.getenv("JAVA_HOME", "/usr/lib/jvm/default-java")

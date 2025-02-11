@@ -18,7 +18,7 @@ class JavaScriptHelper(BaseLogger):
         lock_file = None
 
         if not os.path.isfile(pkg_json_path):
-            self.logger.error("No package.json found in the repository.")
+            self.logger.warn("No package.json found in the repository.")
             return []
 
         pkg_lock = os.path.join(repo_dir, "package-lock.json")
@@ -63,7 +63,7 @@ class JavaScriptHelper(BaseLogger):
                 return True
         except subprocess.CalledProcessError as e:
             self.logger.error(f"{pm} install failed: {e}")
-            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
         return False
 
     def parse_dependencies(self, lock_file, repo):

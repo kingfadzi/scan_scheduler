@@ -73,7 +73,7 @@ class PythonHelper:
                 self.logger.debug("pip install output: " + result.stdout)
             except subprocess.CalledProcessError as e:
                 self.logger.error(f"Failed to install dependencies: {e}")
-                self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+                self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
                 raise
         else:
             self.logger.warning(f"{requirements_file} does not exist in {project_dir}. Skipping installation.")
@@ -97,7 +97,7 @@ class PythonHelper:
             return output_path
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Failed to run pip freeze: {e}")
-            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
             raise
 
     def generate_requirements_with_pipreqs(self, project_dir, output_file="requirements.txt"):
@@ -117,7 +117,7 @@ class PythonHelper:
             return output_path
         except subprocess.CalledProcessError as e:
             self.logger.error(f"pipreqs failed: {e}")
-            self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
             raise
 
 
@@ -136,8 +136,8 @@ if __name__ == "__main__":
     )
 
     helper = PythonHelper()
-    repo_directory = "/Users/fadzi/tools/dashboard"
-    repo = Repo(repo_id="dashboard")  # Replace with actual repo_id logic
+    repo_directory = "/Users/fadzi/python_repos/Tiredful-API-py3-beta"
+    repo = Repo(repo_id="dashboard")
 
     try:
         dependencies = helper.process_repo(repo_directory, repo)
