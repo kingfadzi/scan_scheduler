@@ -9,8 +9,6 @@ from modular.shared.execution_decorator import analyze_execution
 from modular.shared.models import Session, TrivyVulnerability
 from modular.shared.config import Config
 from modular.shared.base_logger import BaseLogger
-from modular.shared.sbom_processor import SBOMProcessor
-
 
 class TrivyAnalyzer(BaseLogger):
 
@@ -68,18 +66,18 @@ class TrivyAnalyzer(BaseLogger):
 
     def generate_sbom(self, repo_dir, repo):
         """Generate CycloneDX format SBOM and return file path"""
-        sbom_path = os.path.join(repo_dir, f"sbom-{repo.repo_slug}.cdx.json")
+        sbom_path = os.path.join(repo_dir, "sbom.json")
         
         try:
             subprocess.run(
-                ["trivy", "sbom",
-                 "--format", "cyclonedx",
-                 "--output", sbom_path, repo_dir],
+                ["trivy", "fs", "--format", "cyclonedx", "--output", sbom_path, "."],
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                timeout=Config.DEFAULT_PROCESS_TIMEOUT,
+                cwd=repo_dir  # Set the working directory to repo_dir
             )
+            self.logger.info(f"SBOM generated at {sbom_path}")
             return sbom_path
 
         except subprocess.TimeoutExpired as e:
