@@ -32,6 +32,15 @@ RUN if [ -f "/tmp/keys/java.cacerts" ]; then \
       cp /tmp/keys/java.cacerts /home/airflow/java.cacerts; \
     fi
 
+# Install Node.js and npm
+RUN dnf install -y nodejs npm
+
+# Install Yarn
+RUN npm install -g yarn
+
+# Install golang
+RUN sudo dnf install golang -y
+
 RUN dnf -y update && \
     dnf module reset -y python36 && \
     dnf install -y \
@@ -70,6 +79,8 @@ RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
       semgrep \
       python-dotenv \
       checkov \
+      pipreqs \
+      pip-tools \
       sqlalchemy
 
 RUN dnf install -y \

@@ -10,7 +10,7 @@ import os
 class PythonHelper:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir, repo):
         self.logger.info(f"Processing repository at: {repo_dir}")

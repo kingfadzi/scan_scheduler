@@ -67,7 +67,7 @@ class JavaScriptHelper(BaseLogger):
         return False
 
     def parse_dependencies(self, lock_file, repo):
-        """Parses package-lock.json or yarn.lock and returns a list of Dependency objects."""
+
         dependencies = []
         if not os.path.isfile(lock_file):
             return dependencies
@@ -85,7 +85,7 @@ class JavaScriptHelper(BaseLogger):
                                 repo_id=repo.repo_id,
                                 name=name,
                                 version=version,
-                                package_type="npm"  # Set package_type to "npm"
+                                package_type="npm"
                             )
                         )
 
@@ -110,7 +110,7 @@ class JavaScriptHelper(BaseLogger):
                                     repo_id=repo.repo_id,
                                     name=name,
                                     version=version,
-                                    package_type="yarn"  # Set package_type to "yarn"
+                                    package_type="yarn"
                                 )
                             )
                             name = None
@@ -120,7 +120,6 @@ class JavaScriptHelper(BaseLogger):
         return dependencies
 
 
-# Define Repo class similar to PythonHelper
 class Repo:
     def __init__(self, repo_id):
         self.repo_id = repo_id

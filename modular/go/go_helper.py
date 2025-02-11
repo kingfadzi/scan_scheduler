@@ -8,7 +8,7 @@ from modular.shared.models import Dependency
 class GoHelper:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir, repo):
 
