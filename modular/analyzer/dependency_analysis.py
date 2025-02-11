@@ -92,40 +92,45 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return languages
 
+
     def persist_dependencies(self, dependencies, session):
         if not dependencies:
             self.logger.info("No dependencies to persist.")
             return
+
         try:
             self.logger.info(f"Upserting {len(dependencies)} dependencies to the database.")
 
-            for dep in dependencies:
-                session.execute(
-                    insert(Dependency).values(
-                        repo_id=dep.repo_id,
-                        name=dep.name,
-                        version=dep.version,
-                        package_type=dep.package_type
+            dep_dicts = [
+                {
+                    "repo_id": dep.repo_id,
+                    "name": dep.name,
+                    "version": dep.version,
+                    "package_type": dep.package_type,
+                }
+                for dep in dependencies
+            ]
 
-                    ).on_conflict_do_update(
-                        index_elements=['repo_id', 'name', 'version'],
-                        set_={
-                            "repo_id": dep.repo_id,
-                            "name": dep.name,
-                            "package_type": dep.package_type,
-                            "version": dep.version
+            ins_stmt = insert(Dependency)
 
-                        }
-                    )
-                )
+            upsert_stmt = ins_stmt.on_conflict_do_update(
+                index_elements=['repo_id', 'name', 'version'],
+                set_={
+                    "repo_id": ins_stmt.excluded.repo_id,
+                    "name": ins_stmt.excluded.name,
+                    "version": ins_stmt.excluded.version,
+                    "package_type": ins_stmt.excluded.package_type,
+                }
+            )
 
+            session.execute(upsert_stmt, dep_dicts)
             session.commit()
             self.logger.info("Dependency upsert successful.")
+
         except Exception as e:
             session.rollback()
             self.logger.error(f"Failed to upsert dependencies: {e}")
             raise
-
 
 if __name__ == "__main__":
     repo_slug = "WebGoat"

@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 
 from sqlalchemy import text
+
+from modular.analyzer.dependency_analysis import DependencyAnalyzer
 from modular.shared.models import Session, Repository, AnalysisExecutionLog
 from modular.analyzer.cloning import CloningAnalyzer
 from modular.analyzer.kantra_analysis import KantraAnalyzer
@@ -62,9 +64,6 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_vulnerabilities_dir)
             logger.debug(f"[Vulnerabilities] Repository cloned to: {repo_dir}")
 
-            # Added DependencyAnalyzer as first analysis step
-            DependencyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
-            
             TrivyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
             SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
@@ -124,6 +123,8 @@ def analyze_component_patterns(batch, run_id, **kwargs):
 
             analyze_components_dir = "analyze_components"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_components_dir)
+
+            DependencyAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
             logger.debug(f"[Component Patterns] Repository cloned to: {repo_dir}")
 
