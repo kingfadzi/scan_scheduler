@@ -66,9 +66,7 @@ class LizardAnalyzer(BaseLogger):
 
         return self._read_analysis_file(analysis_file, repo)
 
-
     def parse_and_persist_lizard_results(self, repo_id, analysis_file_path, session):
-
         summary = {
             "total_nloc": 0,
             "total_ccn": 0,
@@ -84,21 +82,28 @@ class LizardAnalyzer(BaseLogger):
                     "nloc", "ccn", "token_count", "param", "function_length", "location",
                     "file_name", "function_name", "long_name", "start_line", "end_line"
                 ])
-                for row in reader:
-                    if row["nloc"] == "NLOC":  # Skip header row
-                        self.logger.debug("Skipping header row in lizard results.")
-                        continue
+                for row_number, row in enumerate(reader, start=1):
+                    self.logger.debug(f"Processing row {row_number}: {row}")
+
+                    if not all([row["nloc"], row["ccn"], row["token_count"]]):
+                        raise ValueError(f"Invalid data in row {row_number}: {row}")
 
                     try:
-                        summary["total_nloc"] += int(row["nloc"])
-                        summary["total_ccn"] += int(row["ccn"])
-                        summary["total_token_count"] += int(row["token_count"])
-                        summary["function_count"] += 1
+                        nloc = int(row["nloc"])
+                        ccn = int(row["ccn"])
+                        token_count = int(row["token_count"])
                     except ValueError as ve:
-                        self.logger.warning(f"Value conversion error in row: {row} - {ve}")
-                        continue
+                        raise ValueError(f"Value conversion error in row {row_number}: {row} - {ve}")
 
-            summary["avg_ccn"] = summary["total_ccn"] / summary["function_count"] if summary["function_count"] > 0 else 0.0
+                    summary["total_nloc"] += nloc
+                    summary["total_ccn"] += ccn
+                    summary["total_token_count"] += token_count
+                    summary["function_count"] += 1
+
+            if summary["function_count"] == 0:
+                raise ValueError("No valid functions found in the analysis file.")
+
+            summary["avg_ccn"] = summary["total_ccn"] / summary["function_count"]
 
             self.logger.info(f"Summary for repo_id {repo_id}: "
                              f"Total NLOC: {summary['total_nloc']}, Avg CCN: {summary['avg_ccn']}, "
@@ -110,6 +115,7 @@ class LizardAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error parsing lizard results for repository ID {repo_id}: {e}")
             raise
+
 
     def save_lizard_summary(self, session, repo_id, summary):
 
@@ -152,7 +158,7 @@ if __name__ == "__main__":
             self.repo_name = repo_slug
 
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = "/Users/fadzi/tools/gradle_projects/sonar-metrics"
+    repo_dir = "/Users/fadzi/tools/python_projects/vuln_django_play"
     session = Session()
     analyzer = LizardAnalyzer()
 
