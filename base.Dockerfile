@@ -39,7 +39,7 @@ RUN dnf install -y nodejs npm
 RUN npm install -g yarn
 
 # Install golang
-RUN sudo dnf install golang -y
+RUN dnf install golang -y
 
 RUN dnf -y update && \
     dnf module reset -y python36 && \
