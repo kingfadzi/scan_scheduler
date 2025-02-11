@@ -9,6 +9,8 @@ from modular.shared.execution_decorator import analyze_execution
 from modular.shared.models import Session, TrivyVulnerability
 from modular.shared.config import Config
 from modular.shared.base_logger import BaseLogger
+from modular.shared.sbom_processor import SBOMProcessor
+
 
 class TrivyAnalyzer(BaseLogger):
 
