@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 from modular.shared.models import Session, Dependency, Repository, GoEnryAnalysis
@@ -63,12 +64,12 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
-            return {
+            return json.dumps({
                 "status": "success",
                 "summary": f"Analyzed dependencies for repo {repo.repo_id}",
                 "languages_analyzed": repo_languages,
                 "dependencies_found": len(dependencies)
-            }
+            })
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
