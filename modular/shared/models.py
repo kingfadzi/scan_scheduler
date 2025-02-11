@@ -326,6 +326,7 @@ class Dependency(Base):
     language = Column(String, nullable=True)
     package_type = Column(String, nullable=True)
     metadata_type = Column(String, nullable=True)
+    dependency_type = Column(String, nullable=True)
     location = Column(Text, nullable=True)
 
     __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
