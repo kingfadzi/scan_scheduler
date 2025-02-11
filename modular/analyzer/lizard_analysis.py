@@ -83,7 +83,7 @@ class LizardAnalyzer(BaseLogger):
 
             with open(analysis_file_path, 'r') as f:
                 file_contents = f.read()
-            self.logger.debug(f"File contents:\n{file_contents}")
+            # self.logger.debug(f"File contents:\n{file_contents}")
 
             valid_lines = []
             for line in file_contents.split('\n'):
@@ -102,7 +102,7 @@ class LizardAnalyzer(BaseLogger):
             ])
 
             for row_number, row in enumerate(reader, start=1):
-                self.logger.debug(f"Processing row {row_number}: {row}")
+                # self.logger.debug(f"Processing row {row_number}: {row}")
 
                 if not all([row["nloc"], row["ccn"], row["token_count"]]):
                     raise ValueError(f"Invalid data in row {row_number}: {row}")
