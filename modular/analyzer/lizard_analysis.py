@@ -76,16 +76,26 @@ class LizardAnalyzer(BaseLogger):
             "avg_ccn": 0.0
         }
 
+        expected_column_count = 11
+
         try:
             self.logger.info(f"Reading lizard analysis file at: {analysis_file_path}")
 
-            # Read and log the entire file contents
             with open(analysis_file_path, 'r') as f:
                 file_contents = f.read()
             self.logger.debug(f"File contents:\n{file_contents}")
 
-            # Process the file contents
-            csv_file = io.StringIO(file_contents)
+            valid_lines = []
+            for line in file_contents.split('\n'):
+                if line.count(',') == expected_column_count - 1:
+                    valid_lines.append(line)
+
+            if not valid_lines:
+                raise ValueError("No valid data lines found in the file.")
+
+            self.logger.debug(f"Valid lines extracted:\n" + "\n".join(valid_lines))
+
+            csv_file = io.StringIO("\n".join(valid_lines))
             reader = csv.DictReader(csv_file, fieldnames=[
                 "nloc", "ccn", "token_count", "param", "function_length", "location",
                 "file_name", "function_name", "long_name", "start_line", "end_line"
@@ -124,7 +134,6 @@ class LizardAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error parsing lizard results for repository ID {repo_id}: {e}")
             raise
-
 
 
     def save_lizard_summary(self, session, repo_id, summary):
