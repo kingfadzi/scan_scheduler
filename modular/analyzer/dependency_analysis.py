@@ -5,11 +5,11 @@ from sqlalchemy import create_engine
 from modular.shared.models import Session
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
-from dependency_helpers.python_helper import PythonHelper
-from dependency_helpers.javascript_helper import JavaScriptHelper
-from dependency_helpers.go_helper import GoHelper
-from dependency_helpers.maven_helper import MavenHelper
-from dependency_helpers.gradle_helper import GradleHelper
+from modular.python.python_helper import PythonHelper
+from modular.javacript import JavascriptHelper
+from modular.go import GoHelper
+from modular.maven.maven_helper import MavenHelper
+from modular.gradle.gradle_helper import GradleHelper
 from modular.shared.models import GoEnryAnalysis
 
 class DependencyAnalyzer(BaseLogger):
@@ -18,7 +18,7 @@ class DependencyAnalyzer(BaseLogger):
         self.logger = self.get_logger("DependencyAnalyzer")
         self.logger.setLevel(logging.DEBUG)
         self.python_helper = PythonHelper()
-        self.js_helper = JavaScriptHelper()
+        self.js_helper = JavascriptHelper()
         self.go_helper = GoHelper()
         self.maven_helper = MavenHelper()
         self.gradle_helper = GradleHelper()
@@ -41,20 +41,21 @@ class DependencyAnalyzer(BaseLogger):
         try:
             if "Python" in repo_languages:
                 self.logger.info(f"Detected Python in repo_id: {repo.repo_id}. Running Python dependency analysis.")
-                self.python_helper.process_repo(repo_dir)
-            
+                dependencies = self.python_helper.process_repo(repo_dir)
+                self.persist_dependencies(dependencies)
+
             if "JavaScript" in repo_languages or "TypeScript" in repo_languages:
                 self.logger.info(f"Detected JavaScript/TypeScript in repo_id: {repo.repo_id}. Running JavaScript dependency analysis.")
                 self.js_helper.process_repo(repo_dir)
-            
+
             if "Go" in repo_languages:
                 self.logger.info(f"Detected Go in repo_id: {repo.repo_id}. Running Go dependency analysis.")
                 self.go_helper.process_repo(repo_dir)
-            
+
             if "Java" in repo_languages:
                 self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
                 build_tool = self.detect_java_build_tool(repo_dir)
-                
+
                 if build_tool == "Maven":
                     self.logger.info(f"Processing Maven project in {repo_dir}")
                     self.maven_helper.process_repo(repo_dir)
@@ -72,7 +73,7 @@ class DependencyAnalyzer(BaseLogger):
         """Determine Java build system by checking for build files"""
         maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
         gradle_build = os.path.isfile(os.path.join(repo_dir, "build.gradle"))
-        
+
         if maven_pom and gradle_build:
             self.logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
             return "Maven"
@@ -82,7 +83,7 @@ class DependencyAnalyzer(BaseLogger):
         elif gradle_build:
             self.logger.debug("Gradle build.gradle detected")
             return "Gradle"
-        
+
         self.logger.warning("No Java build system detected (checked for pom.xml and build.gradle)")
         return None
 
@@ -98,5 +99,17 @@ class DependencyAnalyzer(BaseLogger):
 
         return languages
 
-if __name__ == "__main__":
-    # ... (existing main code remains unchanged)
+    def persist_dependencies(self, dependencies, session):
+        if not dependencies:
+            self.logger.info("No dependencies to persist.")
+            return
+
+        try:
+            self.logger.info(f"Persisting {len(dependencies)} dependencies to the database.")
+            session.bulk_save_objects(dependencies)
+            session.commit()
+            self.logger.info("Dependency persistence successful.")
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Failed to persist dependencies: {e}")
+            raise

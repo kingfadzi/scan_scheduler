@@ -11,7 +11,7 @@ class MavenHelper(BaseLogger):
         self.logger.setLevel(logging.INFO)
 
     def process_repo(self, repo_dir):
-        """Entry point for repository processing with basic validation"""
+
         self.logger.info(f"Processing repository at: {repo_dir}")
         if not os.path.isdir(repo_dir):
             self.logger.error(f"Invalid directory: {repo_dir}")
@@ -19,7 +19,7 @@ class MavenHelper(BaseLogger):
         return self.generate_effective_pom(repo_dir)
 
     def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
-        """Core method to generate effective POM"""
+
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 
@@ -30,7 +30,6 @@ class MavenHelper(BaseLogger):
         self.logger.info(f"Found pom.xml at {pom_path}")
         command_list = ["mvn", "help:effective-pom", f"-Doutput={output_file}"]
 
-        # Add truststore configuration if available
         if Config.TRUSTSTORE_PATH:
             command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
         if Config.TRUSTSTORE_PASSWORD:

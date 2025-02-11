@@ -2,11 +2,44 @@ import os
 import logging
 import subprocess
 import venv
+from pathlib import Path
+from modular.shared.models import Dependency
+import os
+
 
 class PythonHelper:
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
+
+    def process_repo(self, repo_dir, repo):
+        self.logger.info(f"Processing repository at: {repo_dir}")
+        env_path = self.create_virtual_env(repo_dir)
+        req_file_path = os.path.join(repo_dir, "requirements.txt")
+
+        if not (os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0):
+            self.logger.info("No valid requirements.txt found. Generating one using pipreqs.")
+            try:
+                self.generate_requirements_with_pipreqs(repo_dir)
+            except Exception as e:
+                self.logger.error(f"Failed to generate requirements.txt using pipreqs: {e}")
+                Path(req_file_path).touch()
+
+        self.install_requirements(repo_dir, env_path)
+        final_req_file = self.freeze_requirements(repo_dir, env_path)
+
+        if not os.path.isfile(final_req_file):
+            return []
+
+        lines = Path(final_req_file).read_text().splitlines()
+        dependencies = [
+            Dependency(repo_id=repo.repo_id, name=name, version=version)
+            for line in lines if "==" in line
+            for name, version in [line.split("==", 1)]
+        ]
+
+        return dependencies
+
 
     def create_virtual_env(self, project_dir, env_name="venv"):
         env_path = os.path.join(project_dir, env_name)
@@ -88,38 +121,29 @@ class PythonHelper:
             self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
             raise
 
-    def process_repo(self, repo_dir):
-        self.logger.info(f"Processing repository at: {repo_dir}")
-        env_path = self.create_virtual_env(repo_dir)
-        req_file_path = os.path.join(repo_dir, "requirements.txt")
-        if os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0:
-            self.logger.info("Found existing requirements.txt. Installing dependencies.")
-            self.install_requirements(repo_dir, env_path)
-        else:
-            self.logger.info("No valid requirements.txt found. Generating one using pipreqs.")
-            try:
-                self.generate_requirements_with_pipreqs(repo_dir)
-                if os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0:
-                    self.install_requirements(repo_dir, env_path)
-                else:
-                    self.logger.warning("pipreqs did not generate a valid requirements.txt file.")
-            except Exception as e:
-                self.logger.error(f"Failed to generate requirements.txt using pipreqs: {e}")
-                with open(req_file_path, "w") as f:
-                    f.write("")
-                self.logger.info("Created an empty requirements.txt file.")
-        final_req_file = self.freeze_requirements(repo_dir, env_path)
-        self.logger.info(f"Final requirements file is at: {final_req_file}")
-        return final_req_file
+
+
+import logging
+from pathlib import Path
+
+class Repo:
+    def __init__(self, repo_id):
+        self.repo_id = repo_id
 
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
+
     helper = PythonHelper()
-    repo_directory = "/home/fadzi/tools/dashboard"
+    repo_directory = "/Users/fadzi/tools/dashboard"
+    repo = Repo(repo_id="dashboard")  # Replace with actual repo_id logic
+
     try:
-        helper.process_repo(repo_directory)
+        dependencies = helper.process_repo(repo_directory, repo)
+        for dep in dependencies:
+            print(f"Dependency: {dep.name} - {dep.version}")
     except Exception as e:
         print(f"An error occurred while processing the repository: {e}")
+
