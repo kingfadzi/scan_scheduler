@@ -70,12 +70,15 @@ RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
     python3 -m ensurepip && \
     python3 -m pip install --no-cache-dir --upgrade pip && \
     python3 -m pip install --no-cache-dir \
-      apache-airflow[postgres] \
+      apache-airflow[postgres]==2.10.4 \
       psycopg2-binary \
-      gitpython \
-      apache-airflow-providers-postgres \
-      requests \
-      pandas \
+      gitpython==3.1.43 \
+      python-gitlab==5.3.0 \
+      apache-airflow-providers-postgres==2.10.4 \
+      requests==2.32.3 \
+      pandas==2.2.3 \
+      pytz==2024.2 \
+      PyYAML==6.0.2 \
       numpy \
       lizard==1.17.13 \
       semgrep \
@@ -83,7 +86,7 @@ RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
       checkov \
       pipreqs \
       pip-tools \
-      sqlalchemy
+      sqlalchemy==1.4.54
 
 RUN dnf install -y \
       java-1.8.0-openjdk-devel \
