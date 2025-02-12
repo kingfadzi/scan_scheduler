@@ -17,35 +17,36 @@ default_args = {
 with DAG(
         "standards_assessment",
         default_args=default_args,
-        schedule_interval=None,
+        schedule_interval=None,  # Externally triggered
         catchup=False,
 ) as dag:
 
-    @task
+    @task(queue="standards_assessment")
     def get_payload(**kwargs):
         dag_run = kwargs.get("dag_run")
         return dag_run.conf if dag_run and dag_run.conf else {}
 
-    @task
+    @task(queue="standards_assessment")
     def get_batches(payload: dict, batch_size: int = 1000, num_tasks: int = 5):
         batches = create_batches(payload, batch_size=batch_size, num_tasks=num_tasks)
         logger.info(f"Created {len(batches)} batches.")
         return batches
 
-    @task
+    @task(queue="standards_assessment")
     def process_batch(batch):
         context = get_current_context()
         run_id = context["dag_run"].run_id
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
         analyze_standards_assessment(batch, run_id=run_id)
 
-    @task(task_id="refresh_views")
+    @task(task_id="refresh_views", queue="standards_assessment")
     def refresh_views():
         from modular.shared.repository_processor import execute_sql_script
         script_file = "refresh_views.sql"  # Updated script file name
         execute_sql_script(script_file)
         logger.info(f"Executed SQL script: {script_file}")
 
+    # Build the task flow
     payload = get_payload()
     batches = get_batches(payload)
     processed = process_batch.expand(batch=batches)

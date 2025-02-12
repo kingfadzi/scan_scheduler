@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from airflow import DAG
 from airflow.decorators import task
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.operators.python import get_current_context
 from modular.shared.repository_processor import create_batches, analyze_fundamentals
 
 logging.basicConfig(level=logging.DEBUG)
@@ -17,47 +17,39 @@ default_args = {
 with DAG(
         "fundamental_metrics",
         default_args=default_args,
-        schedule_interval=None,
+        schedule_interval=None,  # Externally triggered
         catchup=False,
 ) as dag:
 
-    @task
+    @task(queue="fundamental_metrics")
     def get_payload(**kwargs):
         dag_run = kwargs.get("dag_run")
         return dag_run.conf if dag_run and dag_run.conf else {}
 
-    @task
+    @task(queue="fundamental_metrics")
     def get_batches(payload: dict, batch_size: int = 1000, num_tasks: int = 5):
         batches = create_batches(payload, batch_size=batch_size, num_tasks=num_tasks)
         logger.info(f"Created {len(batches)} batches.")
         return batches
 
-    @task
+    @task(queue="fundamental_metrics")
     def process_batch(batch):
-        from airflow.operators.python import get_current_context
         context = get_current_context()
         run_id = context["dag_run"].run_id
         logger.info(f"Processing batch with run_id: {run_id} and {len(batch)} repositories")
         analyze_fundamentals(batch, run_id=run_id)
 
-    @task(task_id="refresh_views")
+    @task(task_id="refresh_views", queue="fundamental_metrics")
     def refresh_views():
         from modular.shared.repository_processor import execute_sql_script
-        script_file = "refresh_views.sql"
+        script_file = "refresh_views.sql"  # Updated SQL script file name
         execute_sql_script(script_file)
         logger.info(f"Executed SQL script: {script_file}")
 
-    # Define the DAG tasks
+    # Build the task flow
     payload = get_payload()
     batches = get_batches(payload)
     processed = process_batch.expand(batch=batches)
+    refresh_views_task = refresh_views()
 
-    trigger_component_patterns = TriggerDagRunOperator(
-        task_id="trigger_component_patterns",
-        trigger_dag_id="component_patterns",
-        reset_dag_run=True,
-        conf="{{ dag_run.conf | tojson }}",
-    )
-
-    # Set up task dependencies
-    processed >> refresh_views() >> trigger_component_patterns >> refresh_views()
+    processed >> refresh_views_task

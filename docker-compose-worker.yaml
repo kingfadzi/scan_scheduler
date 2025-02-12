@@ -9,13 +9,13 @@ services:
         GLOBAL_INDEX_URL: ${GLOBAL_INDEX_URL}
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
-    container_name: airflow-worker
-    tmpfs:
-      - /home/airflow/cloned_repositories:size=10G,mode=1777
-      - /home/airflow/airflow/logs:size=500M,mode=177
-      - /home/airflow/airflow/output:size=500M,mode=177
+    container_name: airflow-scheduler
+    tmpfs: #linux server only
+      - /home/airflow/airflow/cloned_repositories:size=20G,mode=1777,exec
+      - /home/airflow/airflow/logs:size=500M,mode=1777
+      - /home/airflow/airflow/output:size=500M,mode=1777
     environment:
-      CLONED_REPOSITORIES_DIR: /home/airflow/cloned_repositories
+      CLONED_REPOSITORIES_DIR: /home/airflow/airflow/cloned_repositories
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -48,12 +48,23 @@ services:
       HTTP_PROXY_PASSWORD: "${HTTP_PROXY_PASSWORD:-}"
       TRUSTSTORE_PATH: "${TRUSTSTORE_PATH:-}"
       TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
+
+      AIRFLOW_ADMIN_USERNAME: admin
+      AIRFLOW_ADMIN_FIRSTNAME: Admin
+      AIRFLOW_ADMIN_LASTNAME: User
+      AIRFLOW_ADMIN_EMAIL: admin@example.com
+      AIRFLOW_ADMIN_PASSWORD: password
+
+      DEFAULT_PROCESS_TIMEOUT: ${DEFAULT_PROCESS_TIMEOUT}
+    command: celery worker --queues ${WORKER_QUEUE}
     restart: always
     volumes:
-      - ${SSH_KEYS_PATH:-~/.ssh/porfolios_github_key}:/home/airflow/.ssh/id_rsa:ro
-      - ${SSH_KEYS_PUB_PATH:-~/.ssh/porfolios_github_key.pub}:/home/airflow/.ssh/id_rsa.pub:ro
-      - ./keys/java.cacerts:/home/airflow/java.cacerts
-      - ~/.gradle:/home/airflow/.gradle
+      - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro,Z
+      - ${SSH_KEYS_PUB_PATH}:/tmp/keys/id_ed25519.pub:ro,Z
+      - ${SSH_KNOWN_HOSTS_PATH}:/tmp/keys/known_hosts:ro,Z
+      - ${USER_HOME}/java.cacerts:/tmp/keys/java.cacerts:ro,Z
+      - ${GRADLE_CACHE_PATH}:/home/airflow/.gradle
+      - ${M2_CACHE_PATH}:/home/airflow/.m2
+
     networks:
       - default
-
