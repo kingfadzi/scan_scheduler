@@ -52,3 +52,5 @@ with DAG(
     refresh_views_task = refresh_views()
 
     processed >> refresh_views_task
+
+
