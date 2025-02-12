@@ -75,6 +75,7 @@ RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
       gitpython==3.1.43 \
       python-gitlab==5.3.0 \
       apache-airflow-providers-postgres \
+      apache-airflow-providers-celery \
       requests==2.32.3 \
       pandas==2.2.3 \
       pytz==2024.2 \
