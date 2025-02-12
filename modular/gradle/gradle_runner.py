@@ -5,6 +5,7 @@ import subprocess
 from modular.shared.base_logger import BaseLogger
 from modular.shared.config import Config
 from modular.gradle.environment_manager import GradleEnvironmentManager
+import traceback
 
 class GradleRunner(BaseLogger):
     def __init__(self):
@@ -40,9 +41,12 @@ class GradleRunner(BaseLogger):
             return result
         except subprocess.CalledProcessError as cpe:
             self.logger.error(f"Gradle command failed with CalledProcessError: {cpe}")
+            self.logger.error(f"Stderr:\n{cpe.stderr}")
+            self.logger.error(f"Gradle error:\n{traceback.format_exc()}")
             return None
         except Exception as ex:
             self.logger.error(f"Unexpected error: {ex}")
+            self.logger.error(f"Gradle error:\n{traceback.format_exc()}")
             return None
 
     def _setup_env(self, java_home):

@@ -8,9 +8,6 @@ from modular.shared.config import Config
 from modular.shared.base_logger import BaseLogger
 import logging
 
-from modular.shared.sbom_processor import SBOMProcessor
-
-
 class SyftAndGrypeAnalyzer(BaseLogger):
 
     def __init__(self):
@@ -37,9 +34,6 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
-
-            processor = SBOMProcessor()
-            processor.persist_dependencies(str(sbom_file_path))
 
         except subprocess.TimeoutExpired as e:
             error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
