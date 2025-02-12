@@ -25,6 +25,7 @@ class DependencyAnalyzer(BaseLogger):
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting dependency analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
+
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
@@ -33,7 +34,7 @@ class DependencyAnalyzer(BaseLogger):
         repo_languages = self.detect_repo_languages(repo.repo_id, session)
         if not repo_languages:
             self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
-            return
+            return f"skipped: No detected languages for repo {repo.repo_id}."
 
         dependencies = []
 
@@ -60,23 +61,18 @@ class DependencyAnalyzer(BaseLogger):
                     self.logger.info(f"Processing Gradle project in {repo_dir}")
                     dependencies.extend(self.gradle_helper.process_repo(repo_dir, repo))
                 else:
-                    self.logger.warning("No supported Java build system detected")
+                    self.logger.warning("No supported Java build system detected.")
 
             self.persist_dependencies(dependencies, session)
 
-            return json.dumps({
-                "status": "success",
-                "summary": f"Analyzed dependencies for repo {repo.repo_id}",
-                "languages_analyzed": repo_languages,
-                "dependencies_found": len(dependencies)
-            })
+            return f"success: Analyzed dependencies for repo {repo.repo_id}, languages: {', '.join(repo_languages)}, dependencies found: {len(dependencies)}."
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
-            return json.dumps({"status": "error", "summary": str(e)})
+            return f"error: {str(e)}"
         except Exception as e:
             self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
-            return json.dumps({"status": "error", "summary": f"Error during dependency analysis: {str(e)}"})
+            return f"error: {str(e)}"
 
     def detect_java_build_tool(self, repo_dir):
         maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
