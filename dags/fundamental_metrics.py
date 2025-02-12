@@ -73,10 +73,4 @@ with DAG(
         conf="{{ dag_run.conf | tojson }}",
     )
 
-    refresh_views_task = refresh_views()
-
-    processed >> refresh_views_task >> [
-        trigger_component_patterns,
-        trigger_standards_assessment,
-        trigger_vulnerability_metrics,
-    ]
+    processed >> refresh_views() >> trigger_component_patterns >> refresh_views()

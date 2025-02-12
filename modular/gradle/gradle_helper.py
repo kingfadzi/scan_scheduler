@@ -18,7 +18,7 @@ class GradleHelper(BaseLogger):
         self.runner = GradleRunner()
 
     def process_repo(self, repo_dir, repo):
-        """Processes a Gradle project and returns a list of dependencies with repo_id."""
+
         gradle_files = ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
         if not any(os.path.isfile(os.path.join(repo_dir, f)) for f in gradle_files):
             self.logger.info(f"No Gradle build files found in {repo_dir}. Skipping.")

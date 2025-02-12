@@ -91,7 +91,8 @@ class LizardAnalyzer(BaseLogger):
                     valid_lines.append(line)
 
             if not valid_lines:
-                raise ValueError("No valid data lines found in the file.")
+                self.logger.warn("No valid data lines found in the file.")
+                return
 
             self.logger.debug(f"Valid lines extracted:\n" + "\n".join(valid_lines))
 
@@ -134,7 +135,6 @@ class LizardAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error parsing lizard results for repository ID {repo_id}: {e}")
             raise
-
 
     def save_lizard_summary(self, session, repo_id, summary):
 
