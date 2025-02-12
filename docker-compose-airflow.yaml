@@ -10,10 +10,10 @@ services:
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
     container_name: airflow-scheduler
-    #tmpfs: #linux server only
-    #  - /home/airflow/airflow/cloned_repositories:size=10G,mode=1777
-    #  - /home/airflow/airflow/logs:size=500M,mode=1777
-    #  - /home/airflow/airflow/output:size=500M,mode=1777
+    tmpfs: #linux server only
+      - /home/airflow/airflow/cloned_repositories:size=10G,mode=1777
+      - /home/airflow/airflow/logs:size=500M,mode=1777
+      - /home/airflow/airflow/output:size=500M,mode=1777
     environment:
       CLONED_REPOSITORIES_DIR: /home/airflow/airflow/cloned_repositories
       POSTGRES_HOST: ${POSTGRES_HOST}
