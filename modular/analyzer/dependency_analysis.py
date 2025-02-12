@@ -91,24 +91,24 @@ class DependencyAnalyzer(BaseLogger):
 
     def detect_repo_languages(self, repo_id, session):
         self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
-        
+
         results = session.query(
             GoEnryAnalysis.language,
-            GoEnryAnalysis.percentage
+            GoEnryAnalysis.percent_usage
         ).filter(
             GoEnryAnalysis.repo_id == repo_id
         ).order_by(
-            GoEnryAnalysis.percentage.desc()
+            GoEnryAnalysis.percent_usage.desc()
         ).all()
-    
+
         if results:
-            main_language = [results[0].language]  # Wrap in list
-            main_percent = results[0].percentage
+            main_language = [results[0].language]
+            main_percent = results[0].percent_usage
             self.logger.info(
                 f"Primary language for repo_id {repo_id}: {main_language} ({main_percent}%)"
             )
             return main_language
-        
+
         self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return []  # Return empty list instead of None
 
