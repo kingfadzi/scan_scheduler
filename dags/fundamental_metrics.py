@@ -59,18 +59,5 @@ with DAG(
         conf="{{ dag_run.conf | tojson }}",
     )
 
-    trigger_standards_assessment = TriggerDagRunOperator(
-        task_id="trigger_standards_assessment",
-        trigger_dag_id="standards_assessment",
-        reset_dag_run=True,
-        conf="{{ dag_run.conf | tojson }}",
-    )
-
-    trigger_vulnerability_metrics = TriggerDagRunOperator(
-        task_id="trigger_vulnerability_metrics",
-        trigger_dag_id="vulnerability_metrics",
-        reset_dag_run=True,
-        conf="{{ dag_run.conf | tojson }}",
-    )
-
+    # Set up task dependencies
     processed >> refresh_views() >> trigger_component_patterns >> refresh_views()
