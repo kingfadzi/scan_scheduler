@@ -15,7 +15,7 @@ class DependencyAnalyzer(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("DependencyAnalyzer")
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
         self.python_helper = PythonHelper()
         self.js_helper = JavaScriptHelper()
         self.go_helper = GoHelper()
