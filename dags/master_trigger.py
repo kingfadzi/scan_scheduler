@@ -19,6 +19,7 @@ with DAG(
         trigger_dag_id="fundamental_metrics",  # Triggers the fundamental_metrics DAG
         reset_dag_run=True,
         conf="{{ dag_run.conf | tojson }}",
+        queue="fundamental_metrics"  # Specify the queue to send this task
     )
 
     trigger_component_patterns = TriggerDagRunOperator(
@@ -26,6 +27,7 @@ with DAG(
         trigger_dag_id="component_patterns",  # Triggers the component_patterns DAG
         reset_dag_run=True,
         conf="{{ dag_run.conf | tojson }}",
+        queue="component_patterns",
     )
 
     trigger_standards_assessment = TriggerDagRunOperator(
@@ -33,6 +35,7 @@ with DAG(
         trigger_dag_id="standards_assessment",  # Triggers the standards_assessment DAG
         reset_dag_run=True,
         conf="{{ dag_run.conf | tojson }}",
+        queue="standards_assessment",
     )
 
     trigger_vulnerability_metrics = TriggerDagRunOperator(
@@ -40,6 +43,7 @@ with DAG(
         trigger_dag_id="vulnerability_metrics",  # Triggers the vulnerability_metrics DAG
         reset_dag_run=True,
         conf="{{ dag_run.conf | tojson }}",
+        queue="vulnerability_metrics",
     )
 
     # Example: you can trigger all in parallel or set dependencies.
