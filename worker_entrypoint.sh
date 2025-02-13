@@ -32,7 +32,7 @@ set -e
     chown airflow:airflow /home/airflow/.ssh
 }
 
-# --- Clone Custom Rulesets ---
+rm -rf /home/airflow/.kantra/custom-rulesets
 if ! git clone "$RULESETS_GIT_URL" /home/airflow/.kantra/custom-rulesets; then
     echo "ERROR: Failed cloning rulesets from $RULESETS_GIT_URL"
     exit 1
