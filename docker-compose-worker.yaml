@@ -60,6 +60,8 @@ services:
       - ${M2_CACHE_PATH}:/home/airflow/.m2
     networks:
       - worker_network
+    ports:
+      - "8793:8793"
 
 networks:
   worker_network:
