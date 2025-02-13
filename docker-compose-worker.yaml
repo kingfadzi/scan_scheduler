@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   airflow-worker:
     build:
@@ -17,7 +15,7 @@ services:
       - /home/airflow/airflow/logs:size=500M,mode=1777
       - /home/airflow/airflow/output:size=500M,mode=1777
     environment:
-      WORKER_QUEUE: ${WORKER_QUEUE:-default}
+      WORKER_QUEUE: ${WORKER_QUEUE}  # No default - will fail if not provided
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -27,7 +25,6 @@ services:
       AIRFLOW__CELERY__BROKER_URL: redis://192.168.1.188:6379/0
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-      # Add all other DAG-specific environment variables here
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       NO_PROXY: ${NO_PROXY:-}
@@ -52,7 +49,7 @@ services:
       TRUSTSTORE_PATH: "${TRUSTSTORE_PATH:-}"
       TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
       DEFAULT_PROCESS_TIMEOUT: ${DEFAULT_PROCESS_TIMEOUT}
-    command: ["$${WORKER_QUEUE}"]
+    command: ["${WORKER_QUEUE}"]  # Fixed variable substitution
     restart: always
     volumes:
       - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro,Z
