@@ -4,14 +4,14 @@ set -e
 ##
 # Usage:
 #
-# For webserver:
-#   ./manage_component.sh <start|stop|restart> <env> webserver
+# For airflow:
+#   ./manage_component.sh <start|stop|restart> <env> airflow
 #
 # For worker:
 #   ./manage_component.sh <start|stop|restart> <env> worker <component>
 #
 # Examples:
-#   ./manage_component.sh start production webserver
+#   ./manage_component.sh start production airflow
 #   ./manage_component.sh start production worker fundamental_metrics
 #
 # - 'start':   Builds (without cache) and then starts the containers in detached mode.
@@ -19,18 +19,19 @@ set -e
 # - 'restart': Stops, rebuilds (without cache), and starts the containers.
 #
 # <env> is used to locate the file ".env-<env>"
-# For a webserver, the Compose file is "docker-compose-webserver.yaml"
-# For a worker, the Compose file is "docker-compose-worker.yaml"
+# For airflow, the Compose file is "docker-compose-airflow.yaml"
+# For worker,  the Compose file is "docker-compose-worker.yaml"
 # The project name will be:
-#   - For webserver: "<env>-webserver"
-#   - For worker:    "<env>-worker-<component>"
+#   - For airflow: "<env>-airflow"
+#   - For worker:  "<env>-worker-<component>"
+#
 # For workers, this script sets the WORKER_QUEUE environment variable for docker-compose.
 ##
 
 if [ "$#" -lt 3 ]; then
   echo "Usage:"
-  echo "  For webserver: $0 <start|stop|restart> <env> webserver"
-  echo "  For worker:    $0 <start|stop|restart> <env> worker <component>"
+  echo "  For airflow: $0 <start|stop|restart> <env> airflow"
+  echo "  For worker:  $0 <start|stop|restart> <env> worker <component>"
   exit 1
 fi
 
@@ -48,15 +49,15 @@ if [ "$SERVICE_TYPE" = "worker" ]; then
   PROJECT_NAME="${ENV_NAME}-worker-${COMPONENT}"
   # Export WORKER_QUEUE so that docker-compose substitutes it in the file
   export WORKER_QUEUE="${COMPONENT}"
-elif [ "$SERVICE_TYPE" = "webserver" ]; then
+elif [ "$SERVICE_TYPE" = "airflow" ]; then
   if [ "$#" -ne 3 ]; then
-    echo "Usage for webserver: $0 <start|stop|restart> <env> webserver"
+    echo "Usage for airflow: $0 <start|stop|restart> <env> airflow"
     exit 1
   fi
-  COMPOSE_FILE="docker-compose-webserver.yaml"
-  PROJECT_NAME="${ENV_NAME}-webserver"
+  COMPOSE_FILE="docker-compose-airflow.yaml"
+  PROJECT_NAME="${ENV_NAME}-airflow"
 else
-  echo "Invalid service type: $SERVICE_TYPE. Valid options are 'webserver' or 'worker'."
+  echo "Invalid service type: $SERVICE_TYPE. Valid options are 'airflow' or 'worker'."
   exit 1
 fi
 
@@ -119,4 +120,3 @@ case "$COMMAND" in
     exit 1
     ;;
 esac
-

@@ -1,21 +1,23 @@
+version: '3.8'
+
 services:
-  airflow-scheduler:
+  airflow-worker:
     build:
       context: .
-      dockerfile: scheduler.Dockerfile
+      dockerfile: worker.Dockerfile
       args:
         GLOBAL_CERT: ${GLOBAL_CERT}
         GLOBAL_INDEX: ${GLOBAL_INDEX}
         GLOBAL_INDEX_URL: ${GLOBAL_INDEX_URL}
         HOST_UID: ${HOST_UID}
         HOST_GID: ${HOST_GID}
-    container_name: airflow-scheduler
-    tmpfs: #linux server only
+    container_name: airflow-worker
+    tmpfs:
       - /home/airflow/airflow/cloned_repositories:size=20G,mode=1777,exec
       - /home/airflow/airflow/logs:size=500M,mode=1777
       - /home/airflow/airflow/output:size=500M,mode=1777
     environment:
-      CLONED_REPOSITORIES_DIR: /home/airflow/airflow/cloned_repositories
+      WORKER_QUEUE: ${WORKER_QUEUE:-default}
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -25,6 +27,7 @@ services:
       AIRFLOW__CELERY__BROKER_URL: redis://192.168.1.188:6379/0
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      # Add all other DAG-specific environment variables here
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       NO_PROXY: ${NO_PROXY:-}
@@ -38,28 +41,18 @@ services:
       SYFT_CONFIG_PATH: ${SYFT_CONFIG_PATH}
       GRYPE_CONFIG_PATH: ${GRYPE_CONFIG_PATH}
       SEMGREP_CONFIG_DIR: ${SEMGREP_CONFIG_DIR}
-
       BITBUCKET_HOSTNAME: ${BITBUCKET_HOSTNAME}
       GITLAB_HOSTNAME: ${GITLAB_HOSTNAME}
-
       KANTRA_RULESETS: ${KANTRA_RULESETS}
       KANTRA_OUTPUT_ROOT: /home/airflow/airflow/output
-
       HTTP_PROXY_HOST: "${HTTP_PROXY_HOST:-}"
       HTTP_PROXY_PORT: "${HTTP_PROXY_PORT:-}"
       HTTP_PROXY_USER: "${HTTP_PROXY_USER:-}"
       HTTP_PROXY_PASSWORD: "${HTTP_PROXY_PASSWORD:-}"
       TRUSTSTORE_PATH: "${TRUSTSTORE_PATH:-}"
       TRUSTSTORE_PASSWORD: "${TRUSTSTORE_PASSWORD:-}"
-
-      AIRFLOW_ADMIN_USERNAME: admin
-      AIRFLOW_ADMIN_FIRSTNAME: Admin
-      AIRFLOW_ADMIN_LASTNAME: User
-      AIRFLOW_ADMIN_EMAIL: admin@example.com
-      AIRFLOW_ADMIN_PASSWORD: password
-
       DEFAULT_PROCESS_TIMEOUT: ${DEFAULT_PROCESS_TIMEOUT}
-    command: celery worker --queues ${WORKER_QUEUE}
+    command: ["$${WORKER_QUEUE}"]
     restart: always
     volumes:
       - ${SSH_KEYS_PATH}:/tmp/keys/id_ed25519:ro,Z
@@ -68,6 +61,10 @@ services:
       - ${USER_HOME}/java.cacerts:/tmp/keys/java.cacerts:ro,Z
       - ${GRADLE_CACHE_PATH}:/home/airflow/.gradle
       - ${M2_CACHE_PATH}:/home/airflow/.m2
-
     networks:
-      - default
+      - airflow_network
+
+networks:
+  airflow_network:
+    name: airflow_network
+    external: true
