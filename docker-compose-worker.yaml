@@ -12,7 +12,7 @@ services:
     container_name: airflow-worker
     tmpfs:
       - /home/airflow/airflow/cloned_repositories:size=20G,mode=1777,exec
-      - /home/airflow/airflow/logs:size=500M,mode=1777,exec
+      - /home/airflow/airflow/logs:size=500M,mode=1777,uid=${HOST_UID},gid=${HOST_GID},exec
       - /home/airflow/airflow/output:size=500M,mode=1777,exec
     environment:
       WORKER_QUEUE: ${WORKER_QUEUE}  # No default - will fail if not provided
