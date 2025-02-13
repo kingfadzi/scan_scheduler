@@ -63,5 +63,5 @@ services:
 
 networks:
   airflow_network:
-    name: airflow_network
+    name: worker_network
     ##external: true
