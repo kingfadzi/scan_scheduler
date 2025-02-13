@@ -64,4 +64,4 @@ services:
 networks:
   airflow_network:
     name: airflow_network
-    external: true
+    ##external: true
