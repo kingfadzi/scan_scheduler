@@ -59,9 +59,9 @@ services:
       - ${GRADLE_CACHE_PATH}:/home/airflow/.gradle
       - ${M2_CACHE_PATH}:/home/airflow/.m2
     networks:
-      - airflow_network
+      - worker_network
 
 networks:
-  airflow_network:
+  worker_network:
     name: worker_network
     ##external: true
