@@ -12,4 +12,8 @@ lizard==1.17.13
 psycopg2-binary
 python-dotenv
 semgrep
-cyclonedx-python-lib
+prefect==3.2.1
+fastapi==0.110.0
+uvicorn==0.29.0
+pydantic==2.6.4
+python-dotenv==1.0.1
