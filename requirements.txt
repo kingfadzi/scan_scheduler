@@ -7,7 +7,7 @@ python_gitlab==5.3.0
 pytz==2024.2
 PyYAML==6.0.2
 Requests==2.32.3
-SQLAlchemy==1.4.54
+SQLAlchemy
 lizard==1.17.13
 psycopg2-binary
 python-dotenv
