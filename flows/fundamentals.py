@@ -22,7 +22,7 @@ class FundamentalsFlow(BaseLogger):
         self.logger = self.get_logger("FundamentalsFlow")
         self.logger.setLevel(logging.WARN)
 
-    @flow(name="Orchestrate Processing Flow")
+    @flow(name="orchestrate_processing_flow")
     async def orchestrate_processing_flow(self, payload: dict):
         logger = get_run_logger()
 
