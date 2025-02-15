@@ -37,6 +37,8 @@ class FundamentalsFlow(BaseLogger):
     async def orchestrate_flow(self, payload: dict):
         logger = get_run_logger()
 
+        logger.info("Starting ... create_batches")
+
         batches = create_batches(payload, batch_size=1000, num_partitions=5)
         all_repos = [repo for batch in batches for repo in batch]
         logger.info(f"Processing {len(all_repos)} repositories.")
