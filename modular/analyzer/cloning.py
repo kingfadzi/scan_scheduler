@@ -11,8 +11,12 @@ import logging
 clone_semaphore = threading.Semaphore(10)
 
 class CloningAnalyzer(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger()
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("CloningAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Clone Repository")

@@ -10,9 +10,12 @@ from modular.shared.config import Config
 
 class CheckovAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("CheckovAnalyzer")
-        self.logger.setLevel(logging.WARN)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("CheckovAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):

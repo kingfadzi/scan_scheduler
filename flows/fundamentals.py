@@ -22,21 +22,24 @@ class FundamentalsFlow(BaseLogger):
         self.logger = self.get_logger("FundamentalsFlow")
         self.logger.setLevel(logging.WARN)
 
-    @task(cache_policy=NO_CACHE)
-    def run_lizard_task(self, repo_dir, repo, session, run_id):
-        LizardAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+    @flow(name="Orchestrate Processing Flow")
+    async def orchestrate_processing_flow(self, payload: dict):
+        logger = get_run_logger()
 
-    @task(cache_policy=NO_CACHE)
-    def run_cloc_task(self, repo_dir, repo, session, run_id):
-        ClocAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+        batches = create_batches(payload, batch_size=1000, num_partitions=5)
+        all_repos = [repo for batch in batches for repo in batch]
+        logger.info(f"Processing {len(all_repos)} repositories.")
 
-    @task(cache_policy=NO_CACHE)
-    def run_goenry_task(self, repo_dir, repo, session, run_id):
-        GoEnryAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+        run_ctx = get_run_context()
+        run_id = run_ctx.flow_run.id if run_ctx and run_ctx.flow_run else None
+        run_id = str(run_id) if run_id else None
 
-    @task(cache_policy=NO_CACHE)
-    def run_gitlog_task(self, repo_dir, repo, session, run_id):
-        GitLogAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
+        # Run process_repo concurrently in separate threads
+        tasks = [asyncio.to_thread(self.process_repo, repo, run_id) for repo in all_repos]
+        await asyncio.gather(*tasks)
+
+        logger.info("All repositories processed. Executing SQL script: refresh_views.sql")
+        self.execute_sql_script_task("refresh_views.sql")
 
     @flow(name="Process Repo Flow")
     def process_repo(self, repo, run_id):
@@ -71,28 +74,60 @@ class FundamentalsFlow(BaseLogger):
             update_status_task(attached_repo, run_id, session)
 
     @task(cache_policy=NO_CACHE)
+    def run_lizard_task(self, repo_dir, repo, session, run_id):
+        logger = get_run_logger()
+        logger.info(f"Starting Lizard analysis for repository {repo.repo_name} (ID: {repo.repo_id})")
+        analyzer = LizardAnalyzer(logger=logger)
+        analyzer.run_analysis(
+            repo_dir=repo_dir,
+            repo=repo,
+            session=session,
+            run_id=run_id
+        )
+        logger.info(f"Completed Lizard analysis for repository {repo.repo_name}")
+
+    @task(cache_policy=NO_CACHE)
+    def run_cloc_task(self, repo_dir, repo, session, run_id):
+        logger = get_run_logger()
+        logger.info(f"Starting Cloc analysis for repository {repo.repo_name} (ID: {repo.repo_id})")
+        analyzer = ClocAnalyzer(logger=logger)
+        analyzer.run_analysis(
+            repo_dir=repo_dir,
+            repo=repo,
+            session=session,
+            run_id=run_id
+        )
+        logger.info(f"Completed Cloc analysis for repository {repo.repo_name}")
+
+    @task(cache_policy=NO_CACHE)
+    def run_goenry_task(self, repo_dir, repo, session, run_id):
+        logger = get_run_logger()
+        logger.info(f"Starting GoEnry analysis for repository {repo.repo_name} (ID: {repo.repo_id})")
+        analyzer = GoEnryAnalyzer(logger=logger)
+        analyzer.run_analysis(
+            repo_dir=repo_dir,
+            repo=repo,
+            session=session,
+            run_id=run_id
+        )
+        logger.info(f"Completed GoEnry analysis for repository {repo.repo_name}")
+
+    @task(cache_policy=NO_CACHE)
+    def run_gitlog_task(self, repo_dir, repo, session, run_id):
+        logger = get_run_logger()
+        logger.info(f"Starting GitLog analysis for repository {repo.repo_name} (ID: {repo.repo_id})")
+        analyzer = GitLogAnalyzer(logger=logger)
+        analyzer.run_analysis(
+            repo_dir=repo_dir,
+            repo=repo,
+            session=session,
+            run_id=run_id
+        )
+        logger.info(f"Completed GitLog analysis for repository {repo.repo_name}")
+
+    @task(cache_policy=NO_CACHE)
     def execute_sql_script_task(self, script_name: str):
         execute_sql_script(script_name)
-
-    @flow(name="Orchestrate Processing Flow")
-    async def orchestrate_processing_flow(self, payload: dict):
-        logger = get_run_logger()
-
-        batches = create_batches(payload, batch_size=1000, num_partitions=5)
-        all_repos = [repo for batch in batches for repo in batch]
-        logger.info(f"Processing {len(all_repos)} repositories.")
-
-        run_ctx = get_run_context()
-        run_id = run_ctx.flow_run.id if run_ctx and run_ctx.flow_run else None
-        run_id = str(run_id) if run_id else None
-
-        # Run process_repo concurrently in separate threads
-        tasks = [asyncio.to_thread(self.process_repo, repo, run_id) for repo in all_repos]
-        await asyncio.gather(*tasks)
-
-        logger.info("All repositories processed. Executing SQL script: refresh_views.sql")
-        self.execute_sql_script_task("refresh_views.sql")
-
 
 if __name__ == "__main__":
     import asyncio

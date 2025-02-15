@@ -12,9 +12,12 @@ import configparser
 
 class SemgrepAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("SemgrepAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Default logging level set to WARN
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("SemgrepAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.INFO)
 
     @analyze_execution(session_factory=Session, stage="Semgrep Analysis")
     def run_analysis(self, repo, repo_dir, session, run_id=None):

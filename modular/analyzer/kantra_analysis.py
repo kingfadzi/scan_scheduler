@@ -14,9 +14,13 @@ from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 
 class KantraAnalyzer(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("KantraAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Kantra Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):

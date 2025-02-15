@@ -11,9 +11,12 @@ from modular.shared.base_logger import BaseLogger  # Import the BaseLogger
 
 class TrivyAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("TrivyAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Set default logging level
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("TrivyAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.INFO)
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):

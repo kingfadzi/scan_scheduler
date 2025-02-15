@@ -11,8 +11,11 @@ import io
 
 class LizardAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("LizardAnalyzer")
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("LizardAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.INFO)
 
     def _read_analysis_file(self, analysis_file, repo):

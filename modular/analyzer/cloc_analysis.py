@@ -9,9 +9,12 @@ import logging
 
 class ClocAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("ClocAnalyzer")
-        self.logger.setLevel(logging.INFO)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("ClocAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="CLOC Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):

@@ -13,8 +13,11 @@ from sqlalchemy.dialects.postgresql import insert
 
 class DependencyAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("DependencyAnalyzer")
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("DependencyAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
         self.python_helper = PythonHelper()
         self.js_helper = JavaScriptHelper()
