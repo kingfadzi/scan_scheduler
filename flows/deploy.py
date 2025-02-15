@@ -19,7 +19,6 @@ DEPLOYMENTS = [
 def create_deployments():
     for entrypoint, name_suffix, pool_name in DEPLOYMENTS:
         deployment_name = f"{name_suffix}"
-
         remote_flow = flow.from_source(
             source=git_storage,
             entrypoint=entrypoint
