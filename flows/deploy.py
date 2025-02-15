@@ -1,8 +1,13 @@
 from prefect import flow
+from prefect.runner.storage import GitRepository
 
-# Git repository details
-GIT_REPO = "https://github.com/kingfadzi/scan_scheduler.git"
-BRANCH = "distributed"
+# Define Git storage
+git_storage = GitRepository(
+    url="https://github.com/kingfadzi/scan_scheduler.git",
+    reference="distributed"  # Use the correct branch
+)
+
+# Deployment configuration
 DEPLOYMENT_VERSION = "3.2.1"
 
 # Define flows and their respective work pools
@@ -17,13 +22,13 @@ DEPLOYMENTS = [
 def create_deployments():
     for entrypoint, name_suffix, pool_name in DEPLOYMENTS:
         deployment_name = f"{name_suffix}"
-        
-        # Load the flow from Git storage
+
+        # Load the flow from Git storage using GitRepository
         remote_flow = flow.from_source(
-            source=f"git+https://github.com/kingfadzi/scan_scheduler.git@{BRANCH}",
+            source=git_storage,
             entrypoint=entrypoint
         )
-        
+
         # Deploy the flow
         remote_flow.deploy(
             name=deployment_name,
