@@ -20,7 +20,7 @@ def create_deployments():
         
         # Load the flow from Git storage
         remote_flow = flow.from_source(
-            source=f"git+{GIT_REPO}@{BRANCH}",
+            source=f"git+https://github.com/kingfadzi/scan_scheduler.git@{BRANCH}",
             entrypoint=entrypoint
         )
         
