@@ -1,5 +1,5 @@
-from flows.orchestrator import main_orchestrator
-from flows.analysis import (
+from orchestrator import main_orchestrator
+from analysis import (
     analyze_fundamentals,
     analyze_vulnerabilities,
     analyze_standards,
@@ -27,7 +27,7 @@ def create_deployments():
         flow.deploy(
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
-            work_pool_name=pool_name,  # Update to `work_queue_name` if required by your version.
+            work_pool_name=pool_name,
             tags=["security-scan", f"v{DEPLOYMENT_VERSION}"],
             git_repo=REPO_URL,
             git_branch=BRANCH
