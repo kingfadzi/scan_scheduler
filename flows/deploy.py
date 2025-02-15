@@ -10,7 +10,7 @@ DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
     ("flows/orchestrator.py:main_orchestrator", "main-orchestrator", "orchestrator-pool"),
-    ("flows/fundamentals.py:run_fundamentals", "fundamentals", "fundamentals-pool"),
+    ("flows/fundamentals.py:orchestrate_flow", "fundamentals", "fundamentals-pool"),
     ("flows/analysis.py:analyze_vulnerabilities", "vulnerabilities", "vulnerabilities-pool"),
     ("flows/analysis.py:analyze_standards", "standards-compliance", "standards-pool"),
     ("flows/analysis.py:analyze_component_patterns", "component-patterns", "components-pool")

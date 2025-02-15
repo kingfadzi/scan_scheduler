@@ -12,33 +12,23 @@ from modular.analyzer.cloc_analysis import ClocAnalyzer
 from modular.shared.models import Session, Repository
 from modular.shared.utils import create_batches, execute_sql_script
 from modular.shared.tasks import clone_repository_task, cleanup_repo_task, update_status_task
-from modular.shared.base_logger import BaseLogger
 from datetime import datetime
 import asyncio
 
-@flow(name="run_fundamentals")
-def run_fundamentals(payload: dict):
+@flow(name="orchestrate_flow")
+async def orchestrate_flow(payload: dict):
     logger = get_run_logger()
+    logger.info("Starting ... orchestrate_flow")
+    fundamentals = FundamentalsFlow()
+    await fundamentals.orchestrate_flow(payload=payload)
+    logger.info("Finished ... orchestrate_flow")
 
-    logger.info("Starting ... run_fundamentals")
-
-    FundamentalsFlow()
-    FundamentalsFlow().orchestrate_flow(payload=payload)
-
-    logger.info("Finished ... run_fundamentals")
-
-class FundamentalsFlow(BaseLogger):
-
-    def __init__(self):
-        self.logger = self.get_logger("FundamentalsFlow")
-        self.logger.setLevel(logging.WARN)
+class FundamentalsFlow:
 
     @flow(name="orchestrate_processing_flow")
     async def orchestrate_flow(self, payload: dict):
         logger = get_run_logger()
-
         logger.info("Starting ... create_batches")
-
         batches = create_batches(payload, batch_size=1000, num_partitions=5)
         all_repos = [repo for batch in batches for repo in batch]
         logger.info(f"Processing {len(all_repos)} repositories.")
@@ -144,11 +134,9 @@ class FundamentalsFlow(BaseLogger):
 
 if __name__ == "__main__":
     import asyncio
-    flow = FundamentalsFlow()
     example_payload = {
         'host_name': ['github.com'],
         'activity_status': ['ACTIVE'],
         'main_language': ['Python'],
     }
-    asyncio.run(flow.orchestrate_flow(payload=example_payload))
-
+    asyncio.run(orchestrate_flow(payload=example_payload))
