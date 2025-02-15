@@ -22,8 +22,8 @@ def run_fundamentals(payload: dict):
 
     logger.info("Starting ... run_fundamentals")
 
-    instance = FundamentalsFlow()
-    instance.orchestrate_flow(payload=payload)
+    FundamentalsFlow()
+    FundamentalsFlow().orchestrate_flow(payload=payload)
 
     logger.info("Finished ... run_fundamentals")
 
