@@ -8,7 +8,7 @@ from analysis import (
     analyze_component_patterns
 )
 
-BATCH_SIZE = 500  # ✅ Process repositories in batches to avoid memory overload
+BATCH_SIZE = 500  # ✅ Process repositories in batches
 
 @task
 def query_repositories(payload: Dict) -> List[str]:
@@ -38,9 +38,9 @@ async def main_orchestrator(payload: Dict):
     for batch in repo_batches:
         print(f"✅ Enqueueing batch of {len(batch)} repositories for processing...")
 
-        # ✅ Fix: Use `.call()` for flows instead of `.submit()`
-        tasks = [process_repository.call(repo_id) for repo_id in batch]
+        # ✅ Ensure parallel execution using `deploy(run_method="async")`
+        tasks = [process_repository.deploy(run_method="async", parameters={"repo_id": repo_id}) for repo_id in batch]
 
-        await asyncio.sleep(2)  # ✅ Prevent overwhelming the scheduler with 1000s of simultaneous runs
+        await asyncio.sleep(2)  # ✅ Prevent overwhelming the scheduler
 
     print("✅ All repository batches have been scheduled for processing.")
