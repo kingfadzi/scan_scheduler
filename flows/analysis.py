@@ -32,3 +32,15 @@ def analyze_component_patterns(repo_id: str) -> Dict:
     logger.info(f"Starting component analysis for {repo_id}")
     # Add component pattern detection
     return {"repo_id": repo_id, "patterns": []}
+    
+if __name__ == "__main__":
+    # Run individual flows
+    analyze_fundamentals("test_repo")
+    analyze_vulnerabilities("test_repo")
+    
+    # Or chain multiple analyses
+    repo_id = "test_repo"
+    analyze_fundamentals(repo_id)
+    analyze_vulnerabilities(repo_id)
+    analyze_standards(repo_id)
+    analyze_component_patterns(repo_id)
