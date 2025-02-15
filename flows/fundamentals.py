@@ -18,8 +18,14 @@ import asyncio
 
 @flow(name="run_fundamentals")
 def run_fundamentals(payload: dict):
+    logger = get_run_logger()
+
+    logger.info("Starting ... run_fundamentals")
+
     instance = FundamentalsFlow()
     instance.orchestrate_flow(payload=payload)
+
+    logger.info("Finished ... run_fundamentals")
 
 class FundamentalsFlow(BaseLogger):
 
