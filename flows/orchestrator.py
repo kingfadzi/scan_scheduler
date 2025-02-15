@@ -23,7 +23,7 @@ async def main_orchestrator(payload: Dict):
     fundamentals_runs = []
     for repo_id in repos:
         run = await analyze_fundamentals.with_options(
-            work_pool_name="fundamentals-pool"
+            name=f"fundamentals-{repo_id}"  # ✅ Remove 'work_pool_name' here
         ).submit(repo_id)
         fundamentals_runs.append(run)
     
@@ -35,11 +35,11 @@ async def main_orchestrator(payload: Dict):
     async with get_client() as client:
         for repo_id in repos:
             await analyze_vulnerabilities.with_options(
-                work_pool_name="vulnerabilities-pool"
+                name=f"vulnerabilities-{repo_id}"  # ✅ Fix 'work_pool_name' issue
             ).submit(repo_id)
             await analyze_standards.with_options(
-                work_pool_name="standards-pool"
+                name=f"standards-{repo_id}"
             ).submit(repo_id)
             await analyze_component_patterns.with_options(
-                work_pool_name="components-pool"
+                name=f"components-{repo_id}"
             ).submit(repo_id)
