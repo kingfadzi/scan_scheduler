@@ -22,7 +22,7 @@ async def main_orchestrator(payload: Dict):
     fundamentals_runs = []
     for repo_id in repos:
         try:
-            run = await analyze_fundamentals(repo_id)  # ✅ Direct async call
+            run = analyze_fundamentals(repo_id)  # ✅ Call without `await` if it's a flow
             fundamentals_runs.append(run)
         except Exception as e:
             print(f"❌ Fundamentals failed for {repo_id}: {e}")
