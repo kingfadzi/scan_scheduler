@@ -38,9 +38,9 @@ async def main_orchestrator(payload: Dict):
     for batch in repo_batches:
         print(f"✅ Enqueueing batch of {len(batch)} repositories for processing...")
 
-        # ✅ Enqueue all repository jobs in parallel
-        tasks = [process_repository.submit(repo_id) for repo_id in batch]  # ✅ `.submit()` queues the flow runs
-        
+        # ✅ Fix: Use `.call()` for flows instead of `.submit()`
+        tasks = [process_repository.call(repo_id) for repo_id in batch]
+
         await asyncio.sleep(2)  # ✅ Prevent overwhelming the scheduler with 1000s of simultaneous runs
 
     print("✅ All repository batches have been scheduled for processing.")
