@@ -1,6 +1,6 @@
 from prefect import flow, task
-from prefect.client.orchestration import get_client
 from typing import Dict, List
+import asyncio
 from analysis import (
     analyze_fundamentals,
     analyze_vulnerabilities,
@@ -8,40 +8,39 @@ from analysis import (
     analyze_component_patterns
 )
 
+BATCH_SIZE = 500  # ✅ Process repositories in batches to avoid memory overload
+
 @task
 def query_repositories(payload: Dict) -> List[str]:
-    """Fetch repositories from database"""
-    return [f"repo-{i}" for i in range(1, 4)]
+    """Fetch repositories from database in manageable batches"""
+    all_repos = [f"repo-{i}" for i in range(1, 10001)]  # Simulating 10,000 repos
+    return [all_repos[i : i + BATCH_SIZE] for i in range(0, len(all_repos), BATCH_SIZE)]  # ✅ Split into batches
 
-@flow(name="main_orchestrator")
-def main_orchestrator(payload: Dict):
-    """Main orchestration flow"""
-    repos = query_repositories(payload)
+@flow(name="process_repository", log_prints=True)
+def process_repository(repo_id: str):
+    """Runs all analysis flows for a single repository"""
+    fundamentals_result = analyze_fundamentals(repo_id)
+    
+    if fundamentals_result != "Completed":
+        raise RuntimeError(f"Fundamentals failed for {repo_id}, stopping execution.")
 
-    # Step 1️⃣: Process all fundamentals first **in parallel**
-    fundamentals_results = [analyze_fundamentals(repo) for repo in repos]  # ✅ Run subflows in parallel
+    analyze_vulnerabilities(repo_id)
+    analyze_standards(repo_id)
+    analyze_component_patterns(repo_id)
 
-    # ✅ Ensure all fundamentals completed successfully
-    for result in fundamentals_results:
-        if result != "Completed":
-            print(f"❌ Fundamentals execution failed: {result}")
-            raise RuntimeError("One or more fundamental metric runs failed, stopping execution.")
+    return f"Processing complete for {repo_id}"
 
-    print("✅ All fundamental metrics completed successfully. Proceeding to other analyses.")
+@flow(name="main_orchestrator", log_prints=True)
+async def main_orchestrator(payload: Dict):
+    """Main orchestrator flow that batches and queues repository processing"""
+    repo_batches = query_repositories(payload)
 
-    # Step 2️⃣: Trigger the remaining analyses **in parallel**
-    analysis_results = [
-        analyze_vulnerabilities(repo) for repo in repos
-    ] + [
-        analyze_standards(repo) for repo in repos
-    ] + [
-        analyze_component_patterns(repo) for repo in repos
-    ]
+    for batch in repo_batches:
+        print(f"✅ Enqueueing batch of {len(batch)} repositories for processing...")
 
-    # ✅ Ensure all analyses completed successfully
-    for result in analysis_results:
-        if result != "Completed":
-            print(f"❌ One of the analyses failed: {result}")
-            raise RuntimeError("One or more analysis runs failed, stopping execution.")
+        # ✅ Enqueue all repository jobs in parallel
+        tasks = [process_repository.submit(repo_id) for repo_id in batch]  # ✅ `.submit()` queues the flow runs
+        
+        await asyncio.sleep(2)  # ✅ Prevent overwhelming the scheduler with 1000s of simultaneous runs
 
-    print("✅ All analyses completed successfully.")
+    print("✅ All repository batches have been scheduled for processing.")
