@@ -1,7 +1,7 @@
 from prefect import flow, task
 from prefect.client.orchestration import get_client
 from typing import Dict, List
-from analysis import (  # ✅ Explicitly import analysis functions
+from analysis import (  # ✅ Ensure all analysis flows are properly imported
     analyze_fundamentals,
     analyze_vulnerabilities,
     analyze_standards,
@@ -19,21 +19,27 @@ async def main_orchestrator(payload: Dict):
     """Main orchestration flow"""
     repos = query_repositories(payload)
     
-    # Process all fundamentals first
+    # Step 1️⃣: Process all fundamentals first **sequentially**
     fundamentals_runs = []
     for repo_id in repos:
-        run = analyze_fundamentals.invoke(  # ✅ Use `.invoke()` instead of `.submit()`
-            parameters={"repo_id": repo_id}  # Pass parameters correctly
-        )
+        run = analyze_fundamentals(repo_id)  # ✅ Call subflow normally
         fundamentals_runs.append(run)
-    
-    # Wait for all fundamentals to complete
-    for run in fundamentals_runs:
-        await run.wait()  # ✅ Keep waiting for flows
 
-    # Process other analyses in parallel
+    # Wait for all fundamentals runs to finish
+    for run in fundamentals_runs:
+        await run  # ✅ Wait for completion of fundamental metrics
+
+    # Step 2️⃣: Trigger the remaining analyses in parallel
     async with get_client() as client:
+        parallel_runs = []
+        
         for repo_id in repos:
-            analyze_vulnerabilities.invoke(parameters={"repo_id": repo_id})  # ✅ Fix calls
-            analyze_standards.invoke(parameters={"repo_id": repo_id})
-            analyze_component_patterns.invoke(parameters={"repo_id": repo_id})
+            parallel_runs.append(analyze_vulnerabilities(repo_id))  # ✅ Run in parallel
+            parallel_runs.append(analyze_standards(repo_id))
+            parallel_runs.append(analyze_component_patterns(repo_id))
+
+        # Wait for all parallel tasks to complete
+        for run in parallel_runs:
+            await run
+
+    print("✅ All fundamental and tiger analysis tasks completed successfully.")
