@@ -22,16 +22,16 @@ async def main_orchestrator(payload: Dict):
     fundamentals_runs = []
     for repo_id in repos:
         try:
-            run = analyze_fundamentals(repo_id)  # ✅ Call the function
+            run = analyze_fundamentals(repo_id)  # ✅ Call without await
             fundamentals_runs.append(run)
         except Exception as e:
             print(f"❌ Fundamentals failed for {repo_id}: {e}")
             raise  # Stop execution immediately if any fundamentals fail
 
-    # ✅ Fix: Properly check if fundamentals succeeded
+    # ✅ Check for successful completion
     for run in fundamentals_runs:
-        if run is None or not isinstance(run, dict) or run.get("state") not in ["Completed", "Success"]:
-            print(f"❌ Unexpected result from analyze_fundamentals: {run}")
+        if run != "Completed":  # ✅ Check string state, not a dict
+            print(f"❌ Fundamentals execution failed: {run}")
             raise RuntimeError("One or more fundamental metric runs failed, stopping execution.")
 
     print("✅ All fundamental metrics completed successfully. Proceeding to other analyses.")
