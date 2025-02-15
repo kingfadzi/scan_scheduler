@@ -22,7 +22,7 @@ class FundamentalsFlow(BaseLogger):
         self.logger = self.get_logger("FundamentalsFlow")
         self.logger.setLevel(logging.WARN)
 
-    @flow
+    @flow(name="run_fundamentals")
     def run_fundamentals(payload: dict):
         instance = FundamentalsFlow()
         instance.orchestrate_flow(payload=payload)
