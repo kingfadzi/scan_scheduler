@@ -3,8 +3,8 @@ from prefect.runner.storage import GitRepository
 
 # Define Git storage
 git_storage = GitRepository(
-    repository="https://github.com/kingfadzi/scan_scheduler.git",
-    reference="distributed"  # Use the correct branch
+    url="https://github.com/kingfadzi/scan_scheduler.git",
+    branch="distributed"  # Use the correct branch
 )
 
 # Deployment configuration
