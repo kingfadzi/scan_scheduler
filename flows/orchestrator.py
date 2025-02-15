@@ -11,7 +11,6 @@ from analysis import (  # ✅ Ensure all analysis flows are properly imported
 @task
 def query_repositories(payload: Dict) -> List[str]:
     """Fetch repositories from database"""
-    # Replace with actual database query
     return [f"repo-{i}" for i in range(1, 4)]
 
 @flow(name="main_orchestrator")
@@ -23,7 +22,7 @@ async def main_orchestrator(payload: Dict):
     fundamentals_runs = []
     for repo_id in repos:
         try:
-            run = await analyze_fundamentals.serve(parameters={"repo_id": repo_id})  # ✅ Proper async call
+            run = await analyze_fundamentals(repo_id)  # ✅ Direct async call
             fundamentals_runs.append(run)
         except Exception as e:
             print(f"❌ Fundamentals failed for {repo_id}: {e}")
@@ -31,7 +30,7 @@ async def main_orchestrator(payload: Dict):
 
     # Wait for all fundamentals runs to finish
     for run in fundamentals_runs:
-        if run.get("state") != "Completed":  # ✅ Check if subflow actually succeeded
+        if run is None or isinstance(run, dict) and run.get("state") != "Completed":  # ✅ Ensure fundamentals succeeded
             print(f"❌ Fundamentals execution failed: {run}")
             raise RuntimeError("One or more fundamental metric runs failed, stopping execution.")
 
@@ -42,9 +41,9 @@ async def main_orchestrator(payload: Dict):
         parallel_runs = []
         
         for repo_id in repos:
-            parallel_runs.append(analyze_vulnerabilities.serve(parameters={"repo_id": repo_id}))  # ✅ Fix async call
-            parallel_runs.append(analyze_standards.serve(parameters={"repo_id": repo_id}))
-            parallel_runs.append(analyze_component_patterns.serve(parameters={"repo_id": repo_id}))
+            parallel_runs.append(analyze_vulnerabilities(repo_id))  # ✅ Run in parallel
+            parallel_runs.append(analyze_standards(repo_id))
+            parallel_runs.append(analyze_component_patterns(repo_id))
 
         # Wait for all parallel tasks to complete
         for run in parallel_runs:
