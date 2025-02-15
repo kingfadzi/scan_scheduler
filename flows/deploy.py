@@ -1,4 +1,3 @@
-from prefect.filesystems import GitStorage
 from flows.orchestrator import main_orchestrator
 from flows.analysis import (
     analyze_fundamentals,
@@ -7,44 +6,37 @@ from flows.analysis import (
     analyze_component_patterns
 )
 
-# Configure Git storage
-storage = GitStorage(
-    repo_url="https://github.com/kingfadzi/scan_scheduler.git",
-    reference="distributed",
-    include_git_ref=True
-)
+# Repository configuration (used in deployment metadata or via CLI)
+REPO_URL = "https://github.com/kingfadzi/scan_scheduler.git"
+BRANCH = "distributed"
+DEPLOYMENT_VERSION = "3.2.1"
 
-# Define common deployment parameters
-DEPLOYMENT_PARAMS = {
-    "version": "3.2.1",  # Update as needed
-    "storage": storage,
-    "work_pool_name": None,  # Will override per flow
-    "tags": ["security-scan", "v3.2.1"],
-    "env": {"PREFECT_API_VERSION": "3.2.1", "PREFECT_LOGGING_LEVEL": "INFO"},
-    "labels": ["prod"]
-}
-
-# Map each flow to its deployment-specific parameters
+# Map each flow to its work pool name
 DEPLOYMENTS = [
-    (main_orchestrator, "orchestrator-pool"),
-    (analyze_fundamentals, "fundamentals-pool"),
-    (analyze_vulnerabilities, "vulnerabilities-pool"),
-    (analyze_standards, "standards-pool"),
-    (analyze_component_patterns, "components-pool")
+    (main_orchestrator, "main-orchestrator", "orchestrator-pool"),
+    (analyze_fundamentals, "fundamentals", "fundamentals-pool"),
+    (analyze_vulnerabilities, "vulnerabilities", "vulnerabilities-pool"),
+    (analyze_standards, "standards-compliance", "standards-pool"),
+    (analyze_component_patterns, "component-patterns", "components-pool")
 ]
 
 def create_deployments():
-    for flow, pool_name in DEPLOYMENTS:
-        params = DEPLOYMENT_PARAMS.copy()
-        params["work_pool_name"] = pool_name
-        # The name can be derived or customized as needed
-        deployment_name = f"{flow.name}-{pool_name}"
-        
-        # Deploy the flow using the new imperative API.
-        # Note: The API signature may vary; consult your Prefect version's docs.
+    for flow, name_suffix, pool_name in DEPLOYMENTS:
+        deployment_name = f"{flow.name}-{name_suffix}"
+        # Deploy the flow using the new API.
+        # Note: Check your Prefect documentation for the exact parameters required.
         flow.deploy(
             name=deployment_name,
-            **params
+            version=DEPLOYMENT_VERSION,
+            work_pool_name=pool_name,
+            infra_overrides={
+                "env": {"PREFECT_API_VERSION": DEPLOYMENT_VERSION},
+                "labels": ["prod"]
+            },
+            tags=["security-scan", f"v{DEPLOYMENT_VERSION}"],
+            # If your Prefect version supports it, you might be able to pass repository info:
+            git_repo=REPO_URL,
+            git_branch=BRANCH
         )
         print(f"Created deployment {deployment_name}")
 
