@@ -1,5 +1,5 @@
-from .orchestrator import main_orchestrator
-from .analysis import (
+from orchestrator import main_orchestrator
+from analysis import (
     analyze_fundamentals,
     analyze_vulnerabilities,
     analyze_standards,
