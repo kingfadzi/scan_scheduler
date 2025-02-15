@@ -16,16 +16,16 @@ from modular.shared.base_logger import BaseLogger
 from datetime import datetime
 import asyncio
 
+@flow(name="run_fundamentals")
+def run_fundamentals(payload: dict):
+    instance = FundamentalsFlow()
+    instance.orchestrate_flow(payload=payload)
+
 class FundamentalsFlow(BaseLogger):
 
     def __init__(self):
         self.logger = self.get_logger("FundamentalsFlow")
         self.logger.setLevel(logging.WARN)
-
-    @flow(name="run_fundamentals")
-    def run_fundamentals(payload: dict):
-        instance = FundamentalsFlow()
-        instance.orchestrate_flow(payload=payload)
 
     @flow(name="orchestrate_processing_flow")
     async def orchestrate_flow(self, payload: dict):
