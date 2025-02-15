@@ -6,9 +6,7 @@ from analysis import (
     analyze_component_patterns
 )
 
-# Repository and deployment configuration
-REPO_URL = "https://github.com/kingfadzi/scan_scheduler.git"
-BRANCH = "distributed"
+# Deployment configuration
 DEPLOYMENT_VERSION = "3.2.1"
 
 # Map each flow to its work pool (or work queue) name
@@ -27,10 +25,8 @@ def create_deployments():
         flow.deploy(
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
-            work_pool_name=pool_name,
-            tags=["security-scan", f"v{DEPLOYMENT_VERSION}"],
-            git_repo=REPO_URL,
-            git_branch=BRANCH
+            work_pool_name=pool_name,  # Ensure this matches your Prefect version (could be work_queue_name)
+            tags=["security-scan", f"v{DEPLOYMENT_VERSION}"]
         )
         print(f"Created deployment {deployment_name}")
 
