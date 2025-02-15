@@ -22,24 +22,32 @@ async def main_orchestrator(payload: Dict):
     # Step 1️⃣: Process all fundamentals first **sequentially**
     fundamentals_runs = []
     for repo_id in repos:
-        run = analyze_fundamentals(repo_id)  # ✅ Call subflow normally
-        fundamentals_runs.append(run)
+        try:
+            run = await analyze_fundamentals.serve(parameters={"repo_id": repo_id})  # ✅ Proper async call
+            fundamentals_runs.append(run)
+        except Exception as e:
+            print(f"❌ Fundamentals failed for {repo_id}: {e}")
+            raise  # Stop execution immediately if any fundamentals fail
 
     # Wait for all fundamentals runs to finish
     for run in fundamentals_runs:
-        await run  # ✅ Wait for completion of fundamental metrics
+        if run.get("state") != "Completed":  # ✅ Check if subflow actually succeeded
+            print(f"❌ Fundamentals execution failed: {run}")
+            raise RuntimeError("One or more fundamental metric runs failed, stopping execution.")
 
-    # Step 2️⃣: Trigger the remaining analyses in parallel
+    print("✅ All fundamental metrics completed successfully. Proceeding to other analyses.")
+
+    # Step 2️⃣: Trigger the remaining analyses in parallel **ONLY if Step 1 succeeded**
     async with get_client() as client:
         parallel_runs = []
         
         for repo_id in repos:
-            parallel_runs.append(analyze_vulnerabilities(repo_id))  # ✅ Run in parallel
-            parallel_runs.append(analyze_standards(repo_id))
-            parallel_runs.append(analyze_component_patterns(repo_id))
+            parallel_runs.append(analyze_vulnerabilities.serve(parameters={"repo_id": repo_id}))  # ✅ Fix async call
+            parallel_runs.append(analyze_standards.serve(parameters={"repo_id": repo_id}))
+            parallel_runs.append(analyze_component_patterns.serve(parameters={"repo_id": repo_id}))
 
         # Wait for all parallel tasks to complete
         for run in parallel_runs:
             await run
 
-    print("✅ All fundamental and tiger analysis tasks completed successfully.")
+    print("✅ All analyses completed successfully.")
