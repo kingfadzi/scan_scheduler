@@ -22,8 +22,13 @@ class FundamentalsFlow(BaseLogger):
         self.logger = self.get_logger("FundamentalsFlow")
         self.logger.setLevel(logging.WARN)
 
+    @flow
+    def run_fundamentals(payload: dict):
+        instance = FundamentalsFlow()
+        instance.orchestrate_flow(payload=payload)
+
     @flow(name="orchestrate_processing_flow")
-    async def orchestrate_processing_flow(self, payload: dict):
+    async def orchestrate_flow(self, payload: dict):
         logger = get_run_logger()
 
         batches = create_batches(payload, batch_size=1000, num_partitions=5)
@@ -137,5 +142,5 @@ if __name__ == "__main__":
         'activity_status': ['ACTIVE'],
         'main_language': ['Python'],
     }
-    asyncio.run(flow.orchestrate_processing_flow(payload=example_payload))
+    asyncio.run(flow.orchestrate_flow(payload=example_payload))
 
