@@ -10,10 +10,9 @@ DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
     ("flows/fundamentals.py:fundamental_metrics_flow", "fundamentals", "fundamentals-pool"),
-    ("flows/components.py:component_patterns_flow", "component-patterns", "components-pool")
+    ("flows/components.py:component_patterns_flow", "component-patterns", "components-pool"),
     ("flows/analysis.py:analyze_vulnerabilities", "vulnerabilities", "vulnerabilities-pool"),
-    ("flows/analysis.py:analyze_standards", "standards-compliance", "standards-pool"),
-
+    ("flows/analysis.py:analyze_standards", "standards-compliance", "standards-pool")
 ]
 
 def create_deployments():

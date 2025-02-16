@@ -6,6 +6,8 @@ from sqlalchemy import text
 from modular.shared.config import Config
 from modular.shared.models import Session, Repository, AnalysisExecutionLog
 from modular.shared.query_builder import build_query
+from prefect.runtime import flow_run
+from prefect.context import get_run_context
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +27,7 @@ def fetch_repositories(payload, batch_size=1000):
             break
         # Detach each repository from the session.
         for repo in batch:
+            _ = repo.repo_slug # Access the attribute so it gets loaded.
             session.expunge(repo)
         yield batch
         offset += batch_size

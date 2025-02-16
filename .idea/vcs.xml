@@ -2,9 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cloned_repositories/analyze_fundamentals/CTFd" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cloned_repositories/analyze_fundamentals/cicd-goat" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cloned_repositories/analyze_fundamentals/cloudgoat" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cloned_repositories/analyze_fundamentals/owasp-mstg" vcs="Git" />
   </component>
 </project>
