@@ -4,7 +4,7 @@ import threading
 import re
 from modular.shared.models import Session, Repository, RepoMetrics
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import logging
 

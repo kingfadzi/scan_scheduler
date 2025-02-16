@@ -1,0 +1,130 @@
+# ==================================================
+# Comprehensive .trivyignore File
+# Purpose: Ignore irrelevant files, directories, and patterns
+# ==================================================
+
+# === ARCHIVES AND COMPRESSED FILES ===
+*.zip
+*.tar
+*.gz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.tgz
+*.tbz2
+
+# === EXECUTABLES AND BINARIES ===
+*.exe
+*.dll
+*.bin
+*.out
+*.run
+*.elf
+*.img
+*.iso
+*.dmg
+*.apk
+*.app
+
+# === OBJECT AND LIBRARY FILES ===
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.class
+*.pyc
+*.pyo
+*.dex
+
+# === MEDIA FILES ===
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.ico
+*.tiff
+# Videos
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.flv
+*.wmv
+*.webm
+# Audio
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+*.m4a
+
+# === DEVELOPMENT DEPENDENCIES ===
+node_modules/
+.npm/
+.venv/
+.tox/
+__pycache__/
+*.egg-info
+target/
+*.class
+.gradle/
+.mvn/
+bin/
+pkg/
+vendor/
+.bundle/
+
+# === MINIFIED OR GENERATED FILES ===
+.min.js
+.min.css
+*.map
+*.bundle.js
+
+# === DOCUMENTATION AND OFFICE FILES ===
+*.md
+*.rst
+*.adoc
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.xls
+*.xlsx
+
+# === LOGS, TEMP, AND BACKUP FILES ===
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.old
+*.err
+*.out
+
+# === SYSTEM METADATA ===
+.DS_Store
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# === LARGE OR NOISY DIRECTORIES ===
+dist/
+public/
+static/
+docs/
+examples/
+tests/
+
+# === OPTIONAL: ADDITIONAL CUSTOM PATTERNS ===
+# Add any project-specific patterns below:
+# E.g., *.xyz for project-specific binary files

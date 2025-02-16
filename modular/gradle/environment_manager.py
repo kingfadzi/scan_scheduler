@@ -2,7 +2,7 @@ import os
 import logging
 import subprocess
 from modular.shared.base_logger import BaseLogger
-from modular.shared.config import Config
+from config.config import Config
 import re
 
 class GradleEnvironmentManager(BaseLogger):

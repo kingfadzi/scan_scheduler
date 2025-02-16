@@ -3,10 +3,10 @@ import json
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, CheckovSummary
 from modular.shared.execution_decorator import analyze_execution
-from subprocess import run, DEVNULL, TimeoutExpired, CalledProcessError
+from subprocess import run, DEVNULL, TimeoutExpired
 from modular.shared.base_logger import BaseLogger
 import logging
-from modular.shared.config import Config
+from config.config import Config
 
 class CheckovAnalyzer(BaseLogger):
 

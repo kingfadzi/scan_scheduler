@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import GoEnryAnalysis, SemgrepResult, Session
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import configparser
 
@@ -85,8 +85,11 @@ class SemgrepAnalyzer(BaseLogger):
         return [row.language for row in result] if result else []
 
     def construct_semgrep_command(self, repo_dir, languages):
+
+        config_dir = os.path.abspath(Config.SEMGREP_CONFIG_DIR)
+
         config = configparser.ConfigParser()
-        config_file = os.path.join(Config.SEMGREP_CONFIG_DIR, "config.ini")
+        config_file = os.path.join(config_dir, "config.ini")
         if not os.path.exists(config_file):
             self.logger.error(f"Configuration file not found: {config_file}")
             return None
@@ -96,7 +99,7 @@ class SemgrepAnalyzer(BaseLogger):
             lang_lower = lang.lower()
             try:
                 relative_path = config.get(lang_lower, 'path')
-                ruleset_path = os.path.join(Config.SEMGREP_CONFIG_DIR, relative_path)
+                ruleset_path = os.path.join(config_dir, relative_path)
                 if os.path.exists(ruleset_path):
                     rulesets.append(ruleset_path)
                     self.logger.info(f"Found Semgrep ruleset for language '{lang}': {ruleset_path}")

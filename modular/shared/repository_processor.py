@@ -17,7 +17,7 @@ from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
 from modular.analyzer.trivy_analysis import TrivyAnalyzer
 from modular.analyzer.checkov_analysis import CheckovAnalyzer
 from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
-from modular.shared.config import Config
+from config.config import Config
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
