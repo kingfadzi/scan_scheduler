@@ -8,9 +8,14 @@ from modular.shared.models import Dependency
 from modular.shared.base_logger import BaseLogger
 
 class JavaScriptHelper(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("JavaScriptHelper")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("JavaScriptHelper")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
+
 
     def process_repo(self, repo_dir, repo):
 

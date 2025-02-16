@@ -19,11 +19,12 @@ class DependencyAnalyzer(BaseLogger):
         else:
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
-        self.python_helper = PythonHelper()
-        self.js_helper = JavaScriptHelper()
-        self.go_helper = GoHelper()
-        self.maven_helper = MavenHelper()
-        self.gradle_helper = GradleHelper()
+
+        self.python_helper = PythonHelper(logger=logger)
+        self.js_helper = JavaScriptHelper(logger=logger)
+        self.go_helper = GoHelper(logger=logger)
+        self.maven_helper = MavenHelper(logger=logger)
+        self.gradle_helper = GradleHelper(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -44,6 +45,7 @@ class DependencyAnalyzer(BaseLogger):
         try:
             if "Python" in repo_languages:
                 self.logger.info(f"Detected Python in repo_id: {repo.repo_id}. Running Python dependency analysis.")
+
                 dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
 
             if "JavaScript" in repo_languages or "TypeScript" in repo_languages:
@@ -122,7 +124,7 @@ class DependencyAnalyzer(BaseLogger):
             return
 
         try:
-            self.logger.info(f"Upserting {len(dependencies)} dependencies to the database.")
+            self.logger.info(f"Inserting {len(dependencies)} dependencies into the database.")
 
             dep_dicts = [
                 {
@@ -135,29 +137,24 @@ class DependencyAnalyzer(BaseLogger):
             ]
 
             ins_stmt = insert(Dependency)
-
-            upsert_stmt = ins_stmt.on_conflict_do_update(
-                index_elements=['repo_id', 'name', 'version'],
-                set_={
-                    "repo_id": ins_stmt.excluded.repo_id,
-                    "name": ins_stmt.excluded.name,
-                    "version": ins_stmt.excluded.version,
-                    "package_type": ins_stmt.excluded.package_type,
-                }
+            # With on_conflict_do_nothing, any conflict based on the unique index is silently skipped.
+            upsert_stmt = ins_stmt.on_conflict_do_nothing(
+                index_elements=['repo_id', 'name', 'version']
             )
 
             session.execute(upsert_stmt, dep_dicts)
             session.commit()
-            self.logger.info("Dependency upsert successful.")
+            self.logger.info("Dependency insertion successful.")
 
         except Exception as e:
             session.rollback()
-            self.logger.error(f"Failed to upsert dependencies: {e}")
+            self.logger.error(f"Failed to insert dependencies: {e}")
             raise
 
+
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "spring-boot"
+    repo_slug = "vulpy"
+    repo_id = "vulnerable-apps/vulpy"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
@@ -167,7 +164,8 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/Users/fadzi/tools/{repo.repo_slug}"
+    #repo_dir = f"/Users/fadzi/tools/{repo.repo_slug}"
+    repo_dir = "/Users/fadzi/tools/python_projects/vulpy"
     session = Session()
 
     try:

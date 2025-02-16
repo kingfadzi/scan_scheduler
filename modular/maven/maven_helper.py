@@ -7,9 +7,12 @@ from modular.shared.base_logger import BaseLogger
 from modular.shared.models import Dependency  # Assuming Dependency model is similar to other helpers
 
 class MavenHelper(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("MavenHelper")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir, repo):
         """Processes a Maven repository and returns a list of dependencies with repo_id."""

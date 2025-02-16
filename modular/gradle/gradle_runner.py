@@ -8,8 +8,13 @@ from modular.gradle.environment_manager import GradleEnvironmentManager
 import traceback
 
 class GradleRunner(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("GradleRunner")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GradleRunner")
+        else:
+            self.logger = logger
+
         self.logger.setLevel(logging.DEBUG)
         self.environment_manager = GradleEnvironmentManager()
 

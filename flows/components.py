@@ -9,11 +9,12 @@ from modular.shared.models import Session
 from modular.shared.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow,
-    generate_flow_run_name
+    generate_repo_flow_run_name,
+    generate_main_flow_run_name
 )
 
 
-@flow(name="Component Patterns Main Flow")
+@flow(name="Component Patterns Main Flow", flow_run_name=generate_main_flow_run_name)
 async def component_patterns_flow(payload: dict):
     await generic_main_flow(
         payload=payload,
@@ -24,7 +25,7 @@ async def component_patterns_flow(payload: dict):
     )
 
 
-@flow(flow_run_name=generate_flow_run_name)
+@flow(flow_run_name=generate_repo_flow_run_name)
 def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [

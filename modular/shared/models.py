@@ -316,10 +316,12 @@ class Dependency(Base):
     __tablename__ = 'dependencies'
 
     id = Column(Integer, primary_key=True)
-    repo_id = Column(String)
+    repo_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
     package_type = Column(String, nullable=False)
 
-    __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),
+    )
 

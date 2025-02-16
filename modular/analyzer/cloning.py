@@ -23,13 +23,15 @@ class CloningAnalyzer(BaseLogger):
     def clone_repository(self, repo, timeout_seconds=300, run_id=None, sub_dir=None):
         self.logger.info(f"Starting cloning for repo: {repo.repo_id}")
 
-        base_dir = Config.CLONED_REPOSITORIES_DIR
+        base_dir = os.path.abspath(Config.CLONED_REPOSITORIES_DIR)
+
+        repo_dir = os.path.join(base_dir, repo.repo_slug)
+
         if sub_dir:
             repo_dir = os.path.join(base_dir, sub_dir, repo.repo_slug)
-        else:
-            repo_dir = os.path.join(base_dir, repo.repo_slug)
 
         os.makedirs(os.path.dirname(repo_dir), exist_ok=True)
+
 
         clone_url = self.ensure_ssh_url(repo)
         repo.clone_url_ssh = clone_url

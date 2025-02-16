@@ -6,8 +6,13 @@ from modular.shared.config import Config
 import re
 
 class GradleEnvironmentManager(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("GradleEnvironmentManager")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GradleEnvironmentManager")
+        else:
+            self.logger = logger
+
         self.logger.setLevel(logging.DEBUG)
         self.available_gradle_versions = {
             4: "4.10.3",

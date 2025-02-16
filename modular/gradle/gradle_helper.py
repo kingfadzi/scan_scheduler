@@ -9,13 +9,18 @@ from modular.gradle.gradle_runner import GradleRunner
 from modular.shared.models import Dependency  # Assuming Dependency model is similar to PythonHelper
 
 class GradleHelper(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("GradleHelper")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GradleHelper")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-        self.environment_manager = GradleEnvironmentManager()
+        self.environment_manager = GradleEnvironmentManager(logger=logger)
         self.snippet_builder = GradleSnippetBuilder()
-        self.runner = GradleRunner()
+        self.runner = GradleRunner(logger=logger)
+
 
     def process_repo(self, repo_dir, repo):
 

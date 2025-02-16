@@ -51,11 +51,21 @@ def refresh_views_task(flow_prefix: str) -> None:
     logger.info(f"[{flow_prefix}] Views refreshed")
 
 
-def generate_flow_run_name():
+def generate_repo_flow_run_name():
     run_ctx = get_run_context()
     flow_name = run_ctx.flow_run.name
     repo_slug = run_ctx.flow_run.parameters.get("repo_slug")
     return f"{repo_slug}"
+
+
+def generate_main_flow_run_name():
+    run_ctx = get_run_context()
+    flow_name = run_ctx.flow_run.name
+    start_time = run_ctx.flow_run.expected_start_time
+    formatted_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # return f"{flow_name}_{formatted_time}"
+    return f"{formatted_time}"
 
 
 async def generic_main_flow(
