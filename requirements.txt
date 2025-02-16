@@ -18,3 +18,4 @@ pydantic
 prefect-github
 pipreqs
 pip-tools
+checkov
