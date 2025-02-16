@@ -16,7 +16,7 @@ from modular.shared.tasks import clone_repository_task, cleanup_repo_task, updat
 from datetime import datetime
 
 @flow(name="fundamental_metrics_flow")
-async def orchestrate_flow(payload: dict):
+async def fundamental_metrics_flow(payload: dict):
     logger = get_run_logger()
     logger.info("Starting ... orchestrate_flow")
     logger.info("Starting ... create_batches")
@@ -30,15 +30,15 @@ async def orchestrate_flow(payload: dict):
     run_id = str(run_id) if run_id else None
 
     # Process repositories concurrently in separate threads
-    tasks = [asyncio.to_thread(process_repo, repo, run_id) for repo in all_repos]
+    tasks = [asyncio.to_thread(fundamental_metrics_repo_processing_flow, repo, run_id) for repo in all_repos]
     await asyncio.gather(*tasks)
 
     logger.info("All repositories processed. Executing SQL script: refresh_views.sql")
     execute_sql_script_task("refresh_views.sql")
     logger.info("Finished ... orchestrate_flow")
 
-@flow(name="fundamental_metrics_chunk_processing_flow")
-def process_repo(repo, run_id):
+@flow(name="fundamental_metrics_repo_processing_flow")
+def fundamental_metrics_repo_processing_flow(repo, run_id):
     logger_flow = get_run_logger()
     with Session() as session:
         attached_repo = session.merge(repo)
@@ -130,4 +130,4 @@ if __name__ == "__main__":
     example_payload = {
         'host_name': ['github.com'],
     }
-    asyncio.run(orchestrate_flow(payload=example_payload))
+    asyncio.run(fundamental_metrics_flow(payload=example_payload))

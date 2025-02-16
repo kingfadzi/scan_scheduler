@@ -9,7 +9,6 @@ git_storage = GitRepository(
 DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
-    ("flows/orchestrator.py:main_orchestrator", "main-orchestrator", "orchestrator-pool"),
     ("flows/fundamentals.py:fundamental_metrics_flow", "fundamentals", "fundamentals-pool"),
     ("flows/analysis.py:analyze_vulnerabilities", "vulnerabilities", "vulnerabilities-pool"),
     ("flows/analysis.py:analyze_standards", "standards-compliance", "standards-pool"),
