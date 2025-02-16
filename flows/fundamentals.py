@@ -15,7 +15,7 @@ from modular.shared.utils import create_batches, execute_sql_script
 from modular.shared.tasks import clone_repository_task, cleanup_repo_task, update_status_task
 from datetime import datetime
 
-@flow(name="orchestrate_flow")
+@flow(name="fundamental_metrics_flow")
 async def orchestrate_flow(payload: dict):
     logger = get_run_logger()
     logger.info("Starting ... orchestrate_flow")
@@ -37,7 +37,7 @@ async def orchestrate_flow(payload: dict):
     execute_sql_script_task("refresh_views.sql")
     logger.info("Finished ... orchestrate_flow")
 
-@flow(name="orchestrate_processing_flow")
+@flow(name="fundamental_metrics_chunk_processing_flow")
 def process_repo(repo, run_id):
     logger_flow = get_run_logger()
     with Session() as session:
