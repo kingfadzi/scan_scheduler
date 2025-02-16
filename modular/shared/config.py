@@ -44,6 +44,6 @@ class Config:
     TRUSTSTORE_PATH = os.getenv("TRUSTSTORE_PATH", "")
     TRUSTSTORE_PASSWORD = os.getenv("TRUSTSTORE_PASSWORD", "")
 
-    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "/home/airflow/airflow/dags/sql")
+    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "./sql")
 
     DEFAULT_PROCESS_TIMEOUT = int(os.getenv("DEFAULT_PROCESS_TIMEOUT", 60))

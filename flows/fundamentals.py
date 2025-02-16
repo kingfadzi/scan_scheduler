@@ -11,7 +11,7 @@ from modular.analyzer.lizard_analysis import LizardAnalyzer
 from modular.analyzer.cloc_analysis import ClocAnalyzer
 
 from modular.shared.models import Session, Repository
-from modular.shared.utils import create_batches, execute_sql_script
+from modular.shared.utils import create_batches, refresh_views
 from modular.shared.tasks import clone_repository_task, cleanup_repo_task, update_status_task
 from datetime import datetime
 
@@ -33,8 +33,8 @@ async def fundamental_metrics_flow(payload: dict):
     tasks = [asyncio.to_thread(fundamental_metrics_repo_processing_flow, repo, run_id) for repo in all_repos]
     await asyncio.gather(*tasks)
 
-    logger.info("All repositories processed. Executing SQL script: refresh_views.sql")
-    execute_sql_script_task("refresh_views.sql")
+    logger.info("All repositories processed.Refreshing views")
+    refresh_views()
     logger.info("Finished ... orchestrate_flow")
 
 @flow(name="fundamental_metrics_repo_processing_flow")
@@ -120,10 +120,6 @@ def run_gitlog_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"Completed GitLog analysis for repository {repo.repo_name}")
-
-@task(cache_policy=NO_CACHE)
-def execute_sql_script_task(script_name: str):
-    execute_sql_script(script_name)
 
 if __name__ == "__main__":
     import asyncio

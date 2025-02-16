@@ -39,21 +39,26 @@ def create_batches(payload, batch_size=1000, num_partitions=5):
     # Distribute repositories into num_partitions batches (using round-robin distribution)
     return [all_repos[i::num_partitions] for i in range(num_partitions)]
 
-def execute_sql_script(script_file_path):
+def refresh_views():
+
+    views_to_refresh = [
+        "combined_repo_metrics",
+        "combined_repo_violations",
+        "combined_repo_metrics_api",
+        "app_component_repo_mapping",
+    ]
 
     session = Session()
     try:
-        sql_script_file_path = os.path.join(Config.SQL_SCRIPTS_DIR, script_file_path)
-        with open(sql_script_file_path, "r") as file:
-            sql_script = file.read()
+        for view in views_to_refresh:
+            logger.info(f"Refreshing materialized view: {view}")
+            session.execute(text(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {view}"))
 
-        logger.info(f"Executing SQL script from {sql_script_file_path}.")
-        session.execute(sql_script)
         session.commit()
-        logger.info("SQL script executed successfully.")
+        logger.info("All materialized views refreshed successfully.")
     except Exception as e:
-        logger.error(f"Error executing SQL script: {e}")
         session.rollback()
+        logger.error(f"Error refreshing materialized views: {e}")
     finally:
         session.close()
 
