@@ -26,7 +26,6 @@ GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 GO_URL="https://go.dev/dl/${GO_TARBALL}"
 PREFECT_API_URL="http://192.168.1.188:4200/api"
 RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
-SSH_KEY=".ssh/id_ed25519"
 
 # Check for Fedora, AlmaLinux, CentOS, or RHEL
 if ! grep -E -q 'Fedora|AlmaLinux|CentOS|Red Hat Enterprise Linux' /etc/os-release; then
@@ -203,22 +202,30 @@ rm /tmp/tools.tar.gz
 # --- Install Yarn ---
 npm install -g yarn
 
+# Determine the real user's home directory from SUDO_USER
 USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 echo "USER_HOME: $USER_HOME"
 
 CLONE_DIR="$USER_HOME/.kantra/custom-rulesets"
 echo "CLONE_DIR: $CLONE_DIR"
 
-# Add the SSH key from the non-root user's home to the SSH agent
+# Use the non-root user's SSH key
+SSH_KEY="$USER_HOME/.ssh/id_ed25519"
+echo "Using SSH_KEY: $SSH_KEY"
+
+# Start the SSH agent and add the SSH key
 eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
 
-# Clone the repository non-interactively using the specified SSH key
-export GIT_SSH_COMMAND="ssh -i $USER_HOME/$SSH_KEY -o IdentitiesOnly=yes"
+# Set GIT_SSH_COMMAND to use the correct key and options
+export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+
+# Remove any existing clone and clone the repository
 rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
     echo "ERROR: Failed to clone $RULESETS_GIT_URL"
     exit 1
 }
 
 echo "Repository cloned successfully to $CLONE_DIR"
+
 
 dockerecho "Setup complete! Please restart your shell if the new environment variables do not take effect."
