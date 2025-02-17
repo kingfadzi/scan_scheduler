@@ -40,12 +40,11 @@ sudo dnf update -y
 sudo dnf groupinstall -y "Development Tools"
 sudo dnf install -y \
     nodejs npm \
-    python3.11 python3.11-devel python3.11-venv \
+    python3.11 python3.11-devel \
     git wget curl unzip \
-    java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel java-21-openjdk-devel \
-    maven \
-    openssl-devel libffi-devel \
-    postgresql-devel python3-distutils
+    java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel \
+    # java-21-openjdk-devel \
+    maven openssl-devel libffi-devel postgresql-devel
 
 # ----- Install Golang 1.22.12 with Verbose Debugging -----
 echo "Installing Golang ${GO_VERSION}..."
