@@ -37,7 +37,7 @@ class TrivyAnalyzer(BaseLogger):
                     "--skip-java-db-update",
                     "--offline-scan",
                     "--format", "json",
-                    "--cache-dir", Config.TRIVY_CACHE_DIR,
+                    "--cache-dir", "/home/fadzi/.cache/trivy/db",
                     repo_dir
                 ],
                 capture_output=True,
