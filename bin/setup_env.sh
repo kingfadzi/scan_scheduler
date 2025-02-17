@@ -144,6 +144,7 @@ wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to 
 #ls -la /tmp/tools.tar.gz
 
 echo "Listing contents of the tarball:"
+rm -f /tmp/tools_tarball_contents.txt
 tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
 
 # Create a temporary directory for user-specific tools extraction
