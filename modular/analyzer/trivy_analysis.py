@@ -16,7 +16,7 @@ class TrivyAnalyzer(BaseLogger):
             self.logger = self.get_logger("TrivyAnalyzer")
         else:
             self.logger = logger
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
