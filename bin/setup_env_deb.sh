@@ -46,13 +46,6 @@ sudo update-alternatives --set python3 /usr/bin/python3.11
 # Install latest pip for Python 3.11
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
-# Install Python packages
-python3.11 -m pip install --no-cache-dir --upgrade pip setuptools wheel
-python3.11 -m pip install --no-cache-dir \
-    psycopg2-binary gitpython==3.1.43 python-gitlab==5.3.0 \
-    requests==2.32.3 pandas==2.2.3 pytz==2024.2 PyYAML==6.0.2 \
-    numpy lizard==1.17.13 semgrep python-dotenv redis checkov \
-    pipreqs pip-tools sqlalchemy "prefect==$PREFECT_VERSION"
 
 # Java configuration
 sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java 1080
