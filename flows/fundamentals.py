@@ -16,6 +16,7 @@ from modular.shared.tasks import (
     generate_main_flow_run_name
 )
 
+
 @flow(name="Fundamental Metrics Main Flow", flow_run_name=generate_main_flow_run_name)
 async def fundamental_metrics_flow(payload: dict):
     await generic_main_flow(
@@ -26,6 +27,7 @@ async def fundamental_metrics_flow(payload: dict):
         num_partitions=10,
     )
 
+
 @flow(flow_run_name=generate_repo_flow_run_name)
 def fundamental_metrics_repo_processing_flow(repo, repo_slug, run_id):
     sub_tasks = [
@@ -34,7 +36,7 @@ def fundamental_metrics_repo_processing_flow(repo, repo_slug, run_id):
         run_goenry_task,
         run_gitlog_task
     ]
-    
+
     generic_single_repo_processing_flow(
         repo=repo,
         run_id=run_id,
@@ -42,6 +44,7 @@ def fundamental_metrics_repo_processing_flow(repo, repo_slug, run_id):
         sub_dir="analyze_fundamentals",
         flow_prefix="Fundamental Metrics"
     )
+
 
 @task(name="Run Lizard Analysis Task", cache_policy=NO_CACHE)
 def run_lizard_task(repo_dir, repo, session, run_id):
@@ -56,6 +59,7 @@ def run_lizard_task(repo_dir, repo, session, run_id):
     )
     logger.info(f"[Fundamental Metrics] Completed Lizard analysis for repository: {repo.repo_id}")
 
+
 @task(name="Run CLOC Analysis Task", cache_policy=NO_CACHE)
 def run_cloc_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
@@ -68,6 +72,7 @@ def run_cloc_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"[Fundamental Metrics] Completed CLOC analysis for repository: {repo.repo_id}")
+
 
 @task(name="Run GoEnry Analysis Task", cache_policy=NO_CACHE)
 def run_goenry_task(repo_dir, repo, session, run_id):
@@ -82,6 +87,7 @@ def run_goenry_task(repo_dir, repo, session, run_id):
     )
     logger.info(f"[Fundamental Metrics] Completed GoEnry analysis for repository: {repo.repo_id}")
 
+
 @task(name="Run GitLog Analysis Task", cache_policy=NO_CACHE)
 def run_gitlog_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
@@ -94,6 +100,7 @@ def run_gitlog_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"[Fundamental Metrics] Completed GitLog analysis for repository: {repo.repo_id}")
+
 
 if __name__ == "__main__":
     example_payload = {
