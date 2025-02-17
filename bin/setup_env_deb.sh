@@ -13,6 +13,7 @@ GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 GO_URL="https://go.dev/dl/${GO_TARBALL}"
 PREFECT_API_URL="http://192.168.1.188:4200/api"
 RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
+SSH_KEY="$HOME/.ssh/id_ed25519"
 
 # Check for Ubuntu
 if ! grep -q 'Ubuntu' /etc/os-release; then
@@ -194,11 +195,16 @@ rm /tmp/tools.tar.gz
 # Install Yarn
 sudo npm install -g yarn
 
-rm -rf $PREFECT_HOME/.kantra/custom-rulesets
-if ! git clone "$RULESETS_GIT_URL" $PREFECT_HOME/.kantra/custom-rulesets; then
-    echo "ERROR: Failed cloning rulesets from $RULESETS_GIT_URL"
-    exit 1
-fi
+CLONE_DIR="$HOME/.kantra/custom-rulesets"
+
+# Add SSH key to SSH agent without modifying permissions
+eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
+
+# Clone the repository non-interactively using the specified SSH key
+export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes"
+rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || { echo "ERROR: Failed to clone $RULESETS_GIT_URL"; exit 1; }
+
+echo "Repository cloned successfully to $CLONE_DIR"
 
 # Source the updated bashrc so environment variables are set for the current shell
 source ~/.bashrc
