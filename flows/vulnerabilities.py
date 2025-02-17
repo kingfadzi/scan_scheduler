@@ -12,25 +12,27 @@ from modular.shared.tasks import (
     generate_main_flow_run_name
 )
 
+
 @flow(name="Vulnerabilities Main Flow", flow_run_name=generate_main_flow_run_name)
 async def vulnerabilities_flow(payload: dict):
-    """Main flow for vulnerability analysis of repositories."""
+
     await generic_main_flow(
         payload=payload,
         single_repo_processing_flow=vulnerabilities_repo_processing_flow,
         flow_prefix="Vulnerabilities",
         batch_size=1000,
-        num_partitions=10,
+        num_partitions=5,
     )
+
 
 @flow(flow_run_name=generate_repo_flow_run_name)
 def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
-    """Processing flow for individual repository vulnerability analysis."""
+
     sub_tasks = [
         run_trivy_analysis_task,
         run_syft_grype_analysis_task
     ]
-    
+
     generic_single_repo_processing_flow(
         repo=repo,
         run_id=run_id,
@@ -39,12 +41,13 @@ def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
         flow_prefix="Vulnerabilities"
     )
 
+
 @task(name="Run Trivy Analysis Task", cache_policy=NO_CACHE)
 def run_trivy_analysis_task(repo_dir, repo, session, run_id):
-    """Task for running Trivy vulnerability scanning."""
+
     logger = get_run_logger()
     logger.info(f"[Vulnerabilities] Starting Trivy analysis for repository: {repo.repo_id}")
-    
+
     analyzer = TrivyAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
@@ -52,15 +55,16 @@ def run_trivy_analysis_task(repo_dir, repo, session, run_id):
         session=session,
         run_id=run_id
     )
-    
+
     logger.info(f"[Vulnerabilities] Completed Trivy analysis for repository: {repo.repo_id}")
+
 
 @task(name="Run Syft+Grype Analysis Task", cache_policy=NO_CACHE)
 def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
-    """Task for running Syft/Grype vulnerability analysis."""
+
     logger = get_run_logger()
     logger.info(f"[Vulnerabilities] Starting Syft+Grype analysis for repository: {repo.repo_id}")
-    
+
     analyzer = SyftAndGrypeAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
@@ -68,8 +72,9 @@ def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
         session=session,
         run_id=run_id
     )
-    
+
     logger.info(f"[Vulnerabilities] Completed Syft+Grype analysis for repository: {repo.repo_id}")
+
 
 if __name__ == "__main__":
     example_payload = {

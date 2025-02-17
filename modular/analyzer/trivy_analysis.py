@@ -34,7 +34,8 @@ class TrivyAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                #timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                timeout=300
             )
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
         except subprocess.TimeoutExpired as e:

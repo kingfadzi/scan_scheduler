@@ -34,7 +34,8 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                #timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                timeout=300
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
 
