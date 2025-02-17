@@ -29,6 +29,10 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
+
+            env = os.environ.copy()
+            env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
+
             result = subprocess.run(
                 [
                     "trivy",
@@ -37,7 +41,6 @@ class TrivyAnalyzer(BaseLogger):
                     "--skip-java-db-update",
                     "--offline-scan",
                     "--format", "json",
-                    "--cache-dir", "/home/fadzi/.cache/trivy/db",
                     repo_dir
                 ],
                 capture_output=True,
