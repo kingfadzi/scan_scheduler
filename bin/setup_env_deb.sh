@@ -91,6 +91,7 @@ export JAVA_HOME="$JAVA_17_HOME"
 export GRADLE_HOME="/opt/gradle/gradle-8.12"
 export PATH="/usr/local/go/bin:$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
 export PREFECT_HOME="$HOME"
+export PREFECT_API_URL="http://192.168.1.188:4200/api"
 export PYTHONIOENCODING=utf-8
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
