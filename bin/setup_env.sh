@@ -20,9 +20,9 @@ if ! grep -E -q 'Fedora|AlmaLinux|CentOS|Red Hat Enterprise Linux' /etc/os-relea
     exit 1
 fi
 
-# Ensure system default Python remains the distro default (likely Python 3.11)
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 10
-sudo update-alternatives --set python3 /usr/bin/python3.11
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 10
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 20
+sudo update-alternatives --set python3 /usr/bin/python3.10
 
 # Configure pip
 mkdir -p ~/.pip
