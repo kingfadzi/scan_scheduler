@@ -128,23 +128,53 @@ ls -la /tmp/tools.tar.gz
 echo "Listing contents of the tarball:"
 tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
 
-# Extract user-specific tools.
-# We expect the tarball to contain paths like "./home/prefect/..."
-# Strip the first two components so that the contents of home/prefect are placed directly into $HOME.
-echo "Extracting user-specific tools to $HOME..."
-tar -xzvf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 "./home/prefect"
+# Create a temporary directory for user-specific tools extraction
+TEMP_USER_EXTRACT="/tmp/tools_extracted_user"
+rm -rf "$TEMP_USER_EXTRACT"
+mkdir -p "$TEMP_USER_EXTRACT"
 
-echo "Listing contents of $HOME after user tools extraction:"
+echo "Extracting tools tarball to temporary directory $TEMP_USER_EXTRACT..."
+tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
+
+# Now, copy the hidden directories from the extracted path to $HOME.
+# We expect the extracted tarball to have a structure like:
+#   $TEMP_USER_EXTRACT/home/prefect/.semgrep
+#   $TEMP_USER_EXTRACT/home/prefect/.trivy
+# etc.
+if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
+    echo "Copying hidden user-specific directories from $TEMP_USER_EXTRACT/home/prefect to $HOME..."
+    cp -a "$TEMP_USER_EXTRACT/home/prefect/." "$HOME"
+else
+    echo "Error: Expected directory $TEMP_USER_EXTRACT/home/prefect not found in extracted tarball."
+    exit 1
+fi
+
+echo "Listing contents of $HOME after copying user tools:"
 ls -la "$HOME"
 
-# Extract system tools.
-# We expect the tarball to contain a "./usr" directory.
-# Strip the leading "./" so that its contents go to /.
-echo "Extracting system tools to /usr..."
-sudo tar -xzvf /tmp/tools.tar.gz -C / --strip-components=1 "./usr"
+# Remove the temporary extraction directory for user tools
+rm -rf "$TEMP_USER_EXTRACT"
 
-echo "Listing contents of /usr after system tools extraction:"
-sudo ls -la /usr
+# Create a temporary directory for system tools extraction
+TEMP_SYS_EXTRACT="/tmp/tools_extracted_sys"
+rm -rf "$TEMP_SYS_EXTRACT"
+mkdir -p "$TEMP_SYS_EXTRACT"
+
+echo "Extracting system tools to temporary directory $TEMP_SYS_EXTRACT..."
+tar -xzvf /tmp/tools.tar.gz -C "$TEMP_SYS_EXTRACT"
+
+if [ -d "$TEMP_SYS_EXTRACT/usr" ]; then
+    echo "Copying system tools from $TEMP_SYS_EXTRACT/usr to /..."
+    sudo cp -a "$TEMP_SYS_EXTRACT/usr/." "/"
+else
+    echo "Error: Expected directory $TEMP_SYS_EXTRACT/usr not found in extracted tarball."
+    exit 1
+fi
+
+echo "Listing contents of / after copying system tools:"
+sudo ls -la /
+
+rm -rf "$TEMP_SYS_EXTRACT"
 
 echo "Setting execute permissions on /usr/local/bin..."
 sudo chmod -R +x /usr/local/bin
