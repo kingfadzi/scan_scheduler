@@ -194,15 +194,22 @@ rm /tmp/tools.tar.gz
 # Install Yarn
 sudo npm install -g yarn
 
-# Determine the real user's home directory from SUDO_USER
-USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+# Determine the real user's home directory
+if [ -n "$SUDO_USER" ]; then
+    # If the script is run with sudo, use the SUDO_USER's home directory
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    # If the script is not run with sudo, use the current user's home directory
+    USER_HOME="$HOME"
+fi
+
 echo "USER_HOME: $USER_HOME"
 
+# Set the clone directory and SSH key path
 CLONE_DIR="$USER_HOME/.kantra/custom-rulesets"
-echo "CLONE_DIR: $CLONE_DIR"
-
-# Use the non-root user's SSH key
 SSH_KEY="$USER_HOME/.ssh/id_ed25519"
+
+echo "CLONE_DIR: $CLONE_DIR"
 echo "Using SSH_KEY: $SSH_KEY"
 
 # Start the SSH agent and add the SSH key
@@ -221,4 +228,3 @@ rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
 source ~/.bashrc
 echo "Environment variables have been updated from ~/.bashrc"
 echo "Setup complete! Please restart your shell if the new environment variables do not take effect."
-
