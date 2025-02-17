@@ -1,16 +1,17 @@
 #!/bin/bash
 set -ex  # Print each command for debugging
 
-# This script must be run as your normal (non-root) user.
+# Ensure this script is run as a non-root user.
 if [ "$EUID" -eq 0 ]; then
     echo "Error: Please run this script as a non-root user."
     exit 1
 fi
 
 # --- Environment Variables ---
-# Set PREFECT_HOME to the user's home directory.
 export PREFECT_HOME="$HOME"
 export PREFECT_VERSION="3.2.1"
+DEFAULT_GRADLE_VERSION="8.12"
+export PREFECT_API_URL="http://192.168.1.188:4200/api"
 RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
 TOOLS_URL="http://192.168.1.188/tools.tar.gz"
 
@@ -32,10 +33,20 @@ chmod 755 "$HOME/.m2" 2>/dev/null || echo "Warning: Could not change permissions
 chmod 755 "$HOME/.gradle" 2>/dev/null || echo "Warning: Could not change permissions on .gradle (possibly a mounted volume)."
 
 # --- Write Environment Variables to File ---
-cat <<EOF > "$HOME/.env_variables"
-export PREFECT_HOME="$HOME"
-export PREFECT_VERSION="$PREFECT_VERSION"
-export PATH="/usr/local/go/bin:\$PATH"
+cat << EOF > "$PREFECT_HOME/.env_variables"
+export JAVA_8_HOME="/usr/lib/jvm/java-1.8.0-openjdk"
+export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk"
+export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk"
+export JAVA_21_HOME="/usr/lib/jvm/java-21-openjdk"
+export JAVA_HOME="\$JAVA_17_HOME"
+export GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
+export PATH="/usr/local/go/bin:\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
+export PREFECT_HOME="$PREFECT_HOME"
+export PREFECT_API_URL="$PREFECT_API_URL"
+export PYTHONIOENCODING=utf-8
+export RULESETS_GIT_URL=$RULESETS_GIT_URL
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 EOF
 
 # --- Download & Extract User Tools from Tarball ---
@@ -64,7 +75,7 @@ echo "User home after copying tools:"
 ls -la "$HOME"
 
 rm -rf "$TEMP_USER_EXTRACT"
-# Optionally remove the tarball if no longer needed:
+# Optionally remove the tarball:
 # rm /tmp/tools.tar.gz
 
 # --- Clone the Repository (User Action) ---
@@ -74,6 +85,7 @@ SSH_KEY="$HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then
     echo "Warning: SSH key $SSH_KEY not found. Cloning might fail."
 fi
+
 GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes" \
 git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || { echo "ERROR: Failed to clone repository."; exit 1; }
 echo "Repository cloned successfully to ${CLONE_DIR}"
