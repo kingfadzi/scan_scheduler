@@ -43,8 +43,8 @@ sudo dnf install -y \
     python3.11 python3.11-devel \
     git wget curl unzip \
     java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel \
-    # java-21-openjdk-devel \
     maven openssl-devel libffi-devel postgresql-devel
+    # jdk 21 not available in fedora 36
 
 # ----- Install Golang 1.22.12 with Verbose Debugging -----
 echo "Installing Golang ${GO_VERSION}..."
