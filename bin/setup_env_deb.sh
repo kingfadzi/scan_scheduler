@@ -195,25 +195,16 @@ rm /tmp/tools.tar.gz
 # Install Yarn
 sudo npm install -g yarn
 
-# Determine the real user's home and set variables
-USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-CLONE_DIR="$USER_HOME/.kantra/custom-rulesets"
-RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
-SSH_KEY="$HOME/.ssh/id_ed25519"
+CLONE_DIR="$HOME/.kantra/custom-rulesets"
 
-sudo -u "$SUDO_USER" bash -c "
-    echo 'Running as: ' \$(whoami)
-    echo 'Starting ssh-agent...'
-    eval \"\$(ssh-agent -s)\"
-    echo 'Adding SSH key...'
-    ssh-add \"$SSH_KEY\"
-    echo 'Removing existing clone directory...'
-    rm -rf \"$CLONE_DIR\"
-    echo 'Cloning repository...'
-    export GIT_SSH_COMMAND=\"ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes\"
-    git clone \"$RULESETS_GIT_URL\" \"$CLONE_DIR\" || { echo 'ERROR: Failed cloning rulesets from $RULESETS_GIT_URL'; exit 1; }
-    echo 'Repository cloned successfully to $CLONE_DIR'
-"
+# Add SSH key to SSH agent without modifying permissions
+eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
+
+# Clone the repository non-interactively using the specified SSH key
+export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes"
+rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || { echo "ERROR: Failed to clone $RULESETS_GIT_URL"; exit 1; }
+
+echo "Repository cloned successfully to $CLONE_DIR"
 
 # Source the updated bashrc so environment variables are set for the current shell
 source ~/.bashrc
