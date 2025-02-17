@@ -26,7 +26,7 @@ GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 GO_URL="https://go.dev/dl/${GO_TARBALL}"
 PREFECT_API_URL="http://192.168.1.188:4200/api"
 RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
-SSH_KEY="$HOME/.ssh/id_ed25519"
+SSH_KEY=".ssh/id_ed25519"
 
 # Check for Fedora, AlmaLinux, CentOS, or RHEL
 if ! grep -E -q 'Fedora|AlmaLinux|CentOS|Red Hat Enterprise Linux' /etc/os-release; then
@@ -213,7 +213,7 @@ echo "CLONE_DIR: $CLONE_DIR"
 eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
 
 # Clone the repository non-interactively using the specified SSH key
-export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes"
+export GIT_SSH_COMMAND="ssh -i $USER_HOME/$SSH_KEY -o IdentitiesOnly=yes"
 rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
     echo "ERROR: Failed to clone $RULESETS_GIT_URL"
     exit 1
