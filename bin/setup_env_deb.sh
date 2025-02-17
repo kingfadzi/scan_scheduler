@@ -84,7 +84,7 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openj
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 # Append environment variables to ~/.bashrc
-# The PATH now includes /usr/local/go/bin for Go 1.22.12.
+# PATH now includes /usr/local/go/bin for Go 1.22.12.
 cat << 'EOF' >> ~/.bashrc
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
@@ -112,7 +112,12 @@ done
 # Setup directories in user's home
 mkdir -p "$PREFECT_HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.kantra,.semgrep,.trivy,.syft}
 chmod 700 "$PREFECT_HOME/.ssh"
-chmod 755 "$PREFECT_HOME/.m2" "$PREFECT_HOME/.gradle"
+if ! chmod 755 "$PREFECT_HOME/.m2"; then
+    echo "Warning: Could not change permissions on $PREFECT_HOME/.m2 (possibly a mounted volume). Skipping."
+fi
+if ! chmod 755 "$PREFECT_HOME/.gradle"; then
+    echo "Warning: Could not change permissions on $PREFECT_HOME/.gradle (possibly a mounted volume). Skipping."
+fi
 
 # ----- Handle Tools Tarball with Verbose Debugging -----
 echo "Starting tools tarball handling with verbose debugging."
