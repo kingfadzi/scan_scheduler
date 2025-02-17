@@ -43,7 +43,7 @@ class TrivyAnalyzer(BaseLogger):
                 ],
                 capture_output=True,
                 text=True,
-                check=True,
+                check=False,
                 timeout=300
             )
 
