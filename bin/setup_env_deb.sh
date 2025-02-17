@@ -221,3 +221,4 @@ rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
 source ~/.bashrc
 echo "Environment variables have been updated from ~/.bashrc"
 echo "Setup complete! Please restart your shell if the new environment variables do not take effect."
+
