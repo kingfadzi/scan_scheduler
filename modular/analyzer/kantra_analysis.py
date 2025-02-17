@@ -26,7 +26,6 @@ class KantraAnalyzer(BaseLogger):
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting Kantra analysis for repo_id: {repo.repo_id} ({repo.repo_slug}).")
 
-        # Resolve KANTRA_RULESETS to an absolute path
         kantra_rulesets = os.path.abspath(Config.KANTRA_RULESETS)
 
         if not os.path.exists(repo_dir):

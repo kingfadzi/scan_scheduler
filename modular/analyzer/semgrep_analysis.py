@@ -87,7 +87,7 @@ class SemgrepAnalyzer(BaseLogger):
     def construct_semgrep_command(self, repo_dir, languages):
 
         config_dir = os.path.abspath(Config.SEMGREP_CONFIG_DIR)
-        ruleset_dir = os.path.abspath(Config.SEMGREP_RULESET_DIR)
+        ruleset_dir = os.path.abspath(Config.SEMGREP_RULESETS)
 
         config = configparser.ConfigParser()
         config_file = os.path.join(config_dir, "config.ini")

@@ -63,7 +63,6 @@ class CheckovAnalyzer(BaseLogger):
             raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
         return results_file
 
-
     def _process_checkov_results(self, repo, session, results_file):
         try:
             self.parse_and_process_checkov_output(repo.repo_id, results_file, session)
@@ -78,11 +77,10 @@ class CheckovAnalyzer(BaseLogger):
             self.logger.error(msg)
             raise RuntimeError(msg) from e
 
-
     def parse_and_process_checkov_output(self, repo_id, checkov_output_path, session):
 
         def process_summary(check_type, summary):
-            """Helper function to save summary data."""
+
             self.save_checkov_results(
                 session,
                 repo_id,
@@ -173,17 +171,14 @@ if __name__ == "__main__":
             self.repo_id = repo_id
             self.repo_slug = repo_slug
 
-    # Create a mock repo object
     repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
 
-    # Initialize a database session
     session = Session()
 
     analyzer = CheckovAnalyzer()
 
     try:
         analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo.repo_id}")
-        # Explicitly pass the repo object
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
     except Exception as e:

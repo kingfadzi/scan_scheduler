@@ -12,9 +12,10 @@ from modular.shared.tasks import (
     generate_main_flow_run_name
 )
 
+
 @flow(name="Standards Assessment Main Flow", flow_run_name=generate_main_flow_run_name)
 async def standards_assessment_flow(payload: dict):
-    """Main flow for running standards assessment analysis on repositories."""
+
     await generic_main_flow(
         payload=payload,
         single_repo_processing_flow=standards_assessment_repo_processing_flow,
@@ -23,9 +24,10 @@ async def standards_assessment_flow(payload: dict):
         num_partitions=5,
     )
 
+
 @flow(flow_run_name=generate_repo_flow_run_name)
 def standards_assessment_repo_processing_flow(repo, repo_slug, run_id):
-    """Processing flow for individual repository standards assessment."""
+
     sub_tasks = [
         run_checkov_analysis_task,
         run_semgrep_analysis_task
@@ -39,9 +41,10 @@ def standards_assessment_repo_processing_flow(repo, repo_slug, run_id):
         flow_prefix="Standards Assessment"
     )
 
+
 @task(name="Run Checkov Analysis Task", cache_policy=NO_CACHE)
 def run_checkov_analysis_task(repo_dir, repo, session, run_id):
-    """Task for running Checkov security analysis."""
+
     logger = get_run_logger()
     logger.info(f"[Standards Assessment] Starting Checkov analysis for repository: {repo.repo_id}")
 
@@ -55,9 +58,10 @@ def run_checkov_analysis_task(repo_dir, repo, session, run_id):
 
     logger.info(f"[Standards Assessment] Completed Checkov analysis for repository: {repo.repo_id}")
 
+
 @task(name="Run Semgrep Analysis Task", cache_policy=NO_CACHE)
 def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
-    """Task for running Semgrep static code analysis."""
+
     logger = get_run_logger()
     logger.info(f"[Standards Assessment] Starting Semgrep analysis for repository: {repo.repo_id}")
 
@@ -70,6 +74,7 @@ def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
     )
 
     logger.info(f"[Standards Assessment] Completed Semgrep analysis for repository: {repo.repo_id}")
+
 
 if __name__ == "__main__":
     example_payload = {

@@ -11,6 +11,8 @@ TOOLS_URL="http://192.168.1.188/tools.tar.gz"
 GO_VERSION="1.22.12"
 GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 GO_URL="https://go.dev/dl/${GO_TARBALL}"
+PREFECT_API_URL="http://192.168.1.188:4200/api"
+RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
 
 # Check for Ubuntu
 if ! grep -q 'Ubuntu' /etc/os-release; then
@@ -82,7 +84,7 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openj
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 # Append environment variables to ~/.bashrc
-cat << 'EOF' >> ~/.bashrc
+cat << 'EOF' > ~/.env_variables
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
@@ -91,8 +93,9 @@ export JAVA_HOME="$JAVA_17_HOME"
 export GRADLE_HOME="/opt/gradle/gradle-8.12"
 export PATH="/usr/local/go/bin:$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
 export PREFECT_HOME="$HOME"
-export PREFECT_API_URL="http://192.168.1.188:4200/api"
+export PREFECT_API_URL="$PREFECT_API_URL"
 export PYTHONIOENCODING=utf-8
+export RULESETS_GIT_URL=$RULESETS_GIT_URL
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 EOF
@@ -186,6 +189,12 @@ rm /tmp/tools.tar.gz
 
 # Install Yarn
 sudo npm install -g yarn
+
+rm -rf $PREFECT_HOME/.kantra/custom-rulesets
+if ! git clone "$RULESETS_GIT_URL" $PREFECT_HOME/.kantra/custom-rulesets; then
+    echo "ERROR: Failed cloning rulesets from $RULESETS_GIT_URL"
+    exit 1
+fi
 
 # Source the updated bashrc so environment variables are set for the current shell
 source ~/.bashrc
