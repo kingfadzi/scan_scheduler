@@ -8,6 +8,7 @@ GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
 DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
 TOOLS_URL="http://192.168.1.188/tools.tar.gz"
+GO_VERSION="1.22"
 
 # Check for Ubuntu
 if ! grep -q 'Ubuntu' /etc/os-release; then
@@ -29,23 +30,26 @@ sudo apt-get update
 sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 
-# Install system packages
+# Install system packages including Python 3.11 and its libraries.
+# Note: "golang-go" has been removed because we install Golang manually.
 sudo apt-get install -y \
     nodejs npm \
-    golang-go \
     python3.11 python3.11-dev python3.11-venv \
     git wget curl unzip \
     openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk openjdk-21-jdk \
     maven build-essential libssl-dev libffi-dev \
     libpq-dev python3-distutils
 
-# Configure Python alternatives
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
-sudo update-alternatives --set python3 /usr/bin/python3.11
+# Install Golang 1.22 manually
+echo "Installing Golang ${GO_VERSION}..."
+GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
+wget -q "https://go.dev/dl/${GO_TARBALL}" -O /tmp/${GO_TARBALL}
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf /tmp/${GO_TARBALL}
+rm /tmp/${GO_TARBALL}
 
-# Install latest pip for Python 3.11
+# Install the latest pip for Python 3.11
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
-
 
 # Java configuration
 sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java 1080
@@ -62,7 +66,7 @@ export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 export JAVA_21_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
 export JAVA_HOME="\$JAVA_17_HOME"
 export GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
-export PATH="\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
+export PATH="/usr/local/go/bin:\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
 export PREFECT_HOME="\$HOME"  # Directly reference home directory
 export PYTHONIOENCODING=utf-8
 export LANG=C.UTF-8
