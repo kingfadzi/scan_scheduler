@@ -101,8 +101,21 @@ done
 
 # Setup directories in user's home
 mkdir -p "$PREFECT_HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.kantra,.semgrep,.trivy,.syft}
-chmod 700 "$PREFECT_HOME/.ssh"
-chmod 755 "$PREFECT_HOME/.m2" "$PREFECT_HOME/.gradle"
+
+# Skip chmod/chown if mounted as Docker volumes
+if ! mount | grep -q " $PREFECT_HOME/.m2 "; then
+    sudo chown -R "$USER:$USER" "$PREFECT_HOME/.m2" 2>/dev/null || true
+    sudo chmod 755 "$PREFECT_HOME/.m2" 2>/dev/null || true
+else
+    echo "Skipping chmod/chown for .m2 (mounted as Docker volume)"
+fi
+
+if ! mount | grep -q " $PREFECT_HOME/.gradle "; then
+    sudo chown -R "$USER:$USER" "$PREFECT_HOME/.gradle" 2>/dev/null || true
+    sudo chmod 755 "$PREFECT_HOME/.gradle" 2>/dev/null || true
+else
+    echo "Skipping chmod/chown for .gradle (mounted as Docker volume)"
+fi
 
 # Handle tools tarball
 echo "Downloading and installing tools..."
