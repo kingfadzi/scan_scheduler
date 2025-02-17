@@ -8,7 +8,9 @@ GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
 DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
 TOOLS_URL="http://192.168.1.188/tools.tar.gz"
-GO_VERSION="1.22"
+GO_VERSION="1.22.12"
+GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
+GO_URL="https://go.dev/dl/${GO_TARBALL}"
 
 # Check for Ubuntu
 if ! grep -q 'Ubuntu' /etc/os-release; then
@@ -32,7 +34,9 @@ fi
 # Update system and install prerequisites
 sudo apt-get update
 sudo apt-get install -y software-properties-common
+# Add deadsnakes PPA for Python 3.11
 sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt-get update
 
 sudo apt-get install -y \
     nodejs npm \
@@ -42,13 +46,32 @@ sudo apt-get install -y \
     maven build-essential libssl-dev libffi-dev \
     libpq-dev python3-distutils
 
-# Install Golang 1.22 manually
+# ----- Install Golang 1.22.12 with Verbose Debugging -----
 echo "Installing Golang ${GO_VERSION}..."
-GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
-wget -q "https://go.dev/dl/${GO_TARBALL}" -O /tmp/${GO_TARBALL}
+echo "Downloading Golang from ${GO_URL}..."
+# Remove any previous tarball if exists
+rm -f "/tmp/${GO_TARBALL}"
+wget --verbose --timeout=30 --tries=3 "${GO_URL}" -O "/tmp/${GO_TARBALL}" || {
+    echo "Failed to download Golang tarball from ${GO_URL}"; exit 1;
+}
+
+# Verify that the file exists and has non-zero size
+if [ ! -s "/tmp/${GO_TARBALL}" ]; then
+    echo "Downloaded Golang tarball is missing or empty."; exit 1;
+fi
+
+echo "Golang tarball downloaded successfully. File details:"
+ls -la "/tmp/${GO_TARBALL}"
+
+echo "Removing any existing Go installation from /usr/local/go..."
 sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf /tmp/${GO_TARBALL}
-rm /tmp/${GO_TARBALL}
+
+echo "Extracting Golang tarball to /usr/local..."
+sudo tar -xzvf "/tmp/${GO_TARBALL}" -C /usr/local
+
+echo "Golang installation complete."
+rm "/tmp/${GO_TARBALL}"
+# ----- End Golang Installation -----
 
 # Install pip for Python 3.11
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
@@ -61,6 +84,7 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openj
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 # Append environment variables to ~/.bashrc
+# The PATH now includes /usr/local/go/bin for Go 1.22.12.
 cat << 'EOF' >> ~/.bashrc
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
@@ -79,7 +103,7 @@ EOF
 sudo mkdir -p /opt/gradle
 for VERSION in "${GRADLE_VERSIONS[@]}"; do
     echo "Installing Gradle $VERSION..."
-    wget -q "${GRADLE_BASE_URL}gradle-${VERSION}-bin.zip" -P /tmp
+    wget --progress=dot:giga "${GRADLE_BASE_URL}gradle-${VERSION}-bin.zip" -P /tmp
     sudo unzip -qo "/tmp/gradle-${VERSION}-bin.zip" -d /opt/gradle
     sudo ln -sf "/opt/gradle/gradle-${VERSION}/bin/gradle" "/usr/local/bin/gradle-${VERSION}"
     rm "/tmp/gradle-${VERSION}-bin.zip"
