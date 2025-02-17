@@ -28,16 +28,27 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         self.logger.info(f"Generating SBOM for repo_id: {repo.repo_id} using Syft.")
+
         try:
+            command = [
+                "syft",
+                repo_dir,
+                "--output", "json",
+                "--file",
+                sbom_file_path
+            ]
+            self.logger.debug("Executing command: %s", " ".join(command))
+
             subprocess.run(
-                ["syft", repo_dir, "--output", "json", "--file", sbom_file_path],
+                command,
                 capture_output=True,
                 text=True,
                 check=True,
-                #timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 timeout=300
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
+        except subprocess.CalledProcessError as e:
+            self.logger.error("Command failed: %s", e)
 
         except subprocess.TimeoutExpired as e:
             error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
@@ -50,19 +61,31 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
         self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id}.")
-        try:
 
+        try:
             env = os.environ.copy()
             env['GRYPE_CACHE_DIR'] = Config.GRYPE_CACHE_DIR
 
+            command = [
+                "grype",
+                f"sbom:{sbom_file_path}",
+                "--output", "json",
+                "--file", grype_file_path
+            ]
+            self.logger.debug("Executing command: %s", " ".join(command))
+
             subprocess.run(
-                ["grype", f"sbom:{sbom_file_path}", "--output", "json", "--file", grype_file_path],
+                command,
+                env=env,
                 capture_output=True,
                 text=True,
                 check=True,
                 timeout=60
             )
             self.logger.debug(f"Grype results written to: {grype_file_path}")
+        except subprocess.CalledProcessError as e:
+            self.logger.error("Command failed: %s", e)
+
         except subprocess.TimeoutExpired:
             error_message = f"Grype command timed out for repo_id {repo.repo_id} after 60 seconds."
             self.logger.error(error_message)
