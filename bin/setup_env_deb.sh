@@ -152,8 +152,6 @@ if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
     echo "Copying hidden user-specific directories from $TEMP_USER_EXTRACT/home/prefect to $HOME..."
     cp -a "$TEMP_USER_EXTRACT/home/prefect/." "$HOME"
 
-    echo "Setting read and write permissions for hidden directories..."
-    find "$HOME" -type d -name ".*" -print0 | xargs -0 chmod -R u+rw,go+r
 else
     echo "Error: Expected directory $TEMP_USER_EXTRACT/home/prefect not found in extracted tarball."
     exit 1
