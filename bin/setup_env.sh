@@ -227,5 +227,3 @@ rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
 
 echo "Repository cloned successfully to $CLONE_DIR"
 
-
-dockerecho "Setup complete! Please restart your shell if the new environment variables do not take effect."
