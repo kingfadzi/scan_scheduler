@@ -204,7 +204,8 @@ npm install -g yarn
 
 # --- Clone Custom Rulesets ---
 rm -rf "$PREFECT_HOME/.kantra/custom-rulesets"
-if ! GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git clone "$RULESETS_GIT_URL" "$PREFECT_HOME/.kantra/custom-rulesets"; then
+if ! GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes" \
+   git clone "$RULESETS_GIT_URL" "$PREFECT_HOME/.kantra/custom-rulesets"; then
     echo "ERROR: Failed cloning rulesets from $RULESETS_GIT_URL"
     exit 1
 fi
