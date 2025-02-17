@@ -21,7 +21,8 @@ class Config:
     BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME", "bitbucket.org")
     GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME", "gitlab.com")
 
-    KANTRA_RULESETS = os.getenv("KANTRA_RULESETS", "../custom-rulesets")
+    KANTRA_RULESETS = os.getenv("KANTRA_RULESETS", f"{os.environ['HOME']}/.kantra/custom-custom-rulesets")
+    
     KANTRA_OUTPUT_ROOT = os.getenv("KANTRA_OUTPUT_ROOT", "./output")
 
     JAVA_HOME = os.getenv("JAVA_HOME", "/opt/homebrew/opt/openjdk")
