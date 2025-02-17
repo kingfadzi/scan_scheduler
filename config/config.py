@@ -15,6 +15,7 @@ class Config:
     CLONED_REPOSITORIES_DIR = os.getenv("CLONED_REPOSITORIES_DIR", "./cloned_repositories")
     TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./config/trivy/.trivyignore")
     SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./config/semgrep")
+    SEMGREP_RULESET_DIR = os.getenv("SEMGREP_RULESET_DIR", "./.semgrep")
 
     BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME", "bitbucket.org")
     GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME", "gitlab.com")
