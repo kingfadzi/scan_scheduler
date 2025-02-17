@@ -128,18 +128,18 @@ ls -la /tmp/tools.tar.gz
 echo "Listing contents of the tarball:"
 tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
 
-# Extract user-specific tools:
-# We expect the tarball to contain files under "./home/prefect/..."
-# Strip the first two components ("home" and "prefect") so that their contents go directly to $HOME.
+# Extract user-specific tools.
+# We expect the tarball to contain paths like "./home/prefect/..."
+# Strip the first two components so that the contents of home/prefect are placed directly into $HOME.
 echo "Extracting user-specific tools to $HOME..."
 tar -xzvf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 "./home/prefect"
 
 echo "Listing contents of $HOME after user tools extraction:"
 ls -la "$HOME"
 
-# Extract system tools:
+# Extract system tools.
 # We expect the tarball to contain a "./usr" directory.
-# Strip the leading "./" so that the contents are placed in /.
+# Strip the leading "./" so that its contents go to /.
 echo "Extracting system tools to /usr..."
 sudo tar -xzvf /tmp/tools.tar.gz -C / --strip-components=1 "./usr"
 
