@@ -195,21 +195,25 @@ rm /tmp/tools.tar.gz
 # Install Yarn
 sudo npm install -g yarn
 
-# Determine the real user's home directory from SUDO_USER
+# Determine the real user's home and set variables
 USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 CLONE_DIR="$USER_HOME/.kantra/custom-rulesets"
+RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
+SSH_KEY="$HOME/.ssh/id_ed25519"
 
-# Build the SSH command with the desired options
-SSH_CMD="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
-
-# Use sudo to switch to the real user and perform the clone:
 sudo -u "$SUDO_USER" bash -c "
-    rm -rf \"$CLONE_DIR\" &&
-    GIT_SSH_COMMAND=\"$SSH_CMD\" git clone '$RULESETS_GIT_URL' '$CLONE_DIR'
-" || {
-    echo \"ERROR: Failed to clone $RULESETS_GIT_URL\";
-    exit 1;
-}
+    echo 'Running as: ' \$(whoami)
+    echo 'Starting ssh-agent...'
+    eval \"\$(ssh-agent -s)\"
+    echo 'Adding SSH key...'
+    ssh-add \"$SSH_KEY\"
+    echo 'Removing existing clone directory...'
+    rm -rf \"$CLONE_DIR\"
+    echo 'Cloning repository...'
+    export GIT_SSH_COMMAND=\"ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes\"
+    git clone \"$RULESETS_GIT_URL\" \"$CLONE_DIR\" || { echo 'ERROR: Failed cloning rulesets from $RULESETS_GIT_URL'; exit 1; }
+    echo 'Repository cloned successfully to $CLONE_DIR'
+"
 
 # Source the updated bashrc so environment variables are set for the current shell
 source ~/.bashrc
