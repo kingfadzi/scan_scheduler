@@ -204,17 +204,9 @@ npm install -g yarn
 
 # --- Clone Custom Rulesets ---
 rm -rf "$PREFECT_HOME/.kantra/custom-rulesets"
-if ! GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes" \
-   git clone "$RULESETS_GIT_URL" "$PREFECT_HOME/.kantra/custom-rulesets"; then
+if ! GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git clone "$RULESETS_GIT_URL" "$PREFECT_HOME/.kantra/custom-rulesets"; then
     echo "ERROR: Failed cloning rulesets from $RULESETS_GIT_URL"
     exit 1
 fi
 
-# --- Finalize Environment Setup ---
-# Append sourcing of the env variables to the user's bashrc (if not already present)
-if ! grep -q "source \$HOME/.env_variables" "$PREFECT_HOME/.bashrc"; then
-    echo "source \$HOME/.env_variables" >> "$PREFECT_HOME/.bashrc"
-fi
-
-echo "Environment variables have been appended to $PREFECT_HOME/.bashrc"
-echo "Setup complete! Please restart your shell if the new environment variables do not take effect."
+dockerecho "Setup complete! Please restart your shell if the new environment variables do not take effect."
