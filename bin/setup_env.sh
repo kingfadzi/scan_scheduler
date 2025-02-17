@@ -14,9 +14,9 @@ else
     REAL_HOME="$HOME"
 fi
 
-# Set environment variables (user‑specific ones will use the original user’s home)
+# Set environment variables (user‑specific ones will use the original user's home)
 export PREFECT_VERSION="3.2.1"
-export PREFECT_HOME="$REAL_HOME"  # Use the non‑root user’s home
+export PREFECT_HOME="$REAL_HOME"  # Use the non‑root user's home
 GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
 DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
@@ -140,13 +140,6 @@ echo "Starting tools tarball handling with verbose debugging."
 echo "Downloading tools tarball from $TOOLS_URL..."
 wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to download tools"; exit 1; }
 
-#echo "Verifying downloaded file /tmp/tools.tar.gz:"
-#ls -la /tmp/tools.tar.gz
-
-#echo "Listing contents of the tarball:"
-#rm -f /tmp/tools_tarball_contents.txt
-#tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
-
 # Create a temporary directory for user-specific tools extraction
 TEMP_USER_EXTRACT="/tmp/tools_extracted_user"
 rm -rf "$TEMP_USER_EXTRACT"
@@ -213,17 +206,16 @@ echo "CLONE_DIR: $CLONE_DIR"
 SSH_KEY="$USER_HOME/.ssh/id_ed25519"
 echo "Using SSH_KEY: $SSH_KEY"
 
-# Start the SSH agent and add the SSH key
-eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
-
-# Set GIT_SSH_COMMAND to use the correct key and options
-export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
-
-# Remove any existing clone and clone the repository
-rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
+# Clone the repository using a subshell
+(
+    export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+    rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR"
+) || {
     echo "ERROR: Failed to clone $RULESETS_GIT_URL"
     exit 1
 }
 
 echo "Repository cloned successfully to $CLONE_DIR"
 
+# Restart SSH service
+systemctl restart sshd
