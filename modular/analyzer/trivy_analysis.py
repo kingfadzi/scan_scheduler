@@ -29,7 +29,6 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
-
             result = subprocess.run(
                 [
                     "trivy",
@@ -47,14 +46,16 @@ class TrivyAnalyzer(BaseLogger):
                 timeout=300
             )
 
+            if result.returncode != 0:
+                error_message = (f"Trivy command failed for repo_id {repo.repo_id}. "
+                                 f"Return code: {result.returncode}. Error: {result.stderr.strip()}")
+                self.logger.error(error_message)
+                raise RuntimeError(error_message)
+
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
+
         except subprocess.TimeoutExpired as e:
             error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
-            self.logger.error(error_message)
-            raise RuntimeError(error_message)
-        except subprocess.CalledProcessError as e:
-            error_message = (f"Trivy command failed for repo_id {repo.repo_id}. "
-                             f"Return code: {e.returncode}. Error: {e.stderr.strip()}")
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
