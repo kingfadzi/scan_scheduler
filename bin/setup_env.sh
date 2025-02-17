@@ -140,8 +140,8 @@ echo "Starting tools tarball handling with verbose debugging."
 echo "Downloading tools tarball from $TOOLS_URL..."
 wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to download tools"; exit 1; }
 
-echo "Verifying downloaded file /tmp/tools.tar.gz:"
-ls -la /tmp/tools.tar.gz
+#echo "Verifying downloaded file /tmp/tools.tar.gz:"
+#ls -la /tmp/tools.tar.gz
 
 echo "Listing contents of the tarball:"
 tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
