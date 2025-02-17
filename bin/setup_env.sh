@@ -203,15 +203,24 @@ rm /tmp/tools.tar.gz
 # --- Install Yarn ---
 npm install -g yarn
 
-CLONE_DIR="$HOME/.kantra/custom-rulesets"
+# Use the non-root user's home if running as root
+if [ -n "$SUDO_USER" ]; then
+    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+    USER_HOME="$HOME"
+fi
 
-# Add SSH key to SSH agent without modifying permissions
+CLONE_DIR="$USER_HOME/.kantra/custom-rulesets"
+
+# Add the SSH key from the non-root user's home to the SSH agent
 eval "$(ssh-agent -s)" && ssh-add "$SSH_KEY"
 
 # Clone the repository non-interactively using the specified SSH key
 export GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes"
-rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || { echo "ERROR: Failed to clone $RULESETS_GIT_URL"; exit 1; }
-
+rm -rf "$CLONE_DIR" && git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || {
+    echo "ERROR: Failed to clone $RULESETS_GIT_URL";
+    exit 1;
+}
 echo "Repository cloned successfully to $CLONE_DIR"
 
 dockerecho "Setup complete! Please restart your shell if the new environment variables do not take effect."
