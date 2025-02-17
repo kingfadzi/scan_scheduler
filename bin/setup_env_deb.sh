@@ -16,6 +16,11 @@ if ! grep -q 'Ubuntu' /etc/os-release; then
     exit 1
 fi
 
+# Ensure system default Python is the distro default (likely Python 3.10)
+# If you previously changed the default, revert it:
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 10
+sudo update-alternatives --set python3 /usr/bin/python3.10
+
 # Configure pip
 mkdir -p ~/.pip
 if [[ -n "$GLOBAL_INDEX" || -n "$GLOBAL_INDEX_URL" ]]; then
@@ -31,7 +36,7 @@ sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 
 # Install system packages including Python 3.11 and its libraries.
-# Note: "golang-go" has been removed because we install Golang manually.
+# Note: "golang-go" is removed because we'll install Golang manually.
 sudo apt-get install -y \
     nodejs npm \
     python3.11 python3.11-dev python3.11-venv \
@@ -48,7 +53,7 @@ sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf /tmp/${GO_TARBALL}
 rm /tmp/${GO_TARBALL}
 
-# Install the latest pip for Python 3.11
+# Install the latest pip for Python 3.11 (accessible as python3.11)
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
 # Java configuration
