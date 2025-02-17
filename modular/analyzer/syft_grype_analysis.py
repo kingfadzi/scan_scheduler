@@ -51,6 +51,10 @@ class SyftAndGrypeAnalyzer(BaseLogger):
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
         self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id}.")
         try:
+
+            env = os.environ.copy()
+            env['GRYPE_CACHE_DIR'] = Config.GRYPE_CACHE_DIR
+
             subprocess.run(
                 ["grype", f"sbom:{sbom_file_path}", "--output", "json", "--file", grype_file_path],
                 capture_output=True,

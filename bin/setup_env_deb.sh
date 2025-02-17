@@ -1,9 +1,9 @@
 #!/bin/bash
 set -ex  # Enable debugging (prints each command)
 
-# Configuration variables
 export PREFECT_VERSION="3.2.1"
-export PREFECT_HOME="$HOME"  # Points directly to user's home
+export PREFECT_HOME="$HOME"
+
 GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
 DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
@@ -98,6 +98,11 @@ export PYTHONIOENCODING=utf-8
 export RULESETS_GIT_URL=$RULESETS_GIT_URL
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
+export TRIVY_CACHE_DIR=$PREFECT_HOME/.cache/trivy/db
+export GRYPE_DB_CACHE_DIR=$PREFECT_HOME/.cache/grype/db
+export GRYPE_DB_AUTO_UPDATE=false
+export GRYPE_DB_VALIDATE_AGE=false
+export SYFT_CHECK_FOR_APP_UPDATE=false
 EOF
 
 # Install Gradle versions
