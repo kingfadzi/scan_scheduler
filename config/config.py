@@ -14,6 +14,7 @@ class Config:
     METRICS_DATABASE_NAME = os.getenv("METRICS_DATABASE_NAME", "gitlab-usage")
     CLONED_REPOSITORIES_DIR = os.getenv("CLONED_REPOSITORIES_DIR", "./cloned_repositories")
     TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./config/trivy/.trivyignore")
+    SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./config/semgrep")
 
     SEMGREP_RULESET_DIR = os.getenv("SEMGREP_RULESET_DIR", f"{os.environ['HOME']}/.semgrep")
 
