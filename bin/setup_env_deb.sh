@@ -49,13 +49,11 @@ sudo apt-get install -y \
 # ----- Install Golang 1.22.12 with Verbose Debugging -----
 echo "Installing Golang ${GO_VERSION}..."
 echo "Downloading Golang from ${GO_URL}..."
-# Remove any previous tarball if exists
 rm -f "/tmp/${GO_TARBALL}"
 wget --verbose --timeout=30 --tries=3 "${GO_URL}" -O "/tmp/${GO_TARBALL}" || {
     echo "Failed to download Golang tarball from ${GO_URL}"; exit 1;
 }
 
-# Verify that the file exists and has non-zero size
 if [ ! -s "/tmp/${GO_TARBALL}" ]; then
     echo "Downloaded Golang tarball is missing or empty."; exit 1;
 fi
@@ -84,7 +82,6 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openj
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 # Append environment variables to ~/.bashrc
-# PATH now includes /usr/local/go/bin for Go 1.22.12.
 cat << 'EOF' >> ~/.bashrc
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
@@ -131,14 +128,20 @@ ls -la /tmp/tools.tar.gz
 echo "Listing contents of the tarball:"
 tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
 
+# Extract user-specific tools:
+# We expect the tarball to contain files under "./home/prefect/..."
+# Strip the first two components ("home" and "prefect") so that their contents go directly to $HOME.
 echo "Extracting user-specific tools to $HOME..."
-tar -xzvf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 home/prefect
+tar -xzvf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 "./home/prefect"
 
 echo "Listing contents of $HOME after user tools extraction:"
 ls -la "$HOME"
 
+# Extract system tools:
+# We expect the tarball to contain a "./usr" directory.
+# Strip the leading "./" so that the contents are placed in /.
 echo "Extracting system tools to /usr..."
-sudo tar -xzvf /tmp/tools.tar.gz -C / usr
+sudo tar -xzvf /tmp/tools.tar.gz -C / --strip-components=1 "./usr"
 
 echo "Listing contents of /usr after system tools extraction:"
 sudo ls -la /usr
