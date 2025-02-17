@@ -140,13 +140,8 @@ mkdir -p "$TEMP_USER_EXTRACT"
 echo "Extracting tools tarball to temporary directory $TEMP_USER_EXTRACT..."
 tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
 
-# Now, copy the hidden directories from the extracted path to $HOME.
-# We expect the extracted tarball to have a structure like:
-#   $TEMP_USER_EXTRACT/home/prefect/.semgrep
-#   $TEMP_USER_EXTRACT/home/prefect/.trivy
-# etc.
-
 rm -rf $HOME/.semgrep/
+rm -rf $HOME/.kantra/
 
 if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
     echo "Copying hidden user-specific directories from $TEMP_USER_EXTRACT/home/prefect to $HOME..."
