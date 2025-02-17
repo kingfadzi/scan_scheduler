@@ -84,15 +84,15 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openj
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
 # Append environment variables to ~/.bashrc
-cat << 'EOF' > ~/.env_variables
+cat << EOF > ~/.env_variables
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 export JAVA_21_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
-export JAVA_HOME="$JAVA_17_HOME"
+export JAVA_HOME="\$JAVA_17_HOME"
 export GRADLE_HOME="/opt/gradle/gradle-8.12"
-export PATH="/usr/local/go/bin:$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
-export PREFECT_HOME="$HOME"
+export PATH="/usr/local/go/bin:\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
+export PREFECT_HOME="\$HOME"
 export PREFECT_API_URL="$PREFECT_API_URL"
 export PYTHONIOENCODING=utf-8
 export RULESETS_GIT_URL=$RULESETS_GIT_URL
@@ -148,6 +148,9 @@ tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
 if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
     echo "Copying hidden user-specific directories from $TEMP_USER_EXTRACT/home/prefect to $HOME..."
     cp -a "$TEMP_USER_EXTRACT/home/prefect/." "$HOME"
+
+    echo "Setting read and write permissions for all files and directories..."
+    chmod -R u+rw,go+r "$HOME"
 else
     echo "Error: Expected directory $TEMP_USER_EXTRACT/home/prefect not found in extracted tarball."
     exit 1
