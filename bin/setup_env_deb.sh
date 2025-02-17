@@ -1,9 +1,9 @@
 #!/bin/bash
-set -e
+set -ex  # Enable debugging (prints each command)
 
 # Configuration variables
 export PREFECT_VERSION="3.2.1"
-export PREFECT_HOME="$HOME"  # Now points directly to user's home
+export PREFECT_HOME="$HOME"  # Points directly to user's home
 GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
 DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
@@ -34,8 +34,6 @@ sudo apt-get update
 sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 
-# Install system packages including Python 3.11 and its libraries.
-# Note: "golang-go" is removed because we'll install Golang manually.
 sudo apt-get install -y \
     nodejs npm \
     python3.11 python3.11-dev python3.11-venv \
@@ -52,7 +50,7 @@ sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf /tmp/${GO_TARBALL}
 rm /tmp/${GO_TARBALL}
 
-# Install the latest pip for Python 3.11 (accessible as python3.11)
+# Install pip for Python 3.11
 curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
 
 # Java configuration
@@ -92,29 +90,41 @@ mkdir -p "$PREFECT_HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cach
 chmod 700 "$PREFECT_HOME/.ssh"
 chmod 755 "$PREFECT_HOME/.m2" "$PREFECT_HOME/.gradle"
 
-# Handle tools tarball
-echo "Downloading and installing tools..."
+# ----- Handle Tools Tarball with Verbose Debugging -----
+echo "Starting tools tarball handling with verbose debugging."
+
+echo "Downloading tools tarball from $TOOLS_URL..."
 wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to download tools"; exit 1; }
 
-# Extract user-specific tools directly to home directory
-echo "Extracting user tools to $HOME..."
-tar -xzf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 home/prefect
+echo "Verifying downloaded file /tmp/tools.tar.gz:"
+ls -la /tmp/tools.tar.gz
 
-# Extract system tools to /usr
-echo "Installing system tools to /usr..."
-sudo tar -xzf /tmp/tools.tar.gz -C / usr
+echo "Listing contents of the tarball:"
+tar -tzf /tmp/tools.tar.gz | tee /tmp/tools_tarball_contents.txt
 
-# Set permissions for system binaries
-echo "Setting execute permissions..."
+echo "Extracting user-specific tools to $HOME..."
+tar -xzvf /tmp/tools.tar.gz -C "$HOME" --strip-components=2 home/prefect
+
+echo "Listing contents of $HOME after user tools extraction:"
+ls -la "$HOME"
+
+echo "Extracting system tools to /usr..."
+sudo tar -xzvf /tmp/tools.tar.gz -C / usr
+
+echo "Listing contents of /usr after system tools extraction:"
+sudo ls -la /usr
+
+echo "Setting execute permissions on /usr/local/bin..."
 sudo chmod -R +x /usr/local/bin
 
-# Cleanup
+echo "Removing tools tarball /tmp/tools.tar.gz..."
 rm /tmp/tools.tar.gz
+# ----- End Tools Tarball Handling -----
 
 # Install Yarn
 sudo npm install -g yarn
 
-# Source the updated bashrc so that env vars are available in the current shell
+# Source the updated bashrc so environment variables are set for the current shell
 source ~/.bashrc
 echo "Environment variables have been updated from ~/.bashrc"
 echo "Setup complete! Please restart your shell if the new environment variables do not take effect."
