@@ -29,20 +29,23 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
-
             env = os.environ.copy()
             env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
 
+            command = [
+                "trivy",
+                "repo",
+                "--skip-db-update",
+                "--skip-java-db-update",
+                "--offline-scan",
+                "--format", "json",
+                repo_dir
+            ]
+            self.logger.debug("Executing command: %s", " ".join(command))
+
             result = subprocess.run(
-                [
-                    "trivy",
-                    "repo",
-                    "--skip-db-update",
-                    "--skip-java-db-update",
-                    "--offline-scan",
-                    "--format", "json",
-                    repo_dir
-                ],
+                command,
+                env=env,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -50,12 +53,16 @@ class TrivyAnalyzer(BaseLogger):
             )
 
             if result.returncode != 0:
-                error_message = (f"Trivy command failed for repo_id {repo.repo_id}. "
-                                 f"Return code: {result.returncode}. Error: {result.stderr.strip()}")
+                error_message = (
+                    f"Trivy command failed for repo_id {repo.repo_id}. "
+                    f"Return code: {result.returncode}. Error: {result.stderr.strip()}"
+                )
                 self.logger.error(error_message)
                 raise RuntimeError(error_message)
 
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
+        except subprocess.CalledProcessError as e:
+            self.logger.error("Trivy command execution encountered an error: %s", e)
 
         except subprocess.TimeoutExpired as e:
             error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
