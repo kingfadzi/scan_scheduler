@@ -145,6 +145,9 @@ tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
 #   $TEMP_USER_EXTRACT/home/prefect/.semgrep
 #   $TEMP_USER_EXTRACT/home/prefect/.trivy
 # etc.
+
+rm -rf $HOME/.semgrep/
+
 if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
     echo "Copying hidden user-specific directories from $TEMP_USER_EXTRACT/home/prefect to $HOME..."
     cp -a "$TEMP_USER_EXTRACT/home/prefect/." "$HOME"
