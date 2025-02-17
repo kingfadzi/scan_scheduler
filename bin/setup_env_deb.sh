@@ -16,8 +16,7 @@ if ! grep -q 'Ubuntu' /etc/os-release; then
     exit 1
 fi
 
-# Ensure system default Python is the distro default (likely Python 3.10)
-# If you previously changed the default, revert it:
+# Ensure system default Python remains the distro default (likely Python 3.10)
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 10
 sudo update-alternatives --set python3 /usr/bin/python3.10
 
@@ -63,16 +62,16 @@ sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-17-openj
 sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-21-openjdk-amd64/bin/java 1210
 sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 
-# Environment variables
-cat << EOF >> ~/.bashrc
+# Append environment variables to ~/.bashrc
+cat << 'EOF' >> ~/.bashrc
 export JAVA_8_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk-amd64"
 export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 export JAVA_21_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
-export JAVA_HOME="\$JAVA_17_HOME"
-export GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
-export PATH="/usr/local/go/bin:\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
-export PREFECT_HOME="\$HOME"  # Directly reference home directory
+export JAVA_HOME="$JAVA_17_HOME"
+export GRADLE_HOME="/opt/gradle/gradle-8.12"
+export PATH="/usr/local/go/bin:$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
+export PREFECT_HOME="$HOME"
 export PYTHONIOENCODING=utf-8
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
@@ -95,7 +94,7 @@ chmod 755 "$PREFECT_HOME/.m2" "$PREFECT_HOME/.gradle"
 
 # Handle tools tarball
 echo "Downloading and installing tools..."
-wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || (echo "Failed to download tools"; exit 1)
+wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to download tools"; exit 1; }
 
 # Extract user-specific tools directly to home directory
 echo "Extracting user tools to $HOME..."
@@ -115,4 +114,7 @@ rm /tmp/tools.tar.gz
 # Install Yarn
 sudo npm install -g yarn
 
-echo "Setup complete! Please restart your shell or run 'source ~/.bashrc'"
+# Source the updated bashrc so that env vars are available in the current shell
+source ~/.bashrc
+echo "Environment variables have been updated from ~/.bashrc"
+echo "Setup complete! Please restart your shell if the new environment variables do not take effect."
