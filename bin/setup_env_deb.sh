@@ -9,6 +9,10 @@ DEFAULT_GRADLE_VERSION="8.12"
 GRADLE_BASE_URL="https://services.gradle.org/distributions/"
 TOOLS_URL="http://192.168.1.188/tools.tar.gz"
 
+# Ensure dpkg is in a healthy state
+sudo dpkg --configure -a || true
+sudo apt-get install -f -y || true
+
 # Check for Ubuntu
 if ! grep -q 'Ubuntu' /etc/os-release; then
     echo "Error: This script requires Ubuntu" >&2
@@ -28,6 +32,15 @@ fi
 sudo apt-get update
 sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
+
+# Fix potential issues with libpython3.11-stdlib before proceeding
+if ! sudo apt-get install -y libpython3.11-stdlib; then
+    echo "Error installing libpython3.11-stdlib, attempting fix..."
+    sudo dpkg --remove --force-remove-reinstreq libpython3.11-stdlib || true
+    sudo apt-get install -f -y
+    sudo apt-get update
+    sudo apt-get install -y libpython3.11-stdlib
+fi
 
 # Install system packages
 sudo apt-get install -y \
