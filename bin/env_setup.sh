@@ -84,26 +84,21 @@ echo "Extracting tools tarball to $TEMP_SYS_EXTRACT..."
 tar -xzvf /tmp/tools.tar.gz -C "$TEMP_SYS_EXTRACT"
 
 if [ -d "$TEMP_SYS_EXTRACT/usr/local/bin" ]; then
-    echo "Copying system tools to /usr/local/bin..."
-    cp -a "$TEMP_SYS_EXTRACT/usr/local/bin/." "/usr/local/bin/"
+    TARGET_DIR="$HOME/tools/bin"
+    echo "Copying system tools to $TARGET_DIR..."
+    mkdir -p "$TARGET_DIR"
+    cp -a "$TEMP_SYS_EXTRACT/usr/local/bin/." "$TARGET_DIR"
 else
     echo "Error: Expected directory $TEMP_SYS_EXTRACT/usr/local/bin not found in extracted tarball."
     exit 1
 fi
 
-echo "Listing contents of /usr/local/bin after copying system tools:"
-ls -la /usr/local/bin
+echo "Listing contents of $TARGET_DIR after copying system tools:"
+ls -la "$TARGET_DIR"
 
 rm -rf "$TEMP_SYS_EXTRACT"
-echo "Setting execute permissions on /usr/local/bin..."
-chmod -R +x /usr/local/bin
-
-echo "Removing tools tarball /tmp/tools.tar.gz..."
-rm -f /tmp/tools.tar.gz
-
-rm -rf "$TEMP_SYS_EXTRACT"
-echo "Setting execute permissions on /usr/local/bin..."
-chmod -R +x /usr/local/bin
+echo "Setting execute permissions on $TARGET_DIR..."
+chmod -R +x "$TARGET_DIR"
 
 echo "Removing tools tarball /tmp/tools.tar.gz..."
 rm -f /tmp/tools.tar.gz
