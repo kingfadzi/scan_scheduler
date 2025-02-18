@@ -31,6 +31,7 @@ class TrivyAnalyzer(BaseLogger):
         try:
             env = os.environ.copy()
             env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
+            self.logger.debug("Using TRIVY_CACHE_DIR: %s", env['TRIVY_CACHE_DIR'])
 
             command = [
                 "trivy",
