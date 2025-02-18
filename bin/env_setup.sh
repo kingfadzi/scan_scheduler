@@ -69,40 +69,6 @@ for VERSION in "${GRADLE_VERSIONS[@]}"; do
     rm "/tmp/gradle-${VERSION}-bin.zip"
 done
 
-# --- Extract & Install System Tools from Tarball ---
-echo "Handling system tools extraction from tarball..."
-if [ ! -f /tmp/tools.tar.gz ]; then
-    echo "Downloading tools tarball from ${TOOLS_URL}..."
-    wget --progress=dot:giga -O /tmp/tools.tar.gz "$TOOLS_URL" || { echo "Failed to download tools tarball"; exit 1; }
-fi
-
-TEMP_SYS_EXTRACT="/tmp/tools_extracted_sys"
-rm -rf "$TEMP_SYS_EXTRACT"
-mkdir -p "$TEMP_SYS_EXTRACT"
-
-echo "Extracting tools tarball to $TEMP_SYS_EXTRACT..."
-tar -xzvf /tmp/tools.tar.gz -C "$TEMP_SYS_EXTRACT"
-
-if [ -d "$TEMP_SYS_EXTRACT/usr/local/bin" ]; then
-    TARGET_DIR="$HOME/tools/bin"
-    echo "Copying system tools to $TARGET_DIR..."
-    mkdir -p "$TARGET_DIR"
-    cp -a "$TEMP_SYS_EXTRACT/usr/local/bin/." "$TARGET_DIR"
-else
-    echo "Error: Expected directory $TEMP_SYS_EXTRACT/usr/local/bin not found in extracted tarball."
-    exit 1
-fi
-
-echo "Listing contents of $TARGET_DIR after copying system tools:"
-ls -la "$TARGET_DIR"
-
-rm -rf "$TEMP_SYS_EXTRACT"
-echo "Setting execute permissions on $TARGET_DIR..."
-chmod -R +x "$TARGET_DIR"
-
-echo "Removing tools tarball /tmp/tools.tar.gz..."
-rm -f /tmp/tools.tar.gz
-
 # --- Install Yarn ---
 npm install -g yarn
 

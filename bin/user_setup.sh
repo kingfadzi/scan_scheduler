@@ -63,6 +63,17 @@ tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
 # Remove old copies to avoid merging stale data.
 rm -rf "$HOME/.semgrep/" "$HOME/.kantra/"
 
+# --- Extract tool binaries to $HOME/tools/bin ---
+if [ -d "$TEMP_USER_EXTRACT/usr/local/bin" ]; then
+    TARGET_BIN="$HOME/tools/bin"
+    echo "Copying tool binaries to $TARGET_BIN..."
+    mkdir -p "$TARGET_BIN"
+    cp -a "$TEMP_USER_EXTRACT/usr/local/bin/." "$TARGET_BIN"
+else
+    echo "Warning: No tool binaries found in the tarball at usr/local/bin."
+fi
+
+# --- Copy user-specific directories ---
 if [ -d "$TEMP_USER_EXTRACT/home/prefect" ]; then
     echo "Copying user-specific directories to $HOME..."
     cp -a "$TEMP_USER_EXTRACT/home/prefect/." "$HOME"
@@ -71,7 +82,7 @@ else
     exit 1
 fi
 
-echo "User home after copying tools:"
+echo "User home after copying tools and configuration files:"
 ls -la "$HOME"
 
 rm -rf "$TEMP_USER_EXTRACT"
