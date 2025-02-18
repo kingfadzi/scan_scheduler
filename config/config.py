@@ -17,7 +17,7 @@ class Config:
 
     SEMGREP_RULESETS = os.getenv("SEMGREP_RULESETS", f"{os.environ['HOME']}/.semgrep")
     TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", f"{os.environ['HOME']}/.cache/trivy")
-    GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
+    GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
 
     BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME", "bitbucket.org")
     GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME", "gitlab.com")

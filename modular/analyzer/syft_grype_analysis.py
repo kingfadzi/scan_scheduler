@@ -86,6 +86,8 @@ class SyftAndGrypeAnalyzer(BaseLogger):
             self.logger.debug(f"Grype results written to: {grype_file_path}")
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Grype command Error:\n{e.stderr.strip()}")
+            error_message = f"Grype command Error:\n{e.stderr.strip()}"
+            raise RuntimeError(error_message)
 
         except subprocess.TimeoutExpired:
             error_message = f"Grype command timed out for repo_id {repo.repo_id} after 60 seconds."
