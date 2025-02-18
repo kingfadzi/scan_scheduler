@@ -80,7 +80,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=60
+                timeout=300
             )
             self.logger.debug(f"Grype results written to: {grype_file_path}")
         except subprocess.CalledProcessError as e:
