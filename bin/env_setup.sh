@@ -44,10 +44,11 @@ dnf install -y \
     maven openssl-devel libffi-devel postgresql-devel
 
 # Enable the desired module stream.
-if ! dnf module enable -y golang:"${GO_VERSION}"; then
-  echo "Error: Golang version ${GO_VERSION} is not available as a module stream."
+if ! dnf install -y golang-$GO_VERSION; then
+  echo "Error: Golang version $GO_VERSION is not available in the repositories."
   exit 1
 fi
+
 
 # Install Golang.
 dnf install -y golang
