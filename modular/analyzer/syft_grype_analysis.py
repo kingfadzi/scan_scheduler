@@ -64,7 +64,8 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
         try:
             env = os.environ.copy()
-            env['GRYPE_CACHE_DIR'] = Config.GRYPE_CACHE_DIR
+            env['GRYPE_DB_CACHE_DIR'] = Config.GRYPE_DB_CACHE_DIR
+            self.logger.debug("Using GRYPE_DB_CACHE_DIR: %s", env['GRYPE_DB_CACHE_DIR'])
 
             command = [
                 "grype",
