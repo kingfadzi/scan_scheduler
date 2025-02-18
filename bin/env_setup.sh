@@ -9,12 +9,21 @@ fi
 
 # --- Environment Variables ---
 GRADLE_VERSIONS=("4.10.3" "5.6.4" "6.9.4" "7.6.1" "8.8" "8.12")
-DEFAULT_GRADLE_VERSION="8.12"
-GO_VERSION="1.22.12"
-GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
-GO_URL="https://go.dev/dl/${GO_TARBALL}"
-TOOLS_URL="http://192.168.1.188/tools.tar.gz"
-PREFECT_API_URL="http://192.168.1.188:4200/api"
+
+# --- Externalize Environment Variables ---
+CONFIG_FILE="./.env"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Configuration file $CONFIG_FILE not found. Aborting."
+    exit 1
+fi
+source "$CONFIG_FILE"
+
+#DEFAULT_GRADLE_VERSION="8.12"
+#GO_VERSION="1.22.12"
+#GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
+#GO_URL="https://go.dev/dl/${GO_TARBALL}"
+#TOOLS_URL="http://192.168.1.188/tools.tar.gz"
+#PREFECT_API_URL="http://192.168.1.188:4200/api"
 
 # --- OS Check ---
 if ! grep -E -q 'Fedora|AlmaLinux|CentOS|Red Hat Enterprise Linux' /etc/os-release; then

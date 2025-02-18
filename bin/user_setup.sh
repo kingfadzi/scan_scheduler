@@ -7,13 +7,13 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-# --- Environment Variables ---
-export PREFECT_HOME="$HOME"
-export PREFECT_VERSION="3.2.1"
-DEFAULT_GRADLE_VERSION="8.12"
-export PREFECT_API_URL="http://192.168.1.188:4200/api"
-RULESETS_GIT_URL="git@github.com:kingfadzi/custom-rulesets.git"
-TOOLS_URL="http://192.168.1.188/tools.tar.gz"
+# --- Externalize Environment Variables ---
+CONFIG_FILE="./.env"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: Configuration file $CONFIG_FILE not found. Aborting."
+    exit 1
+fi
+source "$CONFIG_FILE"
 
 # --- User pip Configuration ---
 mkdir -p "$HOME/.pip"
