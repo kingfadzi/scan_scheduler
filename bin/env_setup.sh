@@ -19,9 +19,6 @@ fi
 source "$CONFIG_FILE"
 
 #DEFAULT_GRADLE_VERSION="8.12"
-#GO_VERSION="1.22.12"
-#GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
-#GO_URL="https://go.dev/dl/${GO_TARBALL}"
 #TOOLS_URL="http://192.168.1.188/tools.tar.gz"
 #PREFECT_API_URL="http://192.168.1.188:4200/api"
 
@@ -46,21 +43,14 @@ dnf install -y \
     java-1.8.0-openjdk-devel java-11-openjdk-devel java-17-openjdk-devel \
     maven openssl-devel libffi-devel postgresql-devel
 
-# --- Install Golang ---
-echo "Installing Golang ${GO_VERSION}..."
-rm -f "/tmp/${GO_TARBALL}"
-wget --verbose --timeout=30 --tries=3 "${GO_URL}" -O "/tmp/${GO_TARBALL}" || {
-    echo "Failed to download Golang tarball from ${GO_URL}"
-    exit 1
-}
-if [ ! -s "/tmp/${GO_TARBALL}" ]; then
-    echo "Error: Downloaded Golang tarball is missing or empty."
-    exit 1
+# Enable the desired module stream.
+if ! dnf module enable -y golang:"${GO_VERSION}"; then
+  echo "Error: Golang version ${GO_VERSION} is not available as a module stream."
+  exit 1
 fi
-ls -la "/tmp/${GO_TARBALL}"
-rm -rf /usr/local/go
-tar -xzvf "/tmp/${GO_TARBALL}" -C /usr/local
-rm "/tmp/${GO_TARBALL}"
+
+# Install Golang.
+dnf install -y golang
 
 # --- Install pip for Python 3.11 ---
 dnf install -y python3-pip
