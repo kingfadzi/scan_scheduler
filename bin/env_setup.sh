@@ -63,7 +63,7 @@ update-alternatives --set java /usr/lib/jvm/java-17-openjdk/bin/java
 mkdir -p /opt/gradle
 for VERSION in "${GRADLE_VERSIONS[@]}"; do
     echo "Installing Gradle $VERSION..."
-    wget --progress=dot:giga "https://services.gradle.org/distributions/gradle-${VERSION}-bin.zip" -P /tmp
+    wget --progress=dot:giga "${GRADLE_DISTRIBUTIONS_BASE_URL}/gradle-${VERSION}-bin.zip" -P /tmp
     unzip -qo "/tmp/gradle-${VERSION}-bin.zip" -d /opt/gradle
     ln -sf "/opt/gradle/gradle-${VERSION}/bin/gradle" "/usr/local/bin/gradle-${VERSION}"
     rm "/tmp/gradle-${VERSION}-bin.zip"
