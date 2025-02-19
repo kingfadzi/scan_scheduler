@@ -47,6 +47,7 @@ export PYTHONIOENCODING=utf-8
 export RULESETS_GIT_URL=$RULESETS_GIT_URL
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
+export PYTHONPATH="\$(pwd):\$PYTHONPATH"
 EOF
 
 # --- Download & Extract User Tools from Tarball ---
@@ -91,6 +92,9 @@ rm -rf "$TEMP_USER_EXTRACT"
 
 # --- Clone the Repository (User Action) ---
 CLONE_DIR="$HOME/.kantra/custom-rulesets"
+
+rm -rf "${CLONE_DIR}"
+
 echo "Cloning repository to ${CLONE_DIR}..."
 SSH_KEY="$HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then
