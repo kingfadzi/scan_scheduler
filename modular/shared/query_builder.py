@@ -1,12 +1,17 @@
 def build_query(payload):
-    # Validate payload structure
+    # Validate that payload is a dict
     if not isinstance(payload, dict):
         raise ValueError("Input must be a dictionary.")
-    if 'payload' not in payload:
-        raise ValueError("Missing 'payload' key in the input.")
-    inner_payload = payload['payload']
-    if not isinstance(inner_payload, dict):
-        raise ValueError("The value of 'payload' must be a dictionary.")
+
+    # Unpack payload if wrapped in 'payload'
+    if 'payload' in payload:
+        inner_payload = payload['payload']
+    else:
+        inner_payload = payload
+
+    # Ensure the inner_payload is a non-empty dict
+    if not isinstance(inner_payload, dict) or not inner_payload:
+        raise ValueError("The provided payload does not contain any filter values.")
 
     filter_mapping = {
         'repo_id': 'bitbucket_repositories.repo_id',
@@ -26,13 +31,12 @@ def build_query(payload):
         "bitbucket_repositories.updated_on as updated_on"
     ]
 
-    # Add additional columns from combined_repo_metrics with appropriate aliases
+    # Add columns from combined_repo_metrics with aliases (except for repo_id)
     for key, col in filter_mapping.items():
         if key != 'repo_id':
             select_cols.append(f"{col} as {key}")
 
     select_clause = "SELECT " + ", ".join(select_cols)
-
     base_query = f"""
         {select_clause}
         FROM bitbucket_repositories
@@ -42,11 +46,14 @@ def build_query(payload):
     """
 
     filters = []
+    # Build filters for each expected key in the mapping
     for key, column in filter_mapping.items():
         if key in inner_payload:
             values = inner_payload[key]
             if not values:
-                continue
+                # Throw an exception if a filter key is present but its list is empty.
+                raise ValueError(f"Filter for '{key}' cannot be empty.")
+            # For repo_id, use a LIKE clause for partial, case-insensitive matching
             if key == 'repo_id':
                 filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
             else:
@@ -57,12 +64,14 @@ def build_query(payload):
                     formatted_values = ", ".join(str(v) for v in values)
                     filters.append(f"{column} IN ({formatted_values})")
 
-    if filters:
-        base_query += " AND " + " AND ".join(filters)
+    # If no filters were added, throw an exception to avoid generating a query that selects everything.
+    if not filters:
+        raise ValueError("No valid filters provided. Query would select all rows.")
 
-    return base_query
+    final_query = base_query + " AND " + " AND ".join(filters)
+    return final_query
 
-
+# Example usage:
 if __name__ == "__main__":
     payload_example = {
         "payload": {
@@ -76,6 +85,10 @@ if __name__ == "__main__":
             'number_of_contributors': [5]
         }
     }
-    query = build_query(payload_example)
-    print("Constructed Query:")
-    print(query)
+
+    try:
+        query = build_query(payload_example)
+        print("Constructed Query:")
+        print(query)
+    except ValueError as e:
+        print("Error:", e)
