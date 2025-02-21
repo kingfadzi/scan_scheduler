@@ -16,7 +16,7 @@ from modular.shared.tasks import (
 from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
-@flow(name="Fundamental Metrics Main Flow", flow_run_name=generate_main_flow_run_name)
+@flow(flow_run_name=generate_main_flow_run_name)
 async def fundamental_metrics_flow(payload: dict):
     await generic_main_flow(
         payload=payload,

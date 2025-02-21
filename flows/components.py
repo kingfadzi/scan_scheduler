@@ -13,7 +13,7 @@ from modular.shared.tasks import (
 from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
-@flow(name="Component Patterns Main Flow", flow_run_name=generate_main_flow_run_name)
+@flow(flow_run_name=generate_main_flow_run_name)
 async def component_patterns_flow(payload: dict):
     await generic_main_flow(
         payload=payload,
