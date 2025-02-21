@@ -2,10 +2,8 @@ import asyncio
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 
-from modular.shared.tasks import (
-    generic_main_flow,
-    generic_single_repo_processing_flow
-)
+from modular.shared.tasks import generate_main_flow_run_name
+
 
 # Correct deployment names using "<FLOW_NAME>/<DEPLOYMENT_NAME>" format
 DEPLOYMENTS = [
