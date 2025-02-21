@@ -2,6 +2,11 @@ import asyncio
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 
+from modular.shared.tasks import (
+    generic_main_flow,
+    generic_single_repo_processing_flow
+)
+
 # Correct deployment names using "<FLOW_NAME>/<DEPLOYMENT_NAME>" format
 DEPLOYMENTS = [
     "fundamental_metrics_flow/fundamentals",
@@ -34,7 +39,7 @@ async def wait_for_flow_completion(flow_run_id):
         
         await asyncio.sleep(5)  # Wait before checking again
 
-@flow(name="Flow Orchestrator")
+@flow(name="Flow Orchestrator", flow_run_name=generate_main_flow_run_name)
 async def flow_orchestrator():
     """Sequentially triggers each Prefect deployment as an independent top-level flow run."""
     

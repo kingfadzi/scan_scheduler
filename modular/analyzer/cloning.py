@@ -51,7 +51,7 @@ class CloningAnalyzer(BaseLogger):
                     clone_command,
                     shell=True,
                     check=True,
-                    timeout=timeout_seconds,
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT,
                     capture_output=True,
                     text=True,
                 )
@@ -61,7 +61,7 @@ class CloningAnalyzer(BaseLogger):
                 return repo_dir
             except subprocess.TimeoutExpired:
                 error_msg = (
-                    f"Cloning repository {repo.repo_name} took too long (>{timeout_seconds}s)."
+                    f"Cloning repository {repo.repo_name} took too long (>{Config.DEFAULT_PROCESS_TIMEOUT}s)."
                 )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)

@@ -47,9 +47,17 @@ class LizardAnalyzer(BaseLogger):
                     stdout=outfile,
                     stderr=subprocess.DEVNULL,
                     check=True,
-                    cwd=repo_dir
+                    cwd=repo_dir,
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
             self.logger.info(f"Lizard analysis completed successfully. Output file: {analysis_file}")
+            
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Lizard command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+
+            
         except subprocess.CalledProcessError as e:
             error_message = f"Lizard command failed for repo_id {repo.repo_id}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)

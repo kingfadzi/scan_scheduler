@@ -50,7 +50,7 @@ class TrivyAnalyzer(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=300
+                timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
 
             if result.returncode != 0:
@@ -62,6 +62,13 @@ class TrivyAnalyzer(BaseLogger):
                 raise RuntimeError(error_message)
 
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
+            
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+ 
+            
         except subprocess.CalledProcessError as e:
             self.logger.error("Trivy command execution encountered an error: %s", e)
 
