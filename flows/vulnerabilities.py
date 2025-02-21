@@ -7,10 +7,9 @@ from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
 from modular.shared.models import Session
 from modular.shared.tasks import (
     generic_main_flow,
-    generic_single_repo_processing_flow,
-    generate_repo_flow_run_name,
-    generate_main_flow_run_name
+    generic_single_repo_processing_flow
 )
+from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
 @flow(name="Vulnerabilities Main Flow", flow_run_name=generate_main_flow_run_name)

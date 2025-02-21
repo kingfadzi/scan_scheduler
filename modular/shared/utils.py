@@ -1,51 +1,49 @@
+import logging
 from datetime import datetime
+
+from prefect.context import get_run_context
 from sqlalchemy import text
-from prefect import get_run_logger
+
 from modular.shared.models import Session, Repository, AnalysisExecutionLog
 from modular.shared.query_builder import build_query
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-def create_batches(payload, batch_size=10):
-    """
-    Generator function that fetches repositories from the DB in chunks
-    of up to `batch_size` rows. Yields one batch at a time (streaming),
-    so you never hold all repos in memory at once.
-    """
-    logger = get_run_logger()
+
+def create_batches(payload, batch_size=1000, num_partitions=5):
+
+    all_repos = []
+    for batch in fetch_repositories(payload, batch_size):
+        all_repos.extend(batch)
+    # Distribute repositories into num_partitions batches (using round-robin distribution)
+    return [all_repos[i::num_partitions] for i in range(num_partitions)]
+
+
+def fetch_repositories(payload, batch_size=1000):
+
     session = Session()
-    try:
-        offset = 0
-        base_query = build_query(payload)
-        logger.info(f"Built base query (before pagination): {base_query}")
+    offset = 0
+    base_query = build_query(payload)
+    logger.info(f"Built query: {base_query}")
 
-        # Ensure ORDER BY is present for stable pagination.
-        if "ORDER BY" not in base_query.upper():
-            base_query += " ORDER BY repo_id"
+    while True:
+        final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+        logger.info(f"Executing query: {final_query}")
+        batch = session.query(Repository).from_statement(text(final_query)).all()
+        if not batch:
+            break
+        # Detach each repository from the session.
+        for repo in batch:
+            _ = repo.repo_slug # Access the attribute so it gets loaded.
+            session.expunge(repo)
+        yield batch
+        offset += batch_size
 
-        while True:
-            paginated_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-            logger.info(f"Executing query: {paginated_query}")
-
-            batch = session.query(Repository).from_statement(text(paginated_query)).all()
-            if not batch:
-                break  # No more rows
-
-            # Detach each repository from the session to prevent memory issues
-            for repo in batch:
-                _ = repo.repo_slug  # Ensure repo_slug is loaded
-                session.expunge(repo)
-
-            yield batch
-            offset += batch_size
-    finally:
-        session.close()  # Ensure the session is always closed
-
+    session.close()
 
 def refresh_views():
-    """
-    Refresh your materialized views in one go.
-    """
-    logger = get_run_logger()
+
     views_to_refresh = [
         "combined_repo_metrics",
         "combined_repo_violations",
@@ -65,16 +63,11 @@ def refresh_views():
         session.rollback()
         logger.error(f"Error refreshing materialized views: {e}")
     finally:
-        session.close()  # Ensure the session is closed
-
+        session.close()
 
 def determine_final_status(repo, run_id, session):
-    """
-    Decide the final status of a repository based on AnalysisExecutionLog entries.
-    """
-    logger = get_run_logger()
-    logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}), run_id: {run_id}")
 
+    logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}) run_id: {run_id}")
     statuses = (
         session.query(AnalysisExecutionLog.status)
         .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo.repo_id)
@@ -96,3 +89,18 @@ def determine_final_status(repo, run_id, session):
     repo.updated_on = datetime.utcnow()
     session.add(repo)
     session.commit()
+
+
+def generate_repo_flow_run_name():
+    run_ctx = get_run_context()
+    repo_slug = run_ctx.flow_run.parameters.get("repo_slug")
+    return f"{repo_slug}"
+
+
+def generate_main_flow_run_name():
+    run_ctx = get_run_context()
+    start_time = run_ctx.flow_run.expected_start_time
+    formatted_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # return f"{flow_name}_{formatted_time}"
+    return f"{formatted_time}"

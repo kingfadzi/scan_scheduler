@@ -11,10 +11,9 @@ from modular.analyzer.cloc_analysis import ClocAnalyzer
 from modular.shared.models import Session, Repository
 from modular.shared.tasks import (
     generic_main_flow,
-    generic_single_repo_processing_flow,
-    generate_repo_flow_run_name,
-    generate_main_flow_run_name
+    generic_single_repo_processing_flow
 )
+from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
 @flow(name="Fundamental Metrics Main Flow", flow_run_name=generate_main_flow_run_name)
@@ -23,7 +22,9 @@ async def fundamental_metrics_flow(payload: dict):
         payload=payload,
         single_repo_processing_flow=fundamental_metrics_repo_processing_flow,
         flow_prefix="Fundamental Metrics",
-        batch_size=10
+        batch_size=1000,
+        num_partitions=10,
+        concurrency_limit=10
     )
 
 
@@ -105,8 +106,7 @@ if __name__ == "__main__":
     example_payload = {
         "payload": {
             "host_name": ["github.com"],
-            "activity_status": ["ACTIVE"],
-            "main_language": ["Python"]
+            "activity_status": ["ACTIVE"]
         }
     }
     asyncio.run(fundamental_metrics_flow(payload=example_payload))
