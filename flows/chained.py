@@ -2,7 +2,7 @@ import asyncio
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 
-from modular.shared.tasks import generate_main_flow_run_name
+from modular.shared.utils import generate_main_flow_run_name
 
 
 # Correct deployment names using "<FLOW_NAME>/<DEPLOYMENT_NAME>" format
