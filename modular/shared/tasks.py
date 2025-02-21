@@ -17,10 +17,12 @@ def start_task(flow_prefix: str) -> str:
 
 
 @task(name="Create Batches Task")
-def create_batches_task(payload: dict, batch_size: int = 1000, num_partitions: int = 10) -> list:
-    batches = create_batches(payload, batch_size, num_partitions)
-    all_repos = [repo for batch in batches for repo in batch]
-    return all_repos
+def create_batches_task(payload: dict, batch_size: int = 10):
+    """
+    Return a generator that yields small batches of repositories (each <= batch_size).
+    Using offset/limit under the hood. We no longer flatten or partition them.
+    """
+    return create_batches(payload, batch_size)
 
 
 @task(name="Clone Repository Task", cache_policy=NO_CACHE)
@@ -63,8 +65,6 @@ def generate_main_flow_run_name():
     flow_name = run_ctx.flow_run.name
     start_time = run_ctx.flow_run.expected_start_time
     formatted_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
-
-    # return f"{flow_name}_{formatted_time}"
     return f"{formatted_time}"
 
 
@@ -72,38 +72,44 @@ async def generic_main_flow(
         payload: dict,
         single_repo_processing_flow,  # A subflow function that processes one repository.
         flow_prefix: str,
-        batch_size: int,
-        num_partitions: int,
+        batch_size: int,            # We removed num_partitions
 ):
     logger = get_run_logger()
 
     # Step 1: Start the flow.
     start_task(flow_prefix)
 
-    # Step 2: Create batches from the payload.
-    repos = create_batches_task(payload, batch_size, num_partitions)
-    logger.info(f"[{flow_prefix}] Processing {len(repos)} repositories.")
+    # Step 2: Create a generator that yields batches
+    # Instead of returning one giant list, we now stream them.
+    repo_batches = create_batches_task(payload, batch_size)
+    logger.info(f"[{flow_prefix}] Created repository batch generator (batch_size={batch_size}).")
 
     # Step 3: Retrieve run_id from Prefect context (or use default if not available).
     run_ctx = get_run_context()
     run_id = str(run_ctx.flow_run.id) if run_ctx and run_ctx.flow_run else "default_run_id"
 
-    # Step 4: Process each repository concurrently.
-    # We now pass repo, its slug, and run_id.
-    tasks = [
-        asyncio.create_task(
-            asyncio.to_thread(
-                single_repo_processing_flow,
-                repo,
-                getattr(repo, "repo_slug", str(repo)),  # Force the slug value now
-                run_id
-            )
-        )
-        for repo in repos
-    ]
-    await asyncio.gather(*tasks)
+    # Step 4: For each batch, process the repos concurrently
+    batch_index = 0
+    # We'll convert the generator from the Prefect task result into an actual Python iterator.
+    # Because create_batches_task returns a generator-like object, we can iterate over it.
+    for batch in repo_batches:
+        batch_index += 1
+        logger.info(f"[{flow_prefix}] Processing batch #{batch_index}, with {len(batch)} repos.")
 
-    # Step 5: Refresh views after processing.
+        tasks = [
+            asyncio.create_task(
+                asyncio.to_thread(
+                    single_repo_processing_flow,
+                    repo,
+                    getattr(repo, "repo_slug", str(repo)),  # Force the slug value now
+                    run_id
+                )
+            )
+            for repo in batch
+        ]
+        await asyncio.gather(*tasks)
+
+    # Step 5: Refresh views after processing all batches.
     refresh_views_task(flow_prefix)
     logger.info(f"[{flow_prefix}] Finished flow")
 
@@ -115,7 +121,9 @@ def generic_single_repo_processing_flow(
         sub_dir: str,
         flow_prefix: str
 ):
-
+    """
+    (Unchanged) - Only processes a single repo. We haven't altered this at all.
+    """
     logger = get_run_logger()
     with Session() as session:
         attached_repo = session.merge(repo)

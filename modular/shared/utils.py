@@ -8,38 +8,48 @@ from modular.shared.query_builder import build_query
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def fetch_repositories(payload, batch_size=1000):
+def create_batches(payload, batch_size=10):
+    """
+    Generator function that fetches repositories from the DB in chunks
+    of up to `batch_size` rows. Yields one batch at a time (streaming),
+    so you never hold all repos in memory at once.
 
+    Example usage:
+        for batch in create_batches(...):
+            # process this `batch` of repos
+    """
     session = Session()
-    offset = 0
-    base_query = build_query(payload)
-    logger.info(f"Built query: {base_query}")
+    try:
+        offset = 0
+        base_query = build_query(payload)
+        logger.info(f"Built base query (before pagination): {base_query}")
 
-    while True:
-        final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-        logger.info(f"Executing query: {final_query}")
-        batch = session.query(Repository).from_statement(text(final_query)).all()
-        if not batch:
-            break
-        # Detach each repository from the session.
-        for repo in batch:
-            _ = repo.repo_slug # Access the attribute so it gets loaded.
-            session.expunge(repo)
-        yield batch
-        offset += batch_size
+        # Ensure ORDER BY is present for stable pagination.
+        if "ORDER BY" not in base_query.upper():
+            base_query += " ORDER BY repo_id"
 
-    session.close()
+        while True:
+            paginated_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+            logger.info(f"Executing query: {paginated_query}")
 
-def create_batches(payload, batch_size=1000, num_partitions=5):
+            batch = session.query(Repository).from_statement(text(paginated_query)).all()
+            if not batch:
+                break  # No more rows
 
-    all_repos = []
-    for batch in fetch_repositories(payload, batch_size):
-        all_repos.extend(batch)
-    # Distribute repositories into num_partitions batches (using round-robin distribution)
-    return [all_repos[i::num_partitions] for i in range(num_partitions)]
+            # Detach each repository from the session to prevent memory issues
+            for repo in batch:
+                _ = repo.repo_slug  # Ensure repo_slug is loaded
+                session.expunge(repo)
+
+            yield batch
+            offset += batch_size
+    finally:
+        session.close()  # Ensure the session is always closed
 
 def refresh_views():
-
+    """
+    Refresh your materialized views in one go.
+    """
     views_to_refresh = [
         "combined_repo_metrics",
         "combined_repo_violations",
@@ -59,11 +69,14 @@ def refresh_views():
         session.rollback()
         logger.error(f"Error refreshing materialized views: {e}")
     finally:
-        session.close()
+        session.close()  # Ensure the session is closed
 
 def determine_final_status(repo, run_id, session):
+    """
+    Decide the final status of a repository based on AnalysisExecutionLog entries.
+    """
+    logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}), run_id: {run_id}")
 
-    logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}) run_id: {run_id}")
     statuses = (
         session.query(AnalysisExecutionLog.status)
         .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo.repo_id)
