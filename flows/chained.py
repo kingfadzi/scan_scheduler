@@ -1,29 +1,40 @@
-from prefect import flow
 import asyncio
-from flows.standards import standards_assessment_flow
-from flows.fundamentals import fundamental_metrics_flow
-from flows.vulnerabilities import vulnerabilities_flow
-from flows.components import component_patterns_flow
-from modular.shared.utils import generate_main_flow_run_name
+from prefect import flow
+from prefect.deployments import run_deployment
 
+# Define the list of Prefect deployments to trigger in order
+DEPLOYMENTS = [
+    "fundamentals",
+    "component-patterns",
+    "vulnerabilities",
+    "standards-assessment"
+]
 
-@flow(name="Chained Main Flow", flow_run_name=generate_main_flow_run_name)
-async def chained_flow(payload: dict):
-    print("Starting Chained Main Flow...")
-
-    await fundamental_metrics_flow(payload)
-    await component_patterns_flow(payload)
-    await standards_assessment_flow(payload)
-    await vulnerabilities_flow(payload)
-
-    print("Chained Main Flow completed.")
-
-# For testing purposes.
-if __name__ == "__main__":
-    example_payload = {
-        "payload": {
-            "host_name": ["github.com"],
-            "activity_status": ["ACTIVE"]
-        }
+# Example payload to pass to each deployment
+example_payload = {
+    "payload": {
+        "host_name": ["github.com"],
+        "activity_status": ["ACTIVE"],
+        "main_language": ["Python"]
     }
-    asyncio.run(chained_flow(example_payload))
+}
+
+@flow(name="Flow Orchestrator")
+async def flow_orchestrator():
+    """Sequentially triggers each Prefect deployment as an independent top-level flow run."""
+    
+    for deployment_name in DEPLOYMENTS:
+        print(f"Triggering deployment: {deployment_name} with payload: {example_payload}...")
+
+        # Run the deployment asynchronously with the payload
+        flow_run = await run_deployment(name=deployment_name, parameters=example_payload)
+        
+        # Wait for the deployment to complete before proceeding
+        await flow_run.wait_for_completion()
+
+        print(f"Deployment {deployment_name} completed with status: {flow_run.state_name}")
+
+if __name__ == "__main__":
+    print("Starting Flow Orchestrator...")
+    asyncio.run(flow_orchestrator())
+    print("All flows completed.")
