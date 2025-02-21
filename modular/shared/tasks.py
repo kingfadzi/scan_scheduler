@@ -18,10 +18,6 @@ def start_task(flow_prefix: str) -> str:
 
 @task(name="Create Batches Task")
 def create_batches_task(payload: dict, batch_size: int = 10):
-    """
-    Return a generator that yields small batches of repositories (each <= batch_size).
-    Using offset/limit under the hood. We no longer flatten or partition them.
-    """
     return create_batches(payload, batch_size)
 
 
@@ -90,8 +86,7 @@ async def generic_main_flow(
 
     # Step 4: For each batch, process the repos concurrently
     batch_index = 0
-    # We'll convert the generator from the Prefect task result into an actual Python iterator.
-    # Because create_batches_task returns a generator-like object, we can iterate over it.
+
     for batch in repo_batches:
         batch_index += 1
         logger.info(f"[{flow_prefix}] Processing batch #{batch_index}, with {len(batch)} repos.")
@@ -121,9 +116,7 @@ def generic_single_repo_processing_flow(
         sub_dir: str,
         flow_prefix: str
 ):
-    """
-    (Unchanged) - Only processes a single repo. We haven't altered this at all.
-    """
+
     logger = get_run_logger()
     with Session() as session:
         attached_repo = session.merge(repo)

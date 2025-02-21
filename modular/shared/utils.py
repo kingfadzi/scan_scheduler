@@ -9,15 +9,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def create_batches(payload, batch_size=10):
-    """
-    Generator function that fetches repositories from the DB in chunks
-    of up to `batch_size` rows. Yields one batch at a time (streaming),
-    so you never hold all repos in memory at once.
 
-    Example usage:
-        for batch in create_batches(...):
-            # process this `batch` of repos
-    """
     session = Session()
     try:
         offset = 0
@@ -47,9 +39,7 @@ def create_batches(payload, batch_size=10):
         session.close()  # Ensure the session is always closed
 
 def refresh_views():
-    """
-    Refresh your materialized views in one go.
-    """
+
     views_to_refresh = [
         "combined_repo_metrics",
         "combined_repo_violations",
@@ -72,9 +62,7 @@ def refresh_views():
         session.close()  # Ensure the session is closed
 
 def determine_final_status(repo, run_id, session):
-    """
-    Decide the final status of a repository based on AnalysisExecutionLog entries.
-    """
+
     logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}), run_id: {run_id}")
 
     statuses = (
