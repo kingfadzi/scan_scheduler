@@ -2,12 +2,12 @@ import asyncio
 from prefect import flow
 from prefect.deployments import run_deployment
 
-# Define the list of Prefect deployments to trigger in order
+# Correct deployment names using "<FLOW_NAME>/<DEPLOYMENT_NAME>" format
 DEPLOYMENTS = [
-    "fundamentals",
-    "component-patterns",
-    "vulnerabilities",
-    "standards-assessment"
+    "fundamental_metrics_flow/fundamentals",
+    "component_patterns_flow/component-patterns",
+    "vulnerabilities_flow/vulnerabilities",
+    "standards_assessment_flow/standards-assessment"
 ]
 
 # Example payload to pass to each deployment
