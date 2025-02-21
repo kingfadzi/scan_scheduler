@@ -1,9 +1,9 @@
 from prefect import flow
 import asyncio
-from flows.standards import standards_assessment_flow
-from flows.fundamentals import fundamental_metrics_flow
-from flows.vulnerabilities import vulnerabilities_flow
-from flows.components import component_patterns_flow
+from .standards import standards_assessment_flow
+from .fundamentals import fundamental_metrics_flow
+from .vulnerabilities import vulnerabilities_flow
+from .components import component_patterns_flow
 from modular.shared.utils import generate_main_flow_run_name
 
 
