@@ -19,7 +19,9 @@ async def standards_assessment_flow(payload: dict):
         payload=payload,
         single_repo_processing_flow=standards_assessment_repo_processing_flow,
         flow_prefix="Standards Assessment",
-        batch_size=10
+        batch_size=1000,
+        num_partitions=10,
+        concurrency_limit=10
     )
 
 
