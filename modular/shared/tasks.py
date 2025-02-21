@@ -18,7 +18,9 @@ def start_task(flow_prefix: str) -> str:
 
 @task(name="Create Batches Task")
 def create_batches_task(payload: dict, batch_size: int = 10):
-    return create_batches(payload, batch_size)
+    batches = list(create_batches(payload, batch_size))
+    get_run_logger().info(f"Create Batches Task returning {len(batches)} batches")
+    return batches
 
 
 @task(name="Clone Repository Task", cache_policy=NO_CACHE)
@@ -68,45 +70,51 @@ async def generic_main_flow(
         payload: dict,
         single_repo_processing_flow,  # A subflow function that processes one repository.
         flow_prefix: str,
-        batch_size: int,            # We removed num_partitions
+        batch_size: int,
 ):
     logger = get_run_logger()
+    logger.info(f"[{flow_prefix}] Starting generic_main_flow")
 
     # Step 1: Start the flow.
     start_task(flow_prefix)
 
-    # Step 2: Create a generator that yields batches
-    # Instead of returning one giant list, we now stream them.
+    # Step 2: Create batches.
     repo_batches = create_batches_task(payload, batch_size)
-    logger.info(f"[{flow_prefix}] Created repository batch generator (batch_size={batch_size}).")
+    # Because create_batches_task is a Prefect Task, we need to await its result.
+    batches = await repo_batches.result() if hasattr(repo_batches, "result") else repo_batches
+    logger.info(f"[{flow_prefix}] Retrieved {len(batches)} batches (batch_size={batch_size}).")
 
-    # Step 3: Retrieve run_id from Prefect context (or use default if not available).
+    # Step 3: Retrieve run_id from Prefect context.
     run_ctx = get_run_context()
     run_id = str(run_ctx.flow_run.id) if run_ctx and run_ctx.flow_run else "default_run_id"
+    logger.info(f"[{flow_prefix}] Using run_id: {run_id}")
 
-    # Step 4: For each batch, process the repos concurrently
+    # Step 4: Process each batch sequentially.
     batch_index = 0
-
-    for batch in repo_batches:
+    for batch in batches:
         batch_index += 1
-        logger.info(f"[{flow_prefix}] Processing batch #{batch_index}, with {len(batch)} repos.")
-
-        tasks = [
-            asyncio.create_task(
+        logger.info(f"[{flow_prefix}] Processing batch #{batch_index} with {len(batch)} repos.")
+        tasks = []
+        for repo in batch:
+            repo_slug = getattr(repo, "repo_slug", str(repo))
+            logger.debug(f"[{flow_prefix}] Scheduling processing for repo: {repo_slug}")
+            task = asyncio.create_task(
                 asyncio.to_thread(
                     single_repo_processing_flow,
                     repo,
-                    getattr(repo, "repo_slug", str(repo)),  # Force the slug value now
+                    repo_slug,
                     run_id
                 )
             )
-            for repo in batch
-        ]
+            tasks.append(task)
+        logger.info(f"[{flow_prefix}] Awaiting completion of batch #{batch_index} ({len(tasks)} tasks).")
         await asyncio.gather(*tasks)
+        logger.info(f"[{flow_prefix}] Completed processing of batch #{batch_index}.")
 
     # Step 5: Refresh views after processing all batches.
+    logger.info(f"[{flow_prefix}] All batches processed. Refreshing views...")
     refresh_views_task(flow_prefix)
-    logger.info(f"[{flow_prefix}] Finished flow")
+    logger.info(f"[{flow_prefix}] Finished generic_main_flow.")
 
 
 def generic_single_repo_processing_flow(
@@ -116,18 +124,21 @@ def generic_single_repo_processing_flow(
         sub_dir: str,
         flow_prefix: str
 ):
-
     logger = get_run_logger()
+    repo_slug = getattr(repo, "repo_slug", str(repo))
+    logger.info(f"[{flow_prefix}] Entering generic_single_repo_processing_flow for repo: {repo_slug}")
     with Session() as session:
         attached_repo = session.merge(repo)
         repo_dir = None
         try:
             logger.info(f"[{flow_prefix}] Processing repository: {attached_repo.repo_id}")
-
             repo_dir = clone_repository_task(attached_repo, run_id, sub_dir)
+            logger.info(f"[{flow_prefix}] Cloned repository {attached_repo.repo_id} to {repo_dir}")
 
-            for task_fn in sub_tasks:
+            for idx, task_fn in enumerate(sub_tasks, start=1):
+                logger.info(f"[{flow_prefix}] Running sub-task #{idx} for repository: {attached_repo.repo_id}")
                 task_fn(repo_dir, attached_repo, session, run_id)
+                logger.info(f"[{flow_prefix}] Completed sub-task #{idx} for repository: {attached_repo.repo_id}")
 
         except Exception as e:
             logger.error(f"[{flow_prefix}] Error processing repository {attached_repo.repo_id}: {e}")
@@ -138,5 +149,8 @@ def generic_single_repo_processing_flow(
             session.commit()
         finally:
             if repo_dir:
+                logger.info(f"[{flow_prefix}] Cleaning up repository directory for: {attached_repo.repo_id}")
                 cleanup_repo_task(repo_dir)
+        logger.info(f"[{flow_prefix}] Updating processing status for repository: {attached_repo.repo_id}")
         update_status_task(attached_repo, run_id, session)
+        logger.info(f"[{flow_prefix}] Exiting generic_single_repo_processing_flow for repository: {attached_repo.repo_id}")

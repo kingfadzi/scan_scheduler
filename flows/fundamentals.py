@@ -23,8 +23,7 @@ async def fundamental_metrics_flow(payload: dict):
         payload=payload,
         single_repo_processing_flow=fundamental_metrics_repo_processing_flow,
         flow_prefix="Fundamental Metrics",
-        batch_size=1000,
-        num_partitions=10,
+        batch_size=10
     )
 
 

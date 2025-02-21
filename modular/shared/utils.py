@@ -1,15 +1,17 @@
-import logging
 from datetime import datetime
 from sqlalchemy import text
-
+from prefect import get_run_logger
 from modular.shared.models import Session, Repository, AnalysisExecutionLog
 from modular.shared.query_builder import build_query
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 def create_batches(payload, batch_size=10):
-
+    """
+    Generator function that fetches repositories from the DB in chunks
+    of up to `batch_size` rows. Yields one batch at a time (streaming),
+    so you never hold all repos in memory at once.
+    """
+    logger = get_run_logger()
     session = Session()
     try:
         offset = 0
@@ -38,8 +40,12 @@ def create_batches(payload, batch_size=10):
     finally:
         session.close()  # Ensure the session is always closed
 
-def refresh_views():
 
+def refresh_views():
+    """
+    Refresh your materialized views in one go.
+    """
+    logger = get_run_logger()
     views_to_refresh = [
         "combined_repo_metrics",
         "combined_repo_violations",
@@ -61,8 +67,12 @@ def refresh_views():
     finally:
         session.close()  # Ensure the session is closed
 
-def determine_final_status(repo, run_id, session):
 
+def determine_final_status(repo, run_id, session):
+    """
+    Decide the final status of a repository based on AnalysisExecutionLog entries.
+    """
+    logger = get_run_logger()
     logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}), run_id: {run_id}")
 
     statuses = (
