@@ -92,7 +92,7 @@ class SemgrepAnalyzer(BaseLogger):
             self.logger.error(f"Semgrep rules directory not found: {rules_dir}")
             return None
         
-        command = ["semgrep", "scan", "--config", rules_dir, "--json", "--skip-unknown", repo_dir, "--verbose"]
+        command = ["semgrep", "scan", "--config", rules_dir, "--json", repo_dir, "--verbose"]
         return command
 
 
