@@ -17,10 +17,10 @@ class Config:
 
     SEMGREP_RULESETS = os.getenv("SEMGREP_RULESETS", f"{os.environ['HOME']}/.semgrep")
     TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", f"{os.environ['HOME']}/.cache/trivy")
-    GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db/5")
+    GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
 
-    BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME", "bitbucket.org")
-    GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME", "gitlab.com")
+    BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME")
+    GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME")
 
     KANTRA_RULESETS = os.getenv("KANTRA_RULESETS", f"{os.environ['HOME']}/.kantra/custom-rulesets")
 
@@ -43,3 +43,8 @@ class Config:
     SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "./sql")
 
     DEFAULT_PROCESS_TIMEOUT = int(os.getenv("DEFAULT_PROCESS_TIMEOUT", 60))
+    
+    
+    FLOW_GIT_STORAGE = os.getenv("FLOW_GIT_STORAGE")
+    FLOW_GIT_BRANCH = os.getenv("FLOW_GIT_BRANCH")
+

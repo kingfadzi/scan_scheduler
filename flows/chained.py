@@ -1,6 +1,7 @@
 import asyncio
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
+from config.config import Config
 
 # Correct Prefect deployment names (from your deployment list)
 DEPLOYMENTS = [
@@ -13,7 +14,7 @@ DEPLOYMENTS = [
 # Updated payload (removed 'main_language' to get a larger result set)
 example_payload = {
     "payload": {
-        "host_name": ["github.com"],
+        "host_name": [Config.GITLAB_HOSTNAME],
         "activity_status": ["ACTIVE"]
     }
 }

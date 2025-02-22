@@ -1,9 +1,10 @@
 from prefect import flow
 from prefect.runner.storage import GitRepository
+from config.config import Config
 
 git_storage = GitRepository(
-    url="https://github.com/kingfadzi/scan_scheduler.git",
-    branch="distributed"  # Use the correct branch
+    url=Config.FLOW_GIT_STORAGE
+    branch=Config.FLOW_GIT_BRANCH  # Use the correct branch
 )
 
 DEPLOYMENT_VERSION = "3.2.1"

@@ -5,6 +5,7 @@ from prefect.cache_policies import NO_CACHE
 from modular.analyzer.dependency_analysis import DependencyAnalyzer
 from modular.analyzer.kantra_analysis import KantraAnalyzer
 from modular.shared.models import Session
+from config.config import Config
 
 from modular.shared.tasks import (
     generic_main_flow,
@@ -73,10 +74,12 @@ def run_kantra_analysis_task(repo_dir, repo, session, run_id):
 if __name__ == "__main__":
     example_payload = {
         "payload": {
-            "host_name": ["github.com"],
+            "host_name": [Config.GITLAB_HOSTNAME],
             "activity_status": ["ACTIVE"],
             "main_language": ["Python"]
         }
     }
     # Run the asynchronous main flow
     asyncio.run(component_patterns_flow(payload=example_payload))
+
+    

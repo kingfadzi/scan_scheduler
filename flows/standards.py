@@ -1,6 +1,7 @@
 import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
+from config.config import Config
 
 from modular.analyzer.checkov_analysis import CheckovAnalyzer
 from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
@@ -76,12 +77,15 @@ def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
     logger.info(f"[Standards Assessment] Completed Semgrep analysis for repository: {repo.repo_id}")
 
 
+
 if __name__ == "__main__":
+    
     example_payload = {
         "payload": {
-            "host_name": ["github.com"],
+            "host_name": [Config.GITLAB_HOSTNAME],
             "activity_status": ["ACTIVE"],
             "main_language": ["Python"]
         }
     }
+    
     asyncio.run(standards_assessment_flow(payload=example_payload))

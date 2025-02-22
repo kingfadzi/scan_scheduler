@@ -1,6 +1,7 @@
 import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
+from config.config import Config
 
 from modular.analyzer.trivy_analysis import TrivyAnalyzer
 from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
@@ -77,11 +78,13 @@ def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
 
 
 if __name__ == "__main__":
+    
     example_payload = {
         "payload": {
-            "host_name": ["github.com"],
+            "host_name": [Config.GITLAB_HOSTNAME],
             "activity_status": ["ACTIVE"],
             "main_language": ["Python"]
         }
     }
+    
     asyncio.run(vulnerabilities_flow(payload=example_payload))
