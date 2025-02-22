@@ -1,9 +1,10 @@
 import asyncio
+import aiohttp
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 from config.config import Config
+from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
-# Correct Prefect deployment names (from your deployment list)
 DEPLOYMENTS = [
     "fundamental-metrics-flow/fundamentals",
     "component-patterns-flow/component-patterns",
@@ -11,7 +12,6 @@ DEPLOYMENTS = [
     "vulnerabilities-flow/vulnerabilities"
 ]
 
-# Updated payload (removed 'main_language' to get a larger result set)
 example_payload = {
     "payload": {
         "host_name": [Config.GITLAB_HOSTNAME],
@@ -20,40 +20,60 @@ example_payload = {
 }
 
 async def wait_for_flow_completion(flow_run_id):
-    """Polls Prefect API to wait for the flow to complete."""
+    """Polls Prefect API to wait for the flow to complete, with error handling."""
     client = get_client()
     
     while True:
-        flow_run = await client.read_flow_run(flow_run_id)
-        status = flow_run.state_name
+        try:
+            flow_run = await client.read_flow_run(flow_run_id)
+            status = flow_run.state_name
 
-        print(f"Flow run {flow_run_id} status: {status}")
+            print(f"Flow run {flow_run_id} status: {status}")
 
-        if status in ["Completed", "Failed", "Cancelled"]:
-            print(f"Flow run {flow_run_id} finished with status: {status}")
-            return status
+            if status in ["Completed", "Failed", "Cancelled"]:
+                if status != "Completed":
+                    raise RuntimeError(f"Flow {flow_run_id} failed with status: {status}")
+                return status
+        
+        except aiohttp.ClientError as e:
+            print(f"Error while polling flow {flow_run_id}: {e}")
         
         await asyncio.sleep(5)  # Poll every 5 seconds
 
-@flow(name="Flow Orchestrator")
+async def run_deployment_with_retries(deployment_name, payload, retries=3):
+    """Attempts to run a deployment with retries; fails entire process if retries are exhausted."""
+    for attempt in range(retries):
+        try:
+            print(f"Attempt {attempt + 1}: Triggering deployment {deployment_name}...")
+            flow_run_metadata = await run_deployment(name=deployment_name, parameters=payload)
+            return flow_run_metadata.id
+        
+        except Exception as e:
+            print(f"Error triggering {deployment_name}: {e}")
+            if attempt < retries - 1:
+                print("Retrying...")
+                await asyncio.sleep(5)  # Backoff before retrying
+            else:
+                raise RuntimeError(f"Deployment {deployment_name} failed after {retries} attempts.")
+
+@flow(name="Flow Orchestrator", flow_run_name=generate_main_flow_run_name)
 async def flow_orchestrator():
-    """Sequentially triggers each Prefect deployment as an independent top-level flow run."""
+    """Sequentially triggers each Prefect deployment, failing on persistent errors."""
     
-    client = get_client()  # Create a Prefect client for API communication
+    client = get_client()
 
     for deployment_name in DEPLOYMENTS:
-        print(f"Triggering deployment: {deployment_name} with payload: {example_payload}...")
-
-        # Run the deployment and get flow run metadata
-        flow_run_metadata = await run_deployment(name=deployment_name, parameters=example_payload)
-        flow_run_id = flow_run_metadata.id  # Extract the run ID
+        flow_run_id = await run_deployment_with_retries(deployment_name, example_payload)
         
         print(f"Triggered deployment {deployment_name}, waiting for completion (Flow Run ID: {flow_run_id})")
 
-        # Wait for completion before triggering the next flow
-        await wait_for_flow_completion(flow_run_id)
+        await wait_for_flow_completion(flow_run_id)  # Fails on unsuccessful flow completion
 
 if __name__ == "__main__":
     print("Starting Flow Orchestrator...")
-    asyncio.run(flow_orchestrator())
-    print("All flows completed.")
+    try:
+        asyncio.run(flow_orchestrator())
+        print("All flows completed successfully.")
+    except Exception as e:
+        print(f"Orchestration failed: {e}")
+        exit(1)  # Ensure script exits with failure status
