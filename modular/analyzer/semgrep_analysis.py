@@ -31,7 +31,7 @@ class SemgrepAnalyzer(BaseLogger):
                 self.logger.warning(message)
                 return message
 
-            semgrep_command = self.construct_semgrep_command(repo_dir, languages)
+            semgrep_command = self.construct_semgrep_command(repo_dir)
             if not semgrep_command:
                 message = f"No valid Semgrep rulesets found for repo_id: {repo.repo_id}. Skipping Semgrep scan."
                 self.logger.warning(message)
@@ -84,7 +84,19 @@ class SemgrepAnalyzer(BaseLogger):
         result = session.execute(stmt).fetchall()
         return [row.language for row in result] if result else []
 
-    def construct_semgrep_command(self, repo_dir, languages):
+
+    def construct_semgrep_command(self, repo_dir):
+        rules_dir = os.path.abspath(Config.SEMGREP_RULES_DIR)
+        
+        if not os.path.exists(rules_dir):
+            self.logger.error(f"Semgrep rules directory not found: {rules_dir}")
+            return None
+        
+        command = ["semgrep", "scan", "--config", rules_dir, "--json", "--skip-unknown", repo_dir, "--verbose"]
+        return command
+
+
+    def construct_semgrep_command_specific_languages(self, repo_dir, languages):
 
         config_dir = os.path.abspath(Config.SEMGREP_CONFIG_DIR)
         ruleset_dir = os.path.abspath(Config.SEMGREP_RULESETS)

@@ -15,7 +15,7 @@ class Config:
     TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./config/trivy/.trivyignore")
     SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./config/semgrep")
 
-    SEMGREP_RULESETS = os.getenv("SEMGREP_RULESETS", f"{os.environ['HOME']}/.semgrep")
+    SEMGREP_RULES_DIR = os.getenv("SEMGREP_RULES_DIR", f"{os.environ['HOME']}/.semgrep/semgrep-rules")
     TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", f"{os.environ['HOME']}/.cache/trivy")
     GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
 
