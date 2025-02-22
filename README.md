@@ -7,4 +7,4 @@
 
 ``prefect deployment run vulnerabilities_flow/vulnerabilities --params '{"payload": {"host_name": ["github.com"], "activity_status": ["ACTIVE"], "main_language": ["Python"]}}'``
 
-``prefect deployment run standards_assessment_flow/standards-assessment --params '{"payload": {"host_name": ["github.com"], "activity_status": ["ACTIVE"], "main_language": ["Python"]}}'``
+``prefect deployment run standards-assessment-flow/standards-assessment --params '{"payload": {"host_name": ["github.com"], "activity_status": ["ACTIVE"], "main_language": ["Python"]}}'``
