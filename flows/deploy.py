@@ -3,7 +3,7 @@ from prefect.runner.storage import GitRepository
 from config.config import Config
 
 git_storage = GitRepository(
-    url=Config.FLOW_GIT_STORAGE
+    url=Config.FLOW_GIT_STORAGE,
     branch=Config.FLOW_GIT_BRANCH  # Use the correct branch
 )
 
