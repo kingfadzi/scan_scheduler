@@ -41,7 +41,11 @@ class CheckovAnalyzer(BaseLogger):
                         "--directory", repo_dir,
                         "--output", "json",
                         "--output-file-path", output_dir,
-                        "--skip-download"
+                        "--skip-download",
+                        "--framework",
+                        "cloudformation", "dockerfile", "gitlab_configuration", "gitlab_ci",
+                        "helm", "json", "yaml", "kubernetes",
+                        "serverless", "terraform", "terraform_plan"
                     ],
                     check=False,
                     text=True,
