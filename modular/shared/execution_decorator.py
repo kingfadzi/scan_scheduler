@@ -11,6 +11,7 @@ class AnalysisLogger(BaseLogger):
         self.logger = self.get_logger("AnalyzeExecution")
         self.logger.setLevel(logging.DEBUG)
 
+
 def analyze_execution(session_factory, stage=None):
 
     decorator_logger = AnalysisLogger().logger
@@ -43,18 +44,6 @@ def analyze_execution(session_factory, stage=None):
             start_time = time.time()
 
             try:
-
-                session.add(AnalysisExecutionLog(
-                    method_name=method_name,
-                    stage=stage,
-                    run_id=run_id,
-                    repo_id=repo_id,
-                    status="PROCESSING",
-                    message=f"Starting analysis {method_name}",
-                    execution_time=datetime.utcnow(),
-                    duration=0
-                ))
-                session.commit()
 
                 decorator_logger.info(
                     f"Starting {stage} "
