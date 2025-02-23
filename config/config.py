@@ -15,7 +15,7 @@ class Config:
     TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./config/trivy/.trivyignore")
     SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./config/semgrep")
 
-    SEMGREP_RULES_DIR = os.getenv("SEMGREP_RULES_DIR", f"{os.environ['HOME']}/.semgrep/semgrep-rules")
+    SEMGREP_RULES = os.getenv("SEMGREP_RULES", f"{os.environ['HOME']}/.semgrep/semgrep-rules")
     TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", f"{os.environ['HOME']}/.cache/trivy")
     GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
 
@@ -43,8 +43,8 @@ class Config:
     SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "./sql")
 
     DEFAULT_PROCESS_TIMEOUT = int(os.getenv("DEFAULT_PROCESS_TIMEOUT", 60))
-    
-    
+
+
     FLOW_GIT_STORAGE = os.getenv("FLOW_GIT_STORAGE")
     FLOW_GIT_BRANCH = os.getenv("FLOW_GIT_BRANCH")
 
