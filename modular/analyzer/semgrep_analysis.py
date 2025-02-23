@@ -92,13 +92,16 @@ class SemgrepAnalyzer(BaseLogger):
             self.logger.error(f"Semgrep rules directory not found: {rules_dir}")
             return None
 
-        command = ["semgrep", "scan", "--config", rules_dir, "--json", repo_dir, "--verbose"]
+        command = ["semgrep", "--experimental", "--json", "--skip-unknown", repo_dir, "--verbose"]
         return command
 
 
     def construct_semgrep_command_specific_languages(self, repo_dir, languages):
 
-        config_dir = os.path.abspath(Config.SEMGREP_CONFIG_DIR)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_dir = os.path.join(project_root, Config.SEMGREP_CONFIG_DIR)
+        config_dir = os.path.abspath(config_dir)
+        
         ruleset_dir = os.path.abspath(Config.SEMGREP_RULES)
 
         config = configparser.ConfigParser()
