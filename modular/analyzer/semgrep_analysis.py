@@ -9,6 +9,7 @@ from modular.shared.execution_decorator import analyze_execution
 from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import configparser
+from pathlib import Path
 
 class SemgrepAnalyzer(BaseLogger):
 
@@ -98,10 +99,9 @@ class SemgrepAnalyzer(BaseLogger):
 
     def construct_semgrep_command_specific_languages(self, repo_dir, languages):
 
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_dir = os.path.join(project_root, Config.SEMGREP_CONFIG_DIR)
-        config_dir = os.path.abspath(config_dir)
-        
+        project_root = Path(__file__).resolve().parent.parent.parent
+        config_dir = project_root / Config.SEMGREP_CONFIG_DIR
+
         ruleset_dir = os.path.abspath(Config.SEMGREP_RULES)
 
         config = configparser.ConfigParser()
