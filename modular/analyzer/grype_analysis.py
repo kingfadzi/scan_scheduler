@@ -25,7 +25,7 @@ class GrypeAnalyzer(BaseLogger):
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
         
-        # Check if the SBOM file exists before running Grype
+        # Check if the SBOM file exists
         if not os.path.exists(sbom_file_path):
             error_message = f"SBOM file not found for repository {repo.repo_name} at path: {sbom_file_path}"
             self.logger.error(error_message)
@@ -69,13 +69,17 @@ class GrypeAnalyzer(BaseLogger):
 
         self.logger.info(f"Reading Grype results from disk for repo_id: {self.repo_id}.")
         try:
-            grype_data = self.parse_and_save_grype_results(grype_file_path, self.repo_id, session)
+            grype_result = self.parse_and_save_grype_results(grype_file_path, self.repo_id, session)
         except Exception as e:
             error_message = f"Error while parsing or saving Grype results for repository {repo.repo_name}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return json.dumps(grype_data)
+        # If grype_result is a plain string (i.e. no vulnerabilities found), return it as is.
+        if isinstance(grype_result, str):
+            return grype_result
+        else:
+            return json.dumps(grype_result)
 
     def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
@@ -85,8 +89,9 @@ class GrypeAnalyzer(BaseLogger):
 
             matches = grype_data.get("matches", [])
             if not matches:
-                self.logger.info(f"No vulnerabilities found for repo_id: {repo_id}")
-                return grype_data
+                message = f"No vulnerabilities found for repo_id: {repo_id}"
+                self.logger.info(message)
+                return message
 
             self.logger.debug(f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}.")
             processed_vulnerabilities = 0
