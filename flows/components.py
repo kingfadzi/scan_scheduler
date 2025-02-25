@@ -65,7 +65,7 @@ def run_dependency_analysis_task(repo_dir, repo, session, run_id):
 def run_grype_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Grype analysis for repository: {repo.repo_id}")
-    analyzer = GrypeAnalyzer(logger=logger)
+    analyzer = GrypeAnalyzer(repo.repo_id, repo.repo_slug, logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
@@ -73,12 +73,13 @@ def run_grype_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"[Component Patterns] Completed Grype analysis for repository: {repo.repo_id}")
+    
 
 @task(name="Run Xeol Analysis Task", cache_policy=NO_CACHE)
 def run_xeol_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Xeol analysis for repository: {repo.repo_id}")
-    analyzer = XeolAnalyzer(logger=logger)
+    analyzer = XeolAnalyzer(repo.repo_id, repo.repo_slug, logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
