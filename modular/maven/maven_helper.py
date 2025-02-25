@@ -127,7 +127,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    repo_directory = "/Users/fadzi/tools/WebGoat"
+    repo_directory = "/tmp/WebGoat"
     repo = Repo(repo_id="maven_project")
     helper = MavenHelper()
 
