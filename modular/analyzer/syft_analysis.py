@@ -18,8 +18,8 @@ class SyftAnalyzer(BaseLogger):
         self.repo_slug = repo_slug
 
     @analyze_execution(session_factory=Session, stage="Syft Analysis")
-    def run_analysis(self, repo_dir, session, run_id=None):
-        self.logger.info(f"Starting Syft analysis for repo_id: {self.repo_id}.")
+    def run_analysis(self, repo_dir, repo, session, run_id=None):
+        self.logger.info(f"Starting Syft analysis for repo_id: {self.repo_id} (repo slug: {repo.repo_slug}).")
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
@@ -65,18 +65,24 @@ class SyftAnalyzer(BaseLogger):
         return json.dumps(sbom_json)
 
 if __name__ == '__main__':
-    # Set the variables separately to allow easier replacement for testing.
+    # Set the variables separately so they can be easily replaced for testing.
     repo_id = "sonar-metrics"
     repo_slug = "sonar-metrics"
     repo_dir = "/tmp/sonar-metrics"  # Adjust this path as needed
 
-    # Pass the repo_id and repo_slug by value into the constructor.
+    # Create a simple mock repo object
+    class MockRepo:
+        def __init__(self, repo_id, repo_slug):
+            self.repo_id = repo_id
+            self.repo_slug = repo_slug
+
+    repo = MockRepo(repo_id, repo_slug)
     analyzer = SyftAnalyzer(repo_id, repo_slug)
     session = Session()
 
     try:
-        sbom = analyzer.run_analysis(repo_dir, session, run_id="STANDALONE_RUN")
-        analyzer.logger.info("Stand-alone Syft analysis result:\n%s", sbom)
+        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        analyzer.logger.info("Stand-alone Syft analysis result:\n%s", result)
     except Exception as e:
         analyzer.logger.error("Error during Syft analysis: %s", e)
     finally:
