@@ -70,7 +70,7 @@ class DependencyAnalyzer(BaseLogger):
             self.persist_dependencies(dependencies, session)
 
           
-            return f"Dependencies: {dependencies}\nXeol: {xeol_result}"
+            return f"Dependencies: {dependencies}"
 
 
         except Exception as e:
