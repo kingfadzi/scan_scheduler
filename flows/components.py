@@ -52,7 +52,7 @@ def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
 def run_syft_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Syft analysis for repository: {repo.repo_id}")
-    analyzer = SyftAnalyzer(repo.repo_id, repo.repo_slug, logger=logger)
+    analyzer = SyftAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
@@ -81,7 +81,7 @@ def run_dependency_analysis_task(repo_dir, repo, session, run_id):
 def run_grype_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Grype analysis for repository: {repo.repo_id}")
-    analyzer = GrypeAnalyzer(repo.repo_id, repo.repo_slug, logger=logger)
+    analyzer = GrypeAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
@@ -95,7 +95,7 @@ def run_grype_analysis_task(repo_dir, repo, session, run_id):
 def run_xeol_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Xeol analysis for repository: {repo.repo_id}")
-    analyzer = XeolAnalyzer(repo.repo_id, repo.repo_slug, logger=logger)
+    analyzer = XeolAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
