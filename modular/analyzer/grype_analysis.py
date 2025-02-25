@@ -9,18 +9,16 @@ from modular.shared.base_logger import BaseLogger
 import logging
 
 class GrypeAnalyzer(BaseLogger):
-    def __init__(self, repo_id, repo_slug, logger=None):
+    def __init__(self, logger=None):
         if logger is None:
             self.logger = self.get_logger("GrypeAnalyzer")
         else:
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
-        self.repo_id = repo_id
-        self.repo_slug = repo_slug
 
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Grype analysis for repo_id: {self.repo_id} (repo slug: {repo.repo_slug}).")
+        self.logger.info(f"Starting Grype analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
         
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
@@ -31,7 +29,7 @@ class GrypeAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
         
-        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {self.repo_id} using SBOM at {sbom_file_path}.")
+        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id} using SBOM at {sbom_file_path}.")
 
         try:
             env = os.environ.copy()
@@ -54,11 +52,11 @@ class GrypeAnalyzer(BaseLogger):
             )
             self.logger.debug(f"Grype results written to: {grype_file_path}")
         except subprocess.TimeoutExpired as e:
-            error_message = f"Grype command timed out for repo_id {self.repo_id} after {e.timeout} seconds."
+            error_message = f"Grype command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
-            error_message = f"Grype command failed for repo_id {self.repo_id}: {e.stderr.strip()}"
+            error_message = f"Grype command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
@@ -67,15 +65,15 @@ class GrypeAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Reading Grype results from disk for repo_id: {self.repo_id}.")
+        self.logger.info(f"Reading Grype results from disk for repo_id: {repo.repo_id}.")
         try:
-            grype_result = self.parse_and_save_grype_results(grype_file_path, self.repo_id, session)
+            grype_result = self.parse_and_save_grype_results(grype_file_path, repo.repo_id, session)
         except Exception as e:
             error_message = f"Error while parsing or saving Grype results for repository {repo.repo_name}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        # If grype_result is a plain string (i.e. no vulnerabilities found), return it as is.
+        # If no vulnerabilities found, return the log message
         if isinstance(grype_result, str):
             return grype_result
         else:
@@ -149,28 +147,3 @@ class GrypeAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
             raise
-
-if __name__ == "__main__":
-    repo_id = "sonar-metrics"
-    repo_slug = "sonar-metrics"
-    repo_dir = "/tmp/sonar-metrics"  # Adjust this path as necessary
-
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
-
-    repo = MockRepo(repo_id, repo_slug)
-    analyzer = GrypeAnalyzer(repo_id, repo_slug)
-    session = Session()
-
-    try:
-        analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo.repo_id}.")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
-        analyzer.logger.info(f"Standalone Grype analysis result:\n{result}")
-    except Exception as e:
-        analyzer.logger.error(f"Error during standalone Grype analysis: {e}")
-    finally:
-        session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}.")
