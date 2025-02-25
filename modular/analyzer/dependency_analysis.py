@@ -10,7 +10,6 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
-from modular.analyzer.xeol_analysis import SyftAndXeolAnalyzer
 
 class DependencyAnalyzer(BaseLogger):
 
@@ -70,12 +69,7 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
-            # Call the xeol analyzer at the end
-            xeol_analyzer = SyftAndXeolAnalyzer()
-            self.logger.info("Starting Xeol analysis.")
-            xeol_result = xeol_analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id=run_id)
-            self.logger.info("Xeol analysis completed.")
-
+          
             return f"Dependencies: {dependencies}\nXeol: {xeol_result}"
 
 
