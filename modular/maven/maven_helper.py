@@ -127,7 +127,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    repo_directory = "/tmp/WebGoat"
+    repo_directory = "/tmp/sonar-metrics"
     repo = Repo(repo_id="maven_project")
     helper = MavenHelper()
 
