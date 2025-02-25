@@ -4,8 +4,9 @@ import logging
 import subprocess
 from pathlib import Path
 from modular.shared.models import Dependency
+from modular.shared.base_logger import BaseLogger
 
-class GoHelper:
+class GoHelper(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:

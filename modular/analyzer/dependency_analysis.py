@@ -10,6 +10,7 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
+from modular.analyzer.xeol_analysis import SyftAndXeolAnalyzer
 
 class DependencyAnalyzer(BaseLogger):
 
@@ -45,7 +46,6 @@ class DependencyAnalyzer(BaseLogger):
         try:
             if "Python" in repo_languages:
                 self.logger.info(f"Detected Python in repo_id: {repo.repo_id}. Running Python dependency analysis.")
-
                 dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
 
             if "JavaScript" in repo_languages or "TypeScript" in repo_languages:
@@ -70,7 +70,18 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
-            return f"success: Analyzed dependencies for repo {repo.repo_id}, languages: {', '.join(repo_languages)}, dependencies found: {len(dependencies)}."
+            # Call the xeol analyzer at the end
+            xeol_analyzer = SyftAndXeolAnalyzer()
+            self.logger.info("Starting Xeol analysis.")
+            xeol_result = xeol_analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id=run_id)
+            self.logger.info("Xeol analysis completed.")
+
+            return f"Dependencies: {dependencies}\nXeol: {xeol_result}"
+
+
+        except Exception as e:
+            self.logger.error(f"Error during dependency analysis: {e}")
+            raise
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
@@ -164,7 +175,6 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    #repo_dir = f"/Users/fadzi/tools/{repo.repo_slug}"
     repo_dir = "/Users/fadzi/tools/python_projects/vulpy"
     session = Session()
 

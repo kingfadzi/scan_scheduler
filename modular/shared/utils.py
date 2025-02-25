@@ -1,46 +1,103 @@
 import logging
-from datetime import datetime
+from datetime import datetime, time
 
 from prefect.context import get_run_context
 from sqlalchemy import text
 
 from modular.shared.models import Session, Repository, AnalysisExecutionLog
 from modular.shared.query_builder import build_query
+import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def create_batches(payload, batch_size=1000, num_partitions=5):
+    """Split repositories into parallel processing batches with detailed logging."""
+    logger.info(
+        f"Starting batch creation - Target batch size: {batch_size}, "
+        f"Partitions: {num_partitions}"
+    )
 
     all_repos = []
     for batch in fetch_repositories(payload, batch_size):
         all_repos.extend(batch)
-    # Distribute repositories into num_partitions batches (using round-robin distribution)
-    return [all_repos[i::num_partitions] for i in range(num_partitions)]
+        logger.debug(
+            f"Accumulated {len(batch)} repos in current batch, "
+            f"Total so far: {len(all_repos)}"
+        )
+
+    logger.info(f"Total repositories fetched: {len(all_repos)}")
+
+    # Create partitioned batches
+    partitions = [all_repos[i::num_partitions] for i in range(num_partitions)]
+    partition_sizes = [len(p) for p in partitions]
+
+    logger.info(
+        f"Created {num_partitions} partitions with sizes: {partition_sizes} "
+        f"(Standard deviation: {np.std(partition_sizes):.1f})"
+    )
+
+    return partitions
 
 
 def fetch_repositories(payload, batch_size=1000):
+    """Fetch repositories in paginated batches with detailed query logging."""
+    logger.info(
+        f"Initializing repository fetch - Payload: {payload.keys()}, "
+        f"Page size: {batch_size}"
+    )
 
     session = Session()
     offset = 0
+    total_fetched = 0
     base_query = build_query(payload)
-    logger.info(f"Built query: {base_query}")
 
-    while True:
-        final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-        logger.info(f"Executing query: {final_query}")
-        batch = session.query(Repository).from_statement(text(final_query)).all()
-        if not batch:
-            break
-        # Detach each repository from the session.
-        for repo in batch:
-            _ = repo.repo_slug # Access the attribute so it gets loaded.
-            session.expunge(repo)
-        yield batch
-        offset += batch_size
+    logger.debug(f"Base SQL template:\n{base_query}")
 
-    session.close()
+    try:
+        while True:
+            final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+            logger.info(
+                f"Executing paginated query - Offset: {offset:,}, "
+                f"Limit: {batch_size}"
+            )
+
+            start_time = time.perf_counter()
+            batch = session.query(Repository).from_statement(text(final_query)).all()
+            query_time = time.perf_counter() - start_time
+
+            batch_size_actual = len(batch)
+            total_fetched += batch_size_actual
+
+            logger.debug(
+                f"Query completed in {query_time:.2f}s - "
+                f"Returned {batch_size_actual} results\n"
+                f"Sample results: {[r.repo_slug[:20] for r in batch[:3]]}..."
+            )
+
+            if not batch:
+                logger.info("Empty result set - Ending pagination")
+                break
+
+            # Detach objects from session
+            detach_start = time.perf_counter()
+            for repo in batch:
+                _ = repo.repo_slug  # Force attribute load
+                session.expunge(repo)
+            logger.debug(f"Detachment completed in {time.perf_counter() - detach_start:.2f}s")
+
+            yield batch
+            offset += batch_size
+
+    finally:
+        session.close()
+        logger.info(
+            f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
+            f"over {offset//batch_size} pages"
+        )
+
 
 def refresh_views():
 

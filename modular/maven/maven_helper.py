@@ -133,7 +133,9 @@ if __name__ == "__main__":
 
     try:
         dependencies = helper.process_repo(repo_directory, repo)
-        for dep in dependencies:
-            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+        print(f"Dependencies found: {len(dependencies)}" if dependencies else "No dependencies found")
+
+        #for dep in dependencies:
+        #    print(f"Dependency found: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
     except Exception as e:
         print(f"An error occurred while processing the repository: {e}")
