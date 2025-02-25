@@ -8,7 +8,7 @@ from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import logging
 
-class SyftAndXeolAnalyzer(BaseLogger):
+class XeolAnalyzer(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:
