@@ -51,6 +51,12 @@ def refresh_views_task(flow_prefix: str) -> None:
     refresh_views()
     logger.info(f"[{flow_prefix}] Views refreshed")
 
+@task(name="Syft Analysis Task", cache_policy=NO_CACHE)
+def syft_analysis_task(repo_dir):
+    logger = get_run_logger()
+    syft_analyzer = SyftAnalyzer(logger=logger)
+    result = syft_analyzer.run_analysis(repo_dir)
+    return result
 
 async def worker(queue, run_id, single_repo_processing_flow):
     """Worker task: continuously process repositories from the queue."""
