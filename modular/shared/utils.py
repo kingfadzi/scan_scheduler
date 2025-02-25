@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime, time
+from datetime import datetime 
+import time 
 
 from prefect.context import get_run_context
 from sqlalchemy import text
