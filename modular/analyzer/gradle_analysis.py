@@ -1,15 +1,12 @@
 import os
-import json
-import subprocess
-import re
+import logging
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool  # Unified model for build tools
 from modular.shared.execution_decorator import analyze_execution
-from config.config import Config
-from modular.shared.base_logger import BaseLogger
-from modular.gradle.environment_manager import GradleEnvironmentManager
-import logging
 from modular.shared.utils import detect_repo_languages, detect_java_build_tool
+from modular.gradle.environment_manager import GradleEnvironmentManager
+from modular.shared.base_logger import BaseLogger
+
 
 class GradleAnalyzer(BaseLogger):
     def __init__(self, logger=None):
@@ -37,21 +34,17 @@ class GradleAnalyzer(BaseLogger):
             return message
 
         env_manager = GradleEnvironmentManager(logger=self.logger)
-        gradle_env = env_manager.get_gradle_environment(repo_dir)
-        if gradle_env is None:
-            message = f"Repo '{repo.repo_id}' is not a Gradle project."
-            self.logger.info(message)
-            return json.dumps({"repo_id": repo.repo_id, "tool": "Gradle", "message": message})
+        gradle_versions = env_manager.get_java_and_gradle_versions(repo_dir)
 
-        gradle_executable = gradle_env.get("gradle_executable")
-        JAVA_HOME = gradle_env.get("JAVA_HOME")
+        if not gradle_versions:
+            message = f"Failed to determine Java and Gradle versions for repo '{repo.repo_id}'."
+            self.logger.error(message)
+            return message
 
-        gradle_version = env_manager._detect_gradle_version(repo_dir)
-        if not gradle_version:
-            gradle_version = "Unable to determine Gradle version"
-            self.logger.error("Unable to determine Gradle version.")
+        gradle_version = gradle_versions.get("gradle_version", "Unknown")
+        java_version = gradle_versions.get("java_version", "unknown")
 
-        self.logger.info(f"Detected Gradle build tool. Gradle version: {gradle_version}, JAVA_HOME: {JAVA_HOME}")
+        self.logger.info(f"Detected Gradle build tool. Gradle version: {gradle_version}, Java version: {java_version}")
 
         try:
             session.execute(
@@ -59,12 +52,12 @@ class GradleAnalyzer(BaseLogger):
                     repo_id=repo.repo_id,
                     tool="Gradle",
                     tool_version=gradle_version,
-                    runtime_version=JAVA_HOME,
+                    runtime_version=java_version,
                 ).on_conflict_do_update(
                     index_elements=["repo_id", "tool"],
                     set_={
                         "tool_version": gradle_version,
-                        "runtime_version": JAVA_HOME,
+                        "runtime_version": java_version,
                     }
                 )
             )
@@ -74,14 +67,9 @@ class GradleAnalyzer(BaseLogger):
             self.logger.exception(f"Error persisting Gradle build analysis results for repo_id {repo.repo_id}: {e}")
             raise RuntimeError(e)
 
-        result = {
-            "repo_id": repo.repo_id,
-            "tool": "Gradle",
-            "tool_version": gradle_version,
-            "runtime_version": JAVA_HOME,
-        }
+        result = f"Repo ID: {repo.repo_id}, Tool: Gradle, Gradle Version: {gradle_version}, Java Version: {java_version}"
         self.logger.info("Gradle build analysis completed.")
-        return json.dumps(result)
+        return result
 
 
 if __name__ == "__main__":
@@ -98,6 +86,7 @@ if __name__ == "__main__":
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradleAnalyzer()
+
     try:
         result = analyzer.run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN")
         analyzer.logger.info(f"Standalone Gradle build analysis result: {result}")
