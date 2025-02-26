@@ -34,6 +34,12 @@ case "$COMMAND" in
         mkdir -p "${EXTRACT_DIR}"
         tar -xvzf "${TARBALL}" -C "${EXTRACT_DIR}"
         echo "Extraction complete. Modify contents inside '${EXTRACT_DIR}'."
+
+        # Ensure tools/ is ignored in git
+        if ! grep -qxF "${EXTRACT_DIR}/" .gitignore 2>/dev/null; then
+            echo "${EXTRACT_DIR}/" >> .gitignore
+            echo "Added '${EXTRACT_DIR}/' to .gitignore."
+        fi
         ;;
 
     push)
