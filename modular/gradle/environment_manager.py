@@ -267,10 +267,10 @@ class GradleEnvironmentManager(BaseLogger):
         for build_file in build_files:
             version = self._parse_version_from_file(
                 build_file,
-                r"(?:source|target)Compatibility\s*[=:]\s*.*?(\d+)"
+                r"(?:sourceCompatibility|targetCompatibility)\s*[=:]\s*(\d+)"
             ) or self._parse_version_from_file(
                 build_file,
-                r"languageVersion\s*=\s*JavaLanguageVersion\.of\((\d+)\)"
+                r"languageVersion\s*=\s*JavaLanguageVersion\.of(\d+)"
             )
             
             if version:
