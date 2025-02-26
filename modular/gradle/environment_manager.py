@@ -214,7 +214,7 @@ class GradleEnvironmentManager(BaseLogger):
         return os.path.isfile(path) and os.access(path, os.X_OK)
         
         
-    def get_java_and_gradle_versions(repo_dir):
+    def get_java_and_gradle_versions(self, repo_dir):
         """Returns detected Java and Gradle versions with explicit priority handling"""
         gradle_version = self._detect_gradle_version(repo_dir)
         if not gradle_version:

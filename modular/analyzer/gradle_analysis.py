@@ -34,7 +34,7 @@ class GradleAnalyzer(BaseLogger):
             return message
 
         env_manager = GradleEnvironmentManager(logger=self.logger)
-        gradle_versions = env_manager.get_java_and_gradle_versions(repo_dir)
+        gradle_versions = env_manager.get_java_and_gradle_versions(repo_dir=repo_dir)
 
         if not gradle_versions:
             message = f"Failed to determine Java and Gradle versions for repo '{repo.repo_id}'."
