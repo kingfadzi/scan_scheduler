@@ -12,53 +12,30 @@ class XeolAnalyzer(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:
-            self.logger = self.get_logger("SyftAndXeolAnalyzer")
+            self.logger = self.get_logger("XeolAnalyzer")
         else:
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-    @analyze_execution(session_factory=Session, stage="Syft and Xeol Analysis")
+    @analyze_execution(session_factory=Session, stage="Xeol Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
 
         self.logger.info(f"Repo slug: {repo.repo_slug}.")
-        self.logger.info(f"Starting Syft and Xeol analysis for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Starting Xeol analysis for repo_id: {repo.repo_id}.")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        # Generate SBOM using Syft
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
-        self.logger.info(f"Generating SBOM for repo_id: {repo.repo_id} using Syft.")
-
-        try:
-            command = [
-                "syft",
-                repo_dir,
-                "--output", "json",
-                "--file",
-                sbom_file_path
-            ]
-            self.logger.debug("Executing command: %s", " ".join(command))
-            subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
-            )
-            self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
-        except subprocess.TimeoutExpired as e:
-            error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+        if not os.path.exists(sbom_file_path):
+            error_message = f"SBOM file does not exist: {sbom_file_path}"
             self.logger.error(error_message)
-            raise RuntimeError(error_message)
-        except subprocess.CalledProcessError as e:
-            error_message = f"Syft command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
-            self.logger.error(error_message)
-            raise RuntimeError(error_message)
+            raise FileNotFoundError(error_message)
+        self.logger.info(f"SBOM file found at {sbom_file_path} for repo_id: {repo.repo_id}.")
 
-        # Run Xeol on the generated SBOM
+        # Run Xeol on the existing SBOM
         xeol_file_path = os.path.join(repo_dir, "xeol-results.json")
         self.logger.info(f"Analyzing SBOM with Xeol for repo_id: {repo.repo_id}.")
 
@@ -190,17 +167,17 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
 
-    analyzer = SyftAndXeolAnalyzer()
+    analyzer = XeolAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
     repo_dir = f"/tmp/{repo.repo_slug}"
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting standalone Syft and Xeol analysis for repo_id: {repo.repo_id}.")
+        analyzer.logger.info(f"Starting standalone Xeol analysis for repo_id: {repo.repo_id}.")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
-        analyzer.logger.info(f"Standalone Syft and Xeol analysis result: {result}")
+        analyzer.logger.info(f"Standalone Xeol analysis result: {result}")
     except Exception as e:
-        analyzer.logger.error(f"Error during standalone Syft and Xeol analysis: {e}")
+        analyzer.logger.error(f"Error during standalone Xeol analysis: {e}")
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}.")

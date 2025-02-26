@@ -61,3 +61,28 @@ class SyftAnalyzer(BaseLogger):
 
         self.logger.info("Syft analysis completed.")
         return json.dumps(sbom_json)
+
+if __name__ == "__main__":
+    repo_slug = "example-repo"
+    repo_id = "12345"
+
+    class MockRepo:
+        def __init__(self, repo_id, repo_slug):
+            self.repo_id = repo_id
+            self.repo_slug = repo_slug
+            self.repo_name = repo_slug
+
+    analyzer = SyftAnalyzer()
+    repo = MockRepo(repo_id, repo_slug)
+    repo_dir = f"/tmp/{repo.repo_slug}"
+    session = Session()
+
+    try:
+        analyzer.logger.info(f"Starting standalone Syft analysis for repo_id: {repo.repo_id}")
+        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="SYFT_STANDALONE_001")
+        analyzer.logger.info(f"Standalone Syft analysis result: {result[:500]}...")  # Log partial result to avoid flooding
+    except Exception as e:
+        analyzer.logger.error(f"Error during standalone Syft analysis: {e}")
+    finally:
+        session.close()
+        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}")

@@ -48,4 +48,4 @@ class Config:
     FLOW_GIT_STORAGE = os.getenv("FLOW_GIT_STORAGE")
     FLOW_GIT_BRANCH = os.getenv("FLOW_GIT_BRANCH")
 
-    XEOL_DB_CACHE_DIR = os.getenv("XEOL_DB_CACHE_DIR", "/Users/fadzi/Library/Caches/xeol/db")
+    XEOL_DB_CACHE_DIR = os.getenv("XEOL_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/xeol/db")
