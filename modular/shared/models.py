@@ -347,3 +347,15 @@ class XeolResult(Base):
         UniqueConstraint('repo_id', 'artifact_name', 'artifact_version', name='_xeol_result_uc'),
     )
 
+class BuildTool(Base):
+    __tablename__ = 'build_tools'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    repo_id = Column(String, nullable=False)
+    tool = Column(String, nullable=False)  # e.g., Maven, Gradle, npm, pip, etc.
+    tool_version = Column(String, nullable=True)  # version of the build tool
+    runtime_version = Column(String, nullable=True)  # language/runtime version (e.g., Java, Node, Python)
+
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'tool', name='_build_tools_uc'),
+    )

@@ -1,11 +1,11 @@
 import logging
-from datetime import datetime 
-import time 
-
+from datetime import datetime
+import time
+import os
 from prefect.context import get_run_context
 from sqlalchemy import text
 
-from modular.shared.models import Session, Repository, AnalysisExecutionLog
+from modular.shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis
 from modular.shared.query_builder import build_query
 import logging
 import numpy as np
@@ -162,3 +162,48 @@ def generate_main_flow_run_name():
 
     # return f"{flow_name}_{formatted_time}"
     return f"{formatted_time}"
+
+
+def detect_repo_languages(repo_id, session):
+    logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
+
+    results = session.query(
+            GoEnryAnalysis.language,
+            GoEnryAnalysis.percent_usage
+        ).filter(
+            GoEnryAnalysis.repo_id == repo_id
+        ).order_by(
+            GoEnryAnalysis.percent_usage.desc()
+        ).all()
+
+    if results:
+        main_language = [results[0].language]
+        main_percent = results[0].percent_usage
+        logger.info(
+            f"Primary language for repo_id {repo_id}: {main_language} ({main_percent}%)"
+        )
+        return main_language
+
+    logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
+    return []
+
+
+def detect_java_build_tool(repo_dir):
+
+    maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
+
+    gradle_files = ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
+    gradle_found = any(os.path.isfile(os.path.join(repo_dir, f)) for f in gradle_files)
+
+    if maven_pom and gradle_found:
+        logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
+        return "Maven"
+    elif maven_pom:
+        logger.debug("Maven pom.xml detected.")
+        return "Maven"
+    elif gradle_found:
+        logger.debug("Gradle build files detected: " + ", ".join(f for f in gradle_files if os.path.isfile(os.path.join(repo_dir, f))))
+        return "Gradle"
+    else:
+        logger.warning("No Java build system detected. Checked for pom.xml and Gradle files: " + ", ".join(gradle_files))
+        return None

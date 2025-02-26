@@ -93,10 +93,10 @@ class XeolAnalyzer(BaseLogger):
             eol_count = len(matches)
             message = f"Found {eol_count} EOL dependencies for repo_id: {repo_id}"
             if not matches:
-                self.logger.info(f"No matches found in Xeol results for repo_id: {repo_id}")
+                self.logger.info(f"No matches found in EOL results for repo_id: {repo_id}")
                 return message
 
-            self.logger.debug(f"Found {len(matches)} matches in Xeol results for repo_id: {repo_id}.")
+            self.logger.debug(f"Found {len(matches)} matches in EOL results for repo_id: {repo_id}.")
             for match in matches:
                 # Extract lifecycle info from "Cycle"
                 cycle = match.get("Cycle", {})
@@ -151,11 +151,11 @@ class XeolAnalyzer(BaseLogger):
                     )
                 )
             session.commit()
-            self.logger.debug(f"Xeol results successfully committed for repo_id: {repo_id}.")
+            self.logger.debug(f"EOL results successfully committed for repo_id: {repo_id}.")
             return message
 
         except Exception as e:
-            self.logger.exception(f"Error while parsing or saving Xeol results for repository ID {repo_id}: {e}")
+            self.logger.exception(f"Error while parsing or saving EOL results for repository ID {repo_id}: {e}")
             raise
 
 

@@ -10,6 +10,7 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
+from modular.shared.utils import detect_repo_languages, detect_java_build_tool
 
 class DependencyAnalyzer(BaseLogger):
 
@@ -35,7 +36,7 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = self.detect_repo_languages(repo.repo_id, session)
+        repo_languages = detect_repo_languages(repo.repo_id, session)
         if not repo_languages:
             self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
             return f"skipped: No detected languages for repo {repo.repo_id}."
@@ -57,7 +58,7 @@ class DependencyAnalyzer(BaseLogger):
 
             if "Java" in repo_languages:
                 self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
-                build_tool = self.detect_java_build_tool(repo_dir)
+                build_tool = detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
                     self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
@@ -68,7 +69,6 @@ class DependencyAnalyzer(BaseLogger):
                     self.logger.warning("No supported Java build system detected.")
 
             self.persist_dependencies(dependencies, session)
-
 
             #return f"Dependencies: {dependencies}"
             return f"Dependencies: {len(dependencies)}"
@@ -84,44 +84,6 @@ class DependencyAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
             return f"error: {str(e)}"
-
-    def detect_java_build_tool(self, repo_dir):
-        maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
-        gradle_build = os.path.isfile(os.path.join(repo_dir, "build.gradle"))
-        if maven_pom and gradle_build:
-            self.logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
-            return "Maven"
-        elif maven_pom:
-            self.logger.debug("Maven pom.xml detected")
-            return "Maven"
-        elif gradle_build:
-            self.logger.debug("Gradle build.gradle detected")
-            return "Gradle"
-        self.logger.warning("No Java build system detected (checked for pom.xml and build.gradle)")
-        return None
-
-    def detect_repo_languages(self, repo_id, session):
-        self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
-
-        results = session.query(
-            GoEnryAnalysis.language,
-            GoEnryAnalysis.percent_usage
-        ).filter(
-            GoEnryAnalysis.repo_id == repo_id
-        ).order_by(
-            GoEnryAnalysis.percent_usage.desc()
-        ).all()
-
-        if results:
-            main_language = [results[0].language]
-            main_percent = results[0].percent_usage
-            self.logger.info(
-                f"Primary language for repo_id {repo_id}: {main_language} ({main_percent}%)"
-            )
-            return main_language
-
-        self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
-        return []  # Return empty list instead of None
 
 
     def persist_dependencies(self, dependencies, session):

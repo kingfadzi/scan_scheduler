@@ -7,6 +7,9 @@ from modular.analyzer.kantra_analysis import KantraAnalyzer
 from modular.analyzer.grype_analysis import GrypeAnalyzer
 from modular.analyzer.xeol_analysis import XeolAnalyzer
 from modular.analyzer.syft_analysis import SyftAnalyzer
+from modular.analyzer.maven_analysis import MavenAnalyzer
+from modular.analyzer.gradle_analysis import GradleAnalyzer
+
 from modular.shared.models import Session
 from config.config import Config
 
@@ -34,6 +37,8 @@ def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [
         run_dependency_analysis_task,
+        run_maven_analysis_task,
+        run_gradle_analysis_task,
         run_syft_analysis_task,
         run_grype_analysis_task,
         run_xeol_analysis_task,
@@ -47,7 +52,7 @@ def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
         sub_dir="analyze_components",
         flow_prefix="Component Patterns"
     )
-    
+
 @task(name="Syft Analysis Task", cache_policy=NO_CACHE)
 def run_syft_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
@@ -60,8 +65,8 @@ def run_syft_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"[Component Patterns] Completed Syft analysis for repository: {repo.repo_id}")
-    
-    
+
+
 
 @task(name="Run Dependency Analysis Task", cache_policy=NO_CACHE)
 def run_dependency_analysis_task(repo_dir, repo, session, run_id):
@@ -89,7 +94,7 @@ def run_grype_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
     logger.info(f"[Component Patterns] Completed Grype analysis for repository: {repo.repo_id}")
-    
+
 
 @task(name="Run Xeol Analysis Task", cache_policy=NO_CACHE)
 def run_xeol_analysis_task(repo_dir, repo, session, run_id):
@@ -119,6 +124,37 @@ def run_kantra_analysis_task(repo_dir, repo, session, run_id):
     logger.info(f"[Component Patterns] Completed Kantra analysis for repository: {repo.repo_id}")
 
 
+@task(name="Run Maven Analysis Task", cache_policy=NO_CACHE)
+def run_maven_analysis_task(repo_dir, repo, session, run_id):
+    logger = get_run_logger()
+    logger.info(f"[Component Patterns] Starting Maven analysis for repository: {repo.repo_id}")
+    analyzer = MavenAnalyzer(logger=logger)
+    result = analyzer.run_analysis(
+        repo_dir=repo_dir,
+        repo=repo,
+        session=session,
+        run_id=run_id
+    )
+    logger.info(f"[Component Patterns] Completed Maven analysis for repository: {repo.repo_id}")
+    return result
+
+
+@task(name="Run Gradle Analysis Task", cache_policy=NO_CACHE)
+def run_gradle_analysis_task(repo_dir, repo, session, run_id):
+    logger = get_run_logger()
+    logger.info(f"[Component Patterns] Starting Gradle analysis for repository: {repo.repo_id}")
+    analyzer = GradleAnalyzer(logger=logger)
+    result = analyzer.run_analysis(
+        repo_dir=repo_dir,
+        repo=repo,
+        session=session,
+        run_id=run_id
+    )
+    logger.info(f"[Component Patterns] Completed Gradle analysis for repository: {repo.repo_id}")
+    return result
+
+
+
 if __name__ == "__main__":
     example_payload = {
         "payload": {
@@ -130,4 +166,3 @@ if __name__ == "__main__":
     # Run the asynchronous main flow
     asyncio.run(component_patterns_flow(payload=example_payload))
 
-    
