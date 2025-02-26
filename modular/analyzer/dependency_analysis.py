@@ -69,8 +69,9 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
-          
-            return f"Dependencies: {dependencies}"
+
+            #return f"Dependencies: {dependencies}"
+            return f"Dependencies: {len(dependencies)}"
 
 
         except Exception as e:

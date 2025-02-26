@@ -62,13 +62,13 @@ class TrivyAnalyzer(BaseLogger):
                 raise RuntimeError(error_message)
 
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
-            
+
         except subprocess.TimeoutExpired as e:
             error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
- 
-            
+
+
         except subprocess.CalledProcessError as e:
             self.logger.error("Trivy command execution encountered an error: %s", e)
 
@@ -99,7 +99,10 @@ class TrivyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return json.dumps(trivy_data)
+        #return json.dumps(trivy_data)
+        message = f"Found {total_vulnerabilities} vulnerabilities for repo_id: {repo.repo_id}"
+        self.logger.info(message)
+        return message
 
 
     def prepare_trivyignore(self, repo_dir):

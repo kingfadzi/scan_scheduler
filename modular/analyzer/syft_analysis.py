@@ -52,15 +52,13 @@ class SyftAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
         if os.path.exists(sbom_file_path):
-            self.logger.info(f"SBOM file created at: {sbom_file_path}")
+            message = f"SBOM file created at: {sbom_file_path}"
+            self.logger.info(message)
         else:
-            self.logger.warning(f"SBOM file not found at expected path: {sbom_file_path}")
+            message = f"SBOM file not found at expected path: {sbom_file_path}"
+            self.logger.warning(message)
 
-        with open(sbom_file_path, "r") as f:
-            sbom_json = json.load(f)
-
-        self.logger.info("Syft analysis completed.")
-        return json.dumps(sbom_json)
+        return message
 
 if __name__ == "__main__":
     repo_slug = "sonar-metrics"

@@ -90,9 +90,11 @@ class XeolAnalyzer(BaseLogger):
                 xeol_data = json.load(file)
 
             matches = xeol_data.get("matches", [])
+            eol_count = len(matches)
+            message = f"Found {eol_count} EOL dependencies for repo_id: {repo_id}"
             if not matches:
                 self.logger.info(f"No matches found in Xeol results for repo_id: {repo_id}")
-                return xeol_data
+                return message
 
             self.logger.debug(f"Found {len(matches)} matches in Xeol results for repo_id: {repo_id}.")
             for match in matches:
@@ -150,7 +152,7 @@ class XeolAnalyzer(BaseLogger):
                 )
             session.commit()
             self.logger.debug(f"Xeol results successfully committed for repo_id: {repo_id}.")
-            return xeol_data
+            return message
 
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Xeol results for repository ID {repo_id}: {e}")

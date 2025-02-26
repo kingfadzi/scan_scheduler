@@ -19,16 +19,16 @@ class GrypeAnalyzer(BaseLogger):
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
-        
+
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
-        
+
         # Check if the SBOM file exists
         if not os.path.exists(sbom_file_path):
             error_message = f"SBOM file not found for repository {repo.repo_name} at path: {sbom_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
-        
+
         self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id} using SBOM at {sbom_file_path}.")
 
         try:
@@ -73,7 +73,6 @@ class GrypeAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        # If no vulnerabilities found, return the log message
         if isinstance(grype_result, str):
             return grype_result
         else:
@@ -142,14 +141,14 @@ class GrypeAnalyzer(BaseLogger):
 
             session.commit()
             self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
-            return grype_data
+
+            #return grype_data
+            return f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}."
 
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
             raise
-          
-          
-# ... (keep all existing GrypeAnalyzer code above) ...
+
 
 if __name__ == "__main__":
     repo_slug = "sonar-metrics"
@@ -169,12 +168,12 @@ if __name__ == "__main__":
     try:
         analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo.repo_id}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="GRYPE_STANDALONE_001")
-        
+
         if isinstance(result, str):
             analyzer.logger.info(result)
         else:
             analyzer.logger.info(f"Grype analysis completed with {len(json.loads(result).get('matches', []))} findings")
-            
+
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Grype analysis: {e}")
     finally:

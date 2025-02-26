@@ -65,7 +65,10 @@ class CheckovAnalyzer(BaseLogger):
         results_file = os.path.join(output_dir, "results_json.json")
         if not os.path.isfile(results_file):
             raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
-        return results_file
+        message = f"Checkov results successfully produced at: {results_file}"
+        self.logger.info(message)
+        return message
+
 
     def _process_checkov_results(self, repo, session, results_file):
         try:
