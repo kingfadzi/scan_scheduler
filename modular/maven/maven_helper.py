@@ -15,7 +15,7 @@ class MavenHelper(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir, repo):
-        """Processes a Maven repository and returns a list of dependencies with repo_id."""
+
         self.logger.info(f"Processing repository at: {repo_dir}")
         if not os.path.isdir(repo_dir):
             self.logger.error(f"Invalid directory: {repo_dir}")
@@ -28,7 +28,7 @@ class MavenHelper(BaseLogger):
         return self.parse_dependencies(effective_pom, repo)
 
     def generate_effective_pom(self, repo_dir, output_file="effective-pom.xml"):
-        """Generates the effective POM using Maven."""
+
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 

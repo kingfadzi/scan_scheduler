@@ -26,14 +26,14 @@ class GradleAnalyzer(BaseLogger):
         repo_languages = detect_repo_languages(repo.repo_id, session)
         if 'Java' not in repo_languages:
             message = f"Repo {repo.repo_id} is not a Java project. Skipping."
-            self.logger.error(message)
+            self.logger.info(message)
             return message
 
         # Check if build tool is Gradle
         java_build_tool = detect_java_build_tool(repo_dir)
         if java_build_tool != 'Gradle':
             message = f"Repo {repo.repo_id} is Java but doesn't use Gradle. Skipping."
-            self.logger.error(message)
+            self.logger.info(message)
             return message
 
         env_manager = GradleEnvironmentManager(logger=self.logger)
@@ -43,11 +43,9 @@ class GradleAnalyzer(BaseLogger):
             self.logger.info(message)
             return json.dumps({"repo_id": repo.repo_id, "tool": "Gradle", "message": message})
 
-        # Retrieve the gradle_executable and JAVA_HOME from the detected environment
         gradle_executable = gradle_env.get("gradle_executable")
         JAVA_HOME = gradle_env.get("JAVA_HOME")
 
-        # Use the environment manager's detection to determine the Gradle version
         gradle_version = env_manager._detect_gradle_version(repo_dir)
         if not gradle_version:
             gradle_version = "Unable to determine Gradle version"
@@ -55,7 +53,6 @@ class GradleAnalyzer(BaseLogger):
 
         self.logger.info(f"Detected Gradle build tool. Gradle version: {gradle_version}, JAVA_HOME: {JAVA_HOME}")
 
-        # Persist the results into the unified build_tools table
         try:
             session.execute(
                 insert(BuildTool).values(
@@ -88,8 +85,7 @@ class GradleAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    # Main method for standalone testing
-    repo_dir = "/tmp/gradle-wrapper-sample"  # Adjust this path as needed
+    repo_dir = "/tmp/gradle-wrapper-sample"
     repo_id = "gradle-wrapper-sample"
     repo_slug = "gradle-wrapper-sample"
 

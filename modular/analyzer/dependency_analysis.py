@@ -105,7 +105,7 @@ class DependencyAnalyzer(BaseLogger):
             ]
 
             ins_stmt = insert(Dependency)
-            # With on_conflict_do_nothing, any conflict based on the unique index is silently skipped.
+
             upsert_stmt = ins_stmt.on_conflict_do_nothing(
                 index_elements=['repo_id', 'name', 'version']
             )

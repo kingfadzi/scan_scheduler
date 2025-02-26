@@ -25,7 +25,6 @@ async def vulnerabilities_flow(payload: dict):
         concurrency_limit=10
     )
 
-
 @flow(flow_run_name=generate_repo_flow_run_name)
 def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
 
@@ -78,7 +77,7 @@ def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
 
 
 if __name__ == "__main__":
-    
+
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
@@ -86,5 +85,5 @@ if __name__ == "__main__":
             "main_language": ["Python"]
         }
     }
-    
+
     asyncio.run(vulnerabilities_flow(payload=example_payload))

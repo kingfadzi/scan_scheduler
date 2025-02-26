@@ -159,8 +159,8 @@ if __name__ == "__main__":
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
-            "activity_status": ["ACTIVE"],
-            "main_language": ["Python"]
+           # "activity_status": ["ACTIVE"],
+            "main_language": ["Java"]
         }
     }
     # Run the asynchronous main flow

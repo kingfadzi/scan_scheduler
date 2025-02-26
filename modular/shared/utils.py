@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def create_batches(payload, batch_size=1000, num_partitions=5):
-    """Split repositories into parallel processing batches with detailed logging."""
+
     logger.info(
         f"Starting batch creation - Target batch size: {batch_size}, "
         f"Partitions: {num_partitions}"
@@ -31,7 +31,6 @@ def create_batches(payload, batch_size=1000, num_partitions=5):
 
     logger.info(f"Total repositories fetched: {len(all_repos)}")
 
-    # Create partitioned batches
     partitions = [all_repos[i::num_partitions] for i in range(num_partitions)]
     partition_sizes = [len(p) for p in partitions]
 
@@ -44,7 +43,7 @@ def create_batches(payload, batch_size=1000, num_partitions=5):
 
 
 def fetch_repositories(payload, batch_size=1000):
-    """Fetch repositories in paginated batches with detailed query logging."""
+
     logger.info(
         f"Initializing repository fetch - Payload: {payload.keys()}, "
         f"Page size: {batch_size}"
@@ -82,7 +81,6 @@ def fetch_repositories(payload, batch_size=1000):
                 logger.info("Empty result set - Ending pagination")
                 break
 
-            # Detach objects from session
             detach_start = time.perf_counter()
             for repo in batch:
                 _ = repo.repo_slug  # Force attribute load

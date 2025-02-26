@@ -35,7 +35,6 @@ class XeolAnalyzer(BaseLogger):
             raise FileNotFoundError(error_message)
         self.logger.info(f"SBOM file found at {sbom_file_path} for repo_id: {repo.repo_id}.")
 
-        # Run Xeol on the existing SBOM
         xeol_file_path = os.path.join(repo_dir, "xeol-results.json")
         self.logger.info(f"Analyzing SBOM with Xeol for repo_id: {repo.repo_id}.")
 

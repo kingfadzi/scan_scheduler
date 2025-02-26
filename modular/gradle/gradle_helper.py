@@ -6,7 +6,7 @@ from modular.shared.base_logger import BaseLogger
 from modular.gradle.environment_manager import GradleEnvironmentManager
 from modular.gradle.snippet_builder import GradleSnippetBuilder
 from modular.gradle.gradle_runner import GradleRunner
-from modular.shared.models import Dependency  # Assuming Dependency model is similar to PythonHelper
+from modular.shared.models import Dependency
 
 class GradleHelper(BaseLogger):
 
@@ -78,7 +78,7 @@ class GradleHelper(BaseLogger):
         return self._find_output_file(repo_dir, output_file)
 
     def parse_dependencies(self, dependencies_file, repo):
-        """Parses the Gradle dependencies file and returns a list of Dependency objects with repo_id."""
+
         dependencies = []
         if not os.path.isfile(dependencies_file):
             return dependencies
@@ -157,7 +157,7 @@ class GradleHelper(BaseLogger):
                 return c
         return None
 
-# Define Repo class similar to PythonHelper
+
 class Repo:
     def __init__(self, repo_id):
         self.repo_id = repo_id

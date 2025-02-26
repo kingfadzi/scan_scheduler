@@ -53,27 +53,27 @@ def refresh_views_task(flow_prefix: str) -> None:
 
 
 async def worker(queue, run_id, single_repo_processing_flow):
-    """Worker task: continuously process repositories from the queue."""
+
     while True:
-        repo = await queue.get()  # Wait for a repo to process.
+        repo = await queue.get()
         try:
-            # Process the repository in a separate thread.
+
             await asyncio.to_thread(
                 single_repo_processing_flow,
                 repo,
-                getattr(repo, "repo_slug", str(repo)),  # Ensure we have the repo slug.
+                getattr(repo, "repo_slug", str(repo)),
                 run_id
             )
         finally:
-            queue.task_done()  # Mark this repo as done.
+            queue.task_done()
 
 async def generic_main_flow(
         payload: dict,
-        single_repo_processing_flow,  # A function that processes one repository.
+        single_repo_processing_flow,
         flow_prefix: str,
         batch_size: int,
         num_partitions: int,
-        concurrency_limit: int  # This limits the number of concurrent tasks.
+        concurrency_limit: int
 ):
     logger = get_run_logger()
 

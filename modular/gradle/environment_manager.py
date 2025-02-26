@@ -108,7 +108,7 @@ class GradleEnvironmentManager(BaseLogger):
             self.logger.debug(f"Using Gradle wrapper executable: {wrapper_path}")
             return wrapper_path
 
-        # Check system Gradle version
+
         try:
             output = subprocess.run(["gradle", "-v"], capture_output=True, text=True, check=True).stdout
             detected_version = self._parse_version_from_output(output, r"Gradle\s+(\d+\.\d+)")
@@ -118,13 +118,11 @@ class GradleEnvironmentManager(BaseLogger):
         except FileNotFoundError:
             self.logger.warning("System Gradle not found.")
 
-        # Check for compatible version in /opt/gradle
         gradle_path = self._get_compatible_gradle_path(gradle_version)
         if gradle_path and self._is_executable(gradle_path):
             self.logger.debug(f"Using Gradle executable from /opt: {gradle_path}")
             return gradle_path
 
-        # Fall back to system Gradle
         if self._is_executable("gradle"):
             self.logger.info("Using system Gradle as fallback.")
             return "gradle"

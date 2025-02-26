@@ -46,14 +46,14 @@ def build_query(payload):
     """
 
     filters = []
-    # Build filters for each expected key in the mapping
+
     for key, column in filter_mapping.items():
         if key in inner_payload:
             values = inner_payload[key]
             if not values:
-                # Throw an exception if a filter key is present but its list is empty.
+
                 raise ValueError(f"Filter for '{key}' cannot be empty.")
-            # For repo_id, use a LIKE clause for partial, case-insensitive matching
+
             if key == 'repo_id':
                 filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
             else:
@@ -64,7 +64,6 @@ def build_query(payload):
                     formatted_values = ", ".join(str(v) for v in values)
                     filters.append(f"{column} IN ({formatted_values})")
 
-    # If no filters were added, throw an exception to avoid generating a query that selects everything.
     if not filters:
         raise ValueError("No valid filters provided. Query would select all rows.")
 

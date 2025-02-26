@@ -26,19 +26,18 @@ class MavenAnalyzer(BaseLogger):
         repo_languages = detect_repo_languages(repo.repo_id, session)
         if 'Java' not in repo_languages:
             message = f"Repo {repo.repo_id} is not a Java project. Skipping."
-            self.logger.error(message)
+            self.logger.info(message)
             return message
 
-        # Check if build tool is Maven
         java_build_tool = detect_java_build_tool(repo_dir)
         if java_build_tool != 'Maven':
             message = f"Repo {repo.repo_id} is Java but doesn't use Maven. Skipping."
-            self.logger.error(message)
+            self.logger.info(message)
             return message
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
-            self.logger.error(error_message)
+            self.logger.info(error_message)
             raise FileNotFoundError(error_message)
 
         pom_path = os.path.join(repo_dir, "pom.xml")
