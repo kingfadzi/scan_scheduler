@@ -30,17 +30,17 @@ COMMAND="$1"
 FINAL_URL="${S3_URL}/${BUCKET}/${TARBALL}"
 
 # Set curl authentication flag if keys are provided
-CURL_AUTH=""
+CURL_AUTH=()
 if [[ -n "$ACCESS_KEY" && -n "$SECRET_KEY" ]]; then
-    CURL_AUTH="-u ${ACCESS_KEY}:${SECRET_KEY}"
+    CURL_AUTH=(-u "${ACCESS_KEY}:${SECRET_KEY}")
 fi
 
 case "$COMMAND" in
     pull)
         echo "Pulling ${TARBALL} from ${FINAL_URL}..."
 
-        # Download with status capture
-        HTTP_RESPONSE=$(curl --silent --write-out "%{http_code}" --output "${TARBALL}" ${CURL_AUTH} "${FINAL_URL}")
+        # Download with progress and status capture
+        HTTP_RESPONSE=$(curl --progress-bar --silent --write-out "%{http_code}" --output "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}")
 
         # Handle HTTP responses
         case "$HTTP_RESPONSE" in
@@ -75,11 +75,15 @@ case "$COMMAND" in
         echo "Compression complete."
 
         echo "Uploading ${TARBALL} to ${FINAL_URL}..."
-        HTTP_RESPONSE=$(curl --silent --write-out "%{http_code}" --progress-bar -T "${TARBALL}" ${CURL_AUTH} "${FINAL_URL}")
+        HTTP_RESPONSE=$(curl --progress-bar --silent --write-out "%{http_code}" -T "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}")
 
         # Handle HTTP responses
         case "$HTTP_RESPONSE" in
-            200|204) echo "Upload complete." ;;
+            200|204) 
+                echo "Upload complete. Cleaning up local files..."
+                rm -rf "${TARBALL}" "${EXTRACT_DIR}"
+                echo "Cleanup complete."
+                ;;
             400) echo "Error: Bad request (HTTP 400). Check settings." ; exit 1 ;;
             401|403) echo "Error: Authentication failed (HTTP $HTTP_RESPONSE). Check credentials." ; exit 1 ;;
             500) echo "Error: Server error (HTTP 500). Try again later." ; exit 1 ;;
