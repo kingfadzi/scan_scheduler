@@ -147,3 +147,36 @@ class GrypeAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
             raise
+          
+          
+# ... (keep all existing GrypeAnalyzer code above) ...
+
+if __name__ == "__main__":
+    repo_slug = "sonar-metrics"
+    repo_id = "sonar-metrics
+
+    class MockRepo:
+        def __init__(self, repo_id, repo_slug):
+            self.repo_id = repo_id
+            self.repo_slug = repo_slug
+            self.repo_name = repo_slug
+
+    analyzer = GrypeAnalyzer()
+    repo = MockRepo(repo_id, repo_slug)
+    repo_dir = f"/tmp/{repo.repo_slug}"
+    session = Session()
+
+    try:
+        analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo.repo_id}")
+        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="GRYPE_STANDALONE_001")
+        
+        if isinstance(result, str):
+            analyzer.logger.info(result)
+        else:
+            analyzer.logger.info(f"Grype analysis completed with {len(json.loads(result).get('matches', []))} findings")
+            
+    except Exception as e:
+        analyzer.logger.error(f"Error during standalone Grype analysis: {e}")
+    finally:
+        session.close()
+        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}")

@@ -63,8 +63,8 @@ class SyftAnalyzer(BaseLogger):
         return json.dumps(sbom_json)
 
 if __name__ == "__main__":
-    repo_slug = "example-repo"
-    repo_id = "12345"
+    repo_slug = "sonar-metrics"
+    repo_id = "sonar-metrics
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
