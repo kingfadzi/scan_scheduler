@@ -153,7 +153,7 @@ class GrypeAnalyzer(BaseLogger):
 
 if __name__ == "__main__":
     repo_slug = "sonar-metrics"
-    repo_id = "sonar-metrics
+    repo_id = "sonar-metrics"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
