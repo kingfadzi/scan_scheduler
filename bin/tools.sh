@@ -39,17 +39,12 @@ case "$COMMAND" in
     pull)
         echo "Pulling ${TARBALL} from ${FINAL_URL}..."
 
-        # Download with progress and status capture
-        HTTP_RESPONSE=$(curl --progress-bar --silent --write-out "%{http_code}" --output "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}")
-
-        # Handle HTTP responses
-        case "$HTTP_RESPONSE" in
-            200) echo "Download successful." ;;
-            404) echo "Error: ${TARBALL} not found." ; rm -f "${TARBALL}" ; exit 1 ;;
-            401|403) echo "Error: Authentication failed (HTTP $HTTP_RESPONSE). Check credentials." ; rm -f "${TARBALL}" ; exit 1 ;;
-            500) echo "Error: Server error (HTTP 500). Try again later." ; rm -f "${TARBALL}" ; exit 1 ;;
-            *) echo "Error: Download failed. HTTP Status: $HTTP_RESPONSE" ; rm -f "${TARBALL}" ; exit 1 ;;
-        esac
+        # Download with visible progress
+        curl --fail --show-error --progress-bar --output "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}" || {
+            echo "Error: Failed to download ${TARBALL}."
+            rm -f "${TARBALL}"
+            exit 1
+        }
 
         echo "Extracting ${TARBALL}..."
         mkdir -p "${EXTRACT_DIR}"
@@ -75,20 +70,14 @@ case "$COMMAND" in
         echo "Compression complete."
 
         echo "Uploading ${TARBALL} to ${FINAL_URL}..."
-        HTTP_RESPONSE=$(curl --progress-bar --silent --write-out "%{http_code}" -T "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}")
+        curl --fail --show-error --progress-bar -T "${TARBALL}" "${CURL_AUTH[@]}" "${FINAL_URL}" || {
+            echo "Error: Upload failed."
+            exit 1
+        }
 
-        # Handle HTTP responses
-        case "$HTTP_RESPONSE" in
-            200|204) 
-                echo "Upload complete. Cleaning up local files..."
-                rm -rf "${TARBALL}" "${EXTRACT_DIR}"
-                echo "Cleanup complete."
-                ;;
-            400) echo "Error: Bad request (HTTP 400). Check settings." ; exit 1 ;;
-            401|403) echo "Error: Authentication failed (HTTP $HTTP_RESPONSE). Check credentials." ; exit 1 ;;
-            500) echo "Error: Server error (HTTP 500). Try again later." ; exit 1 ;;
-            *) echo "Error: Upload failed. HTTP Status: $HTTP_RESPONSE" ; exit 1 ;;
-        esac
+        echo "Upload complete. Cleaning up local files..."
+        rm -rf "${TARBALL}" "${EXTRACT_DIR}"
+        echo "Cleanup complete."
         ;;
 
     *)
