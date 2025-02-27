@@ -63,21 +63,28 @@ tasks.register("{task_name}") {{
             }}
         }}
 
-        println("Automatically generating gradle.lockfile using 'dependencies --write-locks'...")
+        println("Automatically generating dependency locks using 'dependencies --write-locks'...")
         def execResult = exec {{
             executable = project.file("gradlew").absolutePath
             args = ['dependencies', '--write-locks']
         }}
         println("Lock generation completed with exit code: " + execResult.exitValue)
         
-        def sourceFile = file("gradle/dependency-locks/gradle.lockfile")
+        // Combine all generated lock files into a single file
+        def depLocksDir = file("gradle/dependency-locks")
         def targetFile = file("gradle/all-deps-nodupes.txt")
-        if (sourceFile.exists()) {{
+        if (depLocksDir.exists()) {{
+            def combinedText = ""
+            depLocksDir.listFiles().each {{ f ->
+                if (f.isFile()) {{
+                    combinedText += f.text + "\\n"
+                }}
+            }}
             targetFile.parentFile.mkdirs()
-            targetFile.text = sourceFile.text
-            println("Copied dependency lock file to " + targetFile.absolutePath)
+            targetFile.text = combinedText.trim()
+            println("Combined dependency lock files into " + targetFile.absolutePath)
         }} else {{
-            println("Expected dependency lock file not found at " + sourceFile.absolutePath)
+            println("Expected dependency lock files directory not found at " + depLocksDir.absolutePath)
         }}
     }}
 }}
