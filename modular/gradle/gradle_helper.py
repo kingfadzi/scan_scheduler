@@ -147,15 +147,23 @@ class GradleHelper(BaseLogger):
         except Exception as e:
             self.logger.error(f"Failed to inject snippet into {build_file}: {e}")
 
-    def _find_output_file(self, repo_dir, output_file):
+    
+    def _find_output_file(self, repo_dir, output_file, gradle_version):
+        """Finds the correct dependency lock file based on the Gradle version."""
+    
+        gradle_lock_dir = os.path.join(repo_dir, "gradle")  # Gradle <7: gradle.lockfile
+        gradle_lock_dep_dir = os.path.join(repo_dir, "gradle", "dependency-locks")  # Gradle 7+: dependency-locks
+    
         candidates = [
-            os.path.join(repo_dir, "build", "reports", output_file),
-            os.path.join(repo_dir, output_file)
+            os.path.join(gradle_lock_dir, output_file),  # Gradle <7
+            os.path.join(gradle_lock_dep_dir, output_file)  # Gradle 7+
         ]
+    
         for c in candidates:
             if os.path.isfile(c):
                 return c
-        return None
+        
+        return None  # Return None if the file is not found
 
 
 class Repo:
