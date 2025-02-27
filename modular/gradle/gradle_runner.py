@@ -37,7 +37,7 @@ class GradleRunner(BaseLogger):
                 capture_output=True,
                 text=True,
                 check=check,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                timeout=300 #Config.DEFAULT_PROCESS_TIMEOUT
             )
             self.logger.debug(f"Return code: {result.returncode}")
             if result.stdout:

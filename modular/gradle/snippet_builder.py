@@ -2,7 +2,18 @@ import logging
 from modular.shared.base_logger import BaseLogger
 
 class GradleSnippetBuilder(BaseLogger):
+    def __init__(self):
+        self.logger = self.get_logger("GradleSnippetBuilder")
+        self.logger.setLevel(logging.DEBUG)
 
+    def build_snippet(self, gradle_version, task_name):
+        major, _ = self._parse_major_minor(gradle_version)
+        if major < 7:
+            self.logger.info(f"Generating legacy lockfile for Gradle {gradle_version}.")
+            return self._legacy_lockfile_snippet(task_name)
+        else:
+            self.logger.info(f"Using modern locking for Gradle {gradle_version}.")
+            return self._modern_lockfile_snippet(task_name)
 
     def _modern_lockfile_snippet(self, task_name):
         return f"""
@@ -10,7 +21,7 @@ class GradleSnippetBuilder(BaseLogger):
 dependencyLocking {{
     lockAllConfigurations()
     lockFile = rootProject.file("gradle.lockfile") // Ensure lockfile is in root directory
-    lockMode = LockMode.STRICT
+  
 }}
 
 tasks.register("{task_name}") {{
@@ -104,3 +115,7 @@ gradle.projectsEvaluated {{
     }}
 }}
 """
+
+    def _parse_major_minor(self, version_str):
+        parts = version_str.split('.')
+        return (int(parts[0]), int(parts[1])) if len(parts) >= 2 else (0, 0)
