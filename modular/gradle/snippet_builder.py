@@ -50,7 +50,12 @@ task {task_name} {{
 """
 
     def _modern_snippet(self, task_name):
+        # Prepend a dependencyLocking block to force enable locking.
         return f"""
+dependencyLocking {{
+    lockAllConfigurations()
+}}
+
 tasks.register("{task_name}") {{
     doLast {{
         println("Using Gradle's built-in dependency locking...")

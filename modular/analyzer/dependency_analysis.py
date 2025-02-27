@@ -121,8 +121,8 @@ class DependencyAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_slug = "vulpy"
-    repo_id = "vulnerable-apps/vulpy"
+    repo_slug = "VulnerableApp"
+    repo_id = "vulnerable-apps/VulnerableApp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = "/Users/fadzi/tools/python_projects/vulpy"
+    repo_dir = "/Users/fadzi/tools/gradle_projects/VulnerableApp"
     session = Session()
 
     try:

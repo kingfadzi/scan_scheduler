@@ -21,7 +21,7 @@ example_payload = {
 
 
 async def wait_for_flow_completion(flow_run_id):
-    """Polls Prefect API to wait for the flow to complete, with error handling."""
+
     client = get_client()
 
     while True:
@@ -42,7 +42,7 @@ async def wait_for_flow_completion(flow_run_id):
         await asyncio.sleep(5)  # Poll every 5 seconds
 
 async def run_deployment_with_retries(deployment_name, payload, retries=3):
-    """Attempts to run a deployment with retries; fails entire process if retries are exhausted."""
+
     for attempt in range(retries):
         try:
             print(f"Attempt {attempt + 1}: Triggering deployment {deployment_name}...")
@@ -59,7 +59,6 @@ async def run_deployment_with_retries(deployment_name, payload, retries=3):
 
 @flow(name="Flow Orchestrator", flow_run_name=generate_main_flow_run_name)
 async def flow_orchestrator():
-    """Sequentially triggers each Prefect deployment, failing on persistent errors."""
 
     client = get_client()
 
@@ -68,7 +67,7 @@ async def flow_orchestrator():
 
         print(f"Triggered deployment {deployment_name}, waiting for completion (Flow Run ID: {flow_run_id})")
 
-        await wait_for_flow_completion(flow_run_id)  # Fails on unsuccessful flow completion
+        await wait_for_flow_completion(flow_run_id)
 
 if __name__ == "__main__":
     print("Starting Flow Orchestrator...")
@@ -77,4 +76,4 @@ if __name__ == "__main__":
         print("All flows completed successfully.")
     except Exception as e:
         print(f"Orchestration failed: {e}")
-        exit(1)  # Ensure script exits with failure status
+        exit(1)

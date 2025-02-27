@@ -29,8 +29,7 @@ async def vulnerabilities_flow(payload: dict):
 def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [
-        run_trivy_analysis_task,
-        run_syft_grype_analysis_task
+        run_trivy_analysis_task
     ]
 
     generic_single_repo_processing_flow(
