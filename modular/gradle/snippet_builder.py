@@ -16,7 +16,6 @@ class GradleSnippetBuilder(BaseLogger):
             return self._modern_snippet(task_name)
 
     def _legacy_snippet(self, task_name):
-        """ Creates gradle.lockfile manually for Gradle <7 """
         return f"""
 task {task_name} {{
     def lockFile = file("gradle/gradle.lockfile")
@@ -51,7 +50,6 @@ task {task_name} {{
 """
 
     def _modern_snippet(self, task_name):
-        """ Uses Gradle's built-in locking for Gradle 7+ """
         return f"""
 tasks.register("{task_name}") {{
     doLast {{
@@ -65,12 +63,16 @@ tasks.register("{task_name}") {{
             }}
         }}
 
-        println("Run './gradlew dependencies --write-locks' to generate gradle.lockfile.")
+        println("Automatically generating gradle.lockfile using 'dependencies --write-locks'...")
+        def execResult = exec {{
+            executable = project.file("gradlew").absolutePath
+            args = ['dependencies', '--write-locks']
+        }}
+        println("gradle.lockfile generation completed with exit code: " + execResult.exitValue)
     }}
 }}
 """
 
     def _parse_major_minor(self, version_str):
-        """ Parses major version from a Gradle version string. """
         parts = version_str.split('.')
         return (int(parts[0]), int(parts[1])) if len(parts) >= 2 else (0, 0)
