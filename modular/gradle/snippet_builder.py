@@ -16,7 +16,6 @@ class GradleSnippetBuilder(BaseLogger):
             return self._modern_snippet(task_name)
 
     def _legacy_snippet(self, task_name):
-        # For Gradle <7: manually generate the dependency file at gradle/all-deps-nodupes.txt
         return f"""
 task {task_name} {{
     def outputFile = file("gradle/all-deps-nodupes.txt")
@@ -51,8 +50,6 @@ task {task_name} {{
 """
 
     def _modern_snippet(self, task_name):
-        # For Gradle 7+: use built-in dependency locking and then copy the generated lock file
-        // to "all-deps-nodupes.txt" so that the helper can find it.
         return f"""
 tasks.register("{task_name}") {{
     doLast {{
@@ -66,14 +63,13 @@ tasks.register("{task_name}") {{
             }}
         }}
 
-        println("Automatically generating dependency locks using 'dependencies --write-locks'...")
+        println("Automatically generating gradle.lockfile using 'dependencies --write-locks'...")
         def execResult = exec {{
             executable = project.file("gradlew").absolutePath
             args = ['dependencies', '--write-locks']
         }}
         println("Lock generation completed with exit code: " + execResult.exitValue)
         
-        // Copy the generated lock file to all-deps-nodupes.txt.
         def sourceFile = file("gradle/dependency-locks/gradle.lockfile")
         def targetFile = file("gradle/all-deps-nodupes.txt")
         if (sourceFile.exists()) {{
