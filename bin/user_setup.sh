@@ -27,7 +27,7 @@ EOF
 fi
 
 # --- Create Needed Directories in Your Home ---
-mkdir -p "$HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.kantra,.semgrep,.trivy,.syft}
+mkdir -p "$HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.kantra,.semgrep,.trivy,.syft,.xeol}
 chmod 700 "$HOME/.ssh"
 chmod 755 "$HOME/.m2" 2>/dev/null || echo "Warning: Could not change permissions on .m2 (possibly a mounted volume)."
 chmod 755 "$HOME/.gradle" 2>/dev/null || echo "Warning: Could not change permissions on .gradle (possibly a mounted volume)."
@@ -48,6 +48,15 @@ export RULESETS_GIT_URL=$RULESETS_GIT_URL
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export PYTHONPATH="\$(pwd):\$PYTHONPATH"
+
+export TRIVY_CACHE_DIR=$PREFECT_HOME/.cache/trivy
+export GRYPE_DB_CACHE_DIR=$PREFECT_HOME/.cache/grype/db
+export XEOL_DB_CACHE_DIR=$PREFECT_HOME/.cache/xeol/db
+export GRYPE_DB_AUTO_UPDATE=false
+export GRYPE_DB_VALIDATE_AGE=false
+export SYFT_CHECK_FOR_APP_UPDATE=false
+export XEOL_DB_AUTO_UPDATE=false
+
 EOF
 
 # --- Download & Extract User Tools from Tarball ---

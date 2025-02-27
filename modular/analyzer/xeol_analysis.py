@@ -46,6 +46,7 @@ class XeolAnalyzer(BaseLogger):
                 "xeol",
                 f"sbom:{sbom_file_path}",
                 "--output", "json",
+                "-vv",
                 "--file", xeol_file_path
             ]
             self.logger.debug("Executing command: %s", " ".join(command))
@@ -159,8 +160,8 @@ class XeolAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_slug = "sonar-metrics"
-    repo_id = "sonar-metrics"
+    repo_slug = "nosql-injection-vulnapp"
+    repo_id = "nosql-injection-vulnapp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):

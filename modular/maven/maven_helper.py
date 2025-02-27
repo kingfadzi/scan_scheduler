@@ -27,7 +27,7 @@ class MavenHelper(BaseLogger):
 
         return self.parse_dependencies(effective_pom, repo)
 
-    def generate_effective_pom(self, repo_dir, output_file="effective-pom.xml"):
+    def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
 
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")

@@ -73,9 +73,9 @@ class GradleAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_dir = "/tmp/gradle-wrapper-sample"
-    repo_id = "gradle-wrapper-sample"
-    repo_slug = "gradle-wrapper-sample"
+    repo_dir = "/tmp/VulnerableApp"
+    repo_id = "vulnerable-apps/VulnerableApp"
+    repo_slug = "VulnerableApp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):

@@ -61,8 +61,8 @@ class SyftAnalyzer(BaseLogger):
         return message
 
 if __name__ == "__main__":
-    repo_slug = "sonar-metrics"
-    repo_id = "sonar-metrics"
+    repo_slug = "nosql-injection-vulnapp"
+    repo_id = "nosql-injection-vulnapp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
