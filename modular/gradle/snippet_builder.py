@@ -9,92 +9,83 @@ class GradleSnippetBuilder(BaseLogger):
     def build_snippet(self, gradle_version, task_name):
         major, _ = self._parse_major_minor(gradle_version)
         if major < 7:
-            self.logger.info(f"Generating all-deps-nodupes.txt manually for Gradle {gradle_version}.")
-            return self._legacy_snippet(task_name)
+            self.logger.info(f"Generating unified lockfile for legacy Gradle {gradle_version}")
+            return self._legacy_lockfile_snippet(task_name)
         else:
-            self.logger.info(f"Using built-in locking for Gradle {gradle_version}.")
-            return self._modern_snippet(task_name)
+            self.logger.info(f"Using native locking for Gradle {gradle_version}")
+            return self._modern_lockfile_snippet(task_name)
 
-    def _legacy_snippet(self, task_name):
+    def _legacy_lockfile_snippet(self, task_name):
         return f"""
 task {task_name} {{
-    def outputFile = file("gradle/all-deps-nodupes.txt")
-    def resolvedDependencies = new LinkedHashSet<String>()
-
-    outputs.file(outputFile)
+    def lockfile = file("gradle.lockfile")
+    def strictDependencies = new LinkedHashSet<String>()
+    
+    outputs.file(lockfile)
 
     doLast {{
-        println("Generating all-deps-nodupes.txt for Gradle <7...")
-
-        project.allprojects {{ proj ->
+        logger.lifecycle("Generating legacy-style gradle.lockfile")
+        
+        allprojects {{ proj ->
             proj.configurations.each {{ cfg ->
                 try {{
-                    if (cfg.metaClass.hasProperty(cfg, 'canBeResolved') && cfg.canBeResolved) {{
-                        def deps = cfg.resolvedConfiguration.lenientConfiguration.allModuleDependencies
-                        deps.each {{ dep ->
-                            def coordinate = "${{dep.moduleGroup}}:${{dep.moduleName}}:${{dep.moduleVersion}}"
-                            resolvedDependencies.add(coordinate)
+                    if (cfg.canBeResolved) {{
+                        cfg.resolvedConfiguration.firstLevelModuleDependencies.each {{ dep ->
+                            def coord = "${{dep.moduleGroup}}:${{dep.moduleName}}:${{dep.moduleVersion}} (strict)"
+                            strictDependencies.add(coord)
                         }}
                     }}
                 }} catch (Exception e) {{
-                    println("Error resolving dependencies in ${{proj.name}}: ${{e.message}}")
+                    logger.error("Lockfile generation error in ${{proj.name}}:", e)
                 }}
             }}
         }}
-
-        outputFile.parentFile.mkdirs()
-        outputFile.text = resolvedDependencies.join("\\n")
-        println("all-deps-nodupes.txt generated successfully at " + outputFile.absolutePath)
+        
+        lockfile.parentFile.mkdirs()
+        lockfile.text = strictDependencies.sort().join("\\n")
+        logger.lifecycle("Generated legacy lockfile at ${{lockfile.absolutePath}}")
     }}
 }}
 """
 
-    def _modern_snippet(self, task_name):
-        # Prepend a dependencyLocking block to force enable locking.
+    def _modern_lockfile_snippet(self, task_name):
         return f"""
 dependencyLocking {{
     lockAllConfigurations()
+    lockFile = file("gradle.lockfile")
 }}
 
 tasks.register("{task_name}") {{
     doLast {{
-        println("Using Gradle's built-in dependency locking...")
+        logger.lifecycle("Generating modern gradle.lockfile")
         
-        gradle.rootProject.allprojects.each {{ proj ->
+        gradle.rootProject.allprojects {{ proj ->
             proj.configurations.each {{ cfg ->
-                if (cfg.metaClass.hasProperty(cfg, 'canBeResolved') && cfg.canBeResolved) {{
+                if (cfg.canBeResolved) {{
                     cfg.resolutionStrategy.activateDependencyLocking()
                 }}
             }}
         }}
 
-        println("Automatically generating dependency locks using 'dependencies --write-locks'...")
-        def execResult = exec {{
+        def result = exec {{
             executable = project.file("gradlew").absolutePath
-            args = ['dependencies', '--write-locks']
+            args = ["dependencies", "--write-locks", "--update-locks", "*"]
         }}
-        println("Lock generation completed with exit code: " + execResult.exitValue)
         
-        // Combine all generated lock files into a single file
-        def depLocksDir = file("gradle/dependency-locks")
-        def targetFile = file("gradle/all-deps-nodupes.txt")
-        if (depLocksDir.exists()) {{
-            def combinedText = ""
-            depLocksDir.listFiles().each {{ f ->
-                if (f.isFile()) {{
-                    combinedText += f.text + "\\n"
-                }}
-            }}
-            targetFile.parentFile.mkdirs()
-            targetFile.text = combinedText.trim()
-            println("Combined dependency lock files into " + targetFile.absolutePath)
-        }} else {{
-            println("Expected dependency lock files directory not found at " + depLocksDir.absolutePath)
+        if (result.exitValue != 0) {{
+            throw new GradleException("Lockfile generation failed with exit code ${{result.exitValue}}")
         }}
+        
+        logger.lifecycle("Successfully generated gradle.lockfile")
     }}
 }}
 """
 
     def _parse_major_minor(self, version_str):
-        parts = version_str.split('.')
-        return (int(parts[0]), int(parts[1])) if len(parts) >= 2 else (0, 0)
+        clean_version = version_str.split('-')[0]
+        parts = clean_version.split('.')
+        try:
+            return (int(parts[0]), int(parts[1])) if len(parts) >= 2 else (0, 0)
+        except ValueError:
+            self.logger.warning(f"Invalid version format: {version_str}")
+            return (0, 0)

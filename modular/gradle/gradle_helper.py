@@ -180,7 +180,7 @@ if __name__ == "__main__":
     else:
         repo_directory = "/Users/fadzi/tools/gradle_projects/VulnerableApp"
 
-    repo = Repo(repo_id="Open-Vulnerability-Project")  # Replace with actual repo_id logic
+    repo = Repo(repo_id="Open-Vulnerability-Project")
     helper = GradleHelper()
 
     try:
