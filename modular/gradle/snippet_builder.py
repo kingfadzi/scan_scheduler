@@ -21,7 +21,6 @@ class GradleSnippetBuilder(BaseLogger):
 dependencyLocking {{
     lockAllConfigurations()
     lockFile = rootProject.file("gradle.lockfile") // Ensure lockfile is in root directory
-  
 }}
 
 tasks.register("{task_name}") {{
@@ -49,18 +48,6 @@ tasks.register("{task_name}") {{
             throw new GradleException("Lockfile not generated in root directory: ${{lockfile.absolutePath}}")
         }}
         logger.lifecycle("Lockfile generated successfully at: ${{lockfile.absolutePath}}")
-    }}
-}}
-
-// Buildscript locking
-buildscript {{
-    dependencyLocking {{
-        lockFile = rootProject.file("gradle.buildscript.lockfile") // Separate lockfile for buildscript
-    }}
-    for (cfg in configurations) {{
-        if (cfg.canBeResolved) {{
-            cfg.resolutionStrategy.activateDependencyLocking()
-        }}
     }}
 }}
 """
