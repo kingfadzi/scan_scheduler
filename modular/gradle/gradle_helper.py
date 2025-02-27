@@ -39,7 +39,7 @@ class GradleHelper(BaseLogger):
 
         return self.parse_dependencies(dependencies_file, repo)
 
-    def generate_resolved_dependencies(self, repo_dir, output_file="all-deps-nodupes.txt"):
+    def generate_resolved_dependencies(self, repo_dir, output_file="gradle.lockfile"):
         if not os.path.isdir(repo_dir):
             self.logger.error(f"Invalid directory: {repo_dir}")
             return None
@@ -155,15 +155,12 @@ class GradleHelper(BaseLogger):
 
 
     def _find_output_file(self, repo_dir, output_file):
-        candidates = [
-            os.path.join(repo_dir, output_file),                      # Check in the repo root
-            os.path.join(repo_dir, "gradle", output_file),            # Check in the gradle folder
-            os.path.join(repo_dir, "gradle", "dependency-locks", output_file)  # Check in gradle/dependency-locks
-        ]
-        for candidate in candidates:
-            if os.path.isfile(candidate):
-                return candidate
-        return None
+        candidate = os.path.join(repo_dir, output_file)
+        if os.path.isfile(candidate):
+            return candidate
+        else:
+            raise FileNotFoundError(f"Expected dependency lock file '{output_file}' not found in repository root: {repo_dir}")
+
 
 class Repo:
     def __init__(self, repo_id):
