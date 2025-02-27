@@ -6,12 +6,16 @@ from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, GoEnryAnalysis
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
+from config.config import Config
 
 class GoEnryAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("GoEnryAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Default logging level
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GoEnryAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Go Enry Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -31,9 +35,17 @@ class GoEnryAnalyzer(BaseLogger):
                     stdout=outfile,
                     stderr=subprocess.PIPE,
                     check=True,
-                    cwd=repo_dir
+                    cwd=repo_dir,
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
             self.logger.info(f"Language analysis completed successfully. Output file: {analysis_file}")
+
+        except subprocess.TimeoutExpired as e:
+            error_message = f"go-enry command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+
+
         except subprocess.CalledProcessError as e:
             error_message = f"Error running go-enry for repository {repo.repo_name}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)

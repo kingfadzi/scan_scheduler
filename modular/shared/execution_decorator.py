@@ -11,6 +11,7 @@ class AnalysisLogger(BaseLogger):
         self.logger = self.get_logger("AnalyzeExecution")
         self.logger.setLevel(logging.DEBUG)
 
+
 def analyze_execution(session_factory, stage=None):
 
     decorator_logger = AnalysisLogger().logger
@@ -22,10 +23,8 @@ def analyze_execution(session_factory, stage=None):
             method_name = func.__name__
             run_id = kwargs.get("run_id", "N/A")
 
-            # If the method is an instance method, args[0] is `self`
             self_instance = args[0] if len(args) > 0 and hasattr(args[0], "__class__") else None
 
-            # Extract `repo` from kwargs or args
             repo = kwargs.get("repo") or (args[1] if self_instance and len(args) > 1 else args[0])
 
             if not repo:
@@ -43,18 +42,6 @@ def analyze_execution(session_factory, stage=None):
             start_time = time.time()
 
             try:
-
-                session.add(AnalysisExecutionLog(
-                    method_name=method_name,
-                    stage=stage,
-                    run_id=run_id,
-                    repo_id=repo_id,
-                    status="PROCESSING",
-                    message=f"Starting analysis {method_name}",
-                    execution_time=datetime.utcnow(),
-                    duration=0
-                ))
-                session.commit()
 
                 decorator_logger.info(
                     f"Starting {stage} "

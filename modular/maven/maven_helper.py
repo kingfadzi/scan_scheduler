@@ -2,17 +2,20 @@ import os
 import logging
 import subprocess
 import xml.etree.ElementTree as ET
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger
 from modular.shared.models import Dependency  # Assuming Dependency model is similar to other helpers
 
 class MavenHelper(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("MavenHelper")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir, repo):
-        """Processes a Maven repository and returns a list of dependencies with repo_id."""
+
         self.logger.info(f"Processing repository at: {repo_dir}")
         if not os.path.isdir(repo_dir):
             self.logger.error(f"Invalid directory: {repo_dir}")
@@ -24,8 +27,8 @@ class MavenHelper(BaseLogger):
 
         return self.parse_dependencies(effective_pom, repo)
 
-    def generate_effective_pom(self, repo_dir, output_file="effective-pom.xml"):
-        """Generates the effective POM using Maven."""
+    def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
+
         self.logger.info(f"Checking for pom.xml in: {repo_dir}")
         pom_path = os.path.join(repo_dir, "pom.xml")
 
@@ -124,13 +127,15 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    repo_directory = "/Users/fadzi/tools/WebGoat"
+    repo_directory = "/tmp/sonar-metrics"
     repo = Repo(repo_id="maven_project")
     helper = MavenHelper()
 
     try:
         dependencies = helper.process_repo(repo_directory, repo)
-        for dep in dependencies:
-            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+        print(f"Dependencies found: {len(dependencies)}" if dependencies else "No dependencies found")
+
+        #for dep in dependencies:
+        #    print(f"Dependency found: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
     except Exception as e:
         print(f"An error occurred while processing the repository: {e}")

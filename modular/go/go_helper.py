@@ -4,11 +4,15 @@ import logging
 import subprocess
 from pathlib import Path
 from modular.shared.models import Dependency
+from modular.shared.base_logger import BaseLogger
 
-class GoHelper:
-    def __init__(self):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+class GoHelper(BaseLogger):
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GoHelper")
+        else:
+            self.logger = logger
 
     def process_repo(self, repo_dir, repo):
 

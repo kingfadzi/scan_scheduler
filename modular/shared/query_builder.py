@@ -1,4 +1,18 @@
 def build_query(payload):
+    # Validate that payload is a dict
+    if not isinstance(payload, dict):
+        raise ValueError("Input must be a dictionary.")
+
+    # Unpack payload if wrapped in 'payload'
+    if 'payload' in payload:
+        inner_payload = payload['payload']
+    else:
+        inner_payload = payload
+
+    # Ensure the inner_payload is a non-empty dict
+    if not isinstance(inner_payload, dict) or not inner_payload:
+        raise ValueError("The provided payload does not contain any filter values.")
+
     filter_mapping = {
         'repo_id': 'bitbucket_repositories.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
@@ -9,15 +23,19 @@ def build_query(payload):
         'app_id': 'combined_repo_metrics.app_id',
         'number_of_contributors': 'combined_repo_metrics.number_of_contributors'
     }
+
     select_cols = [
         "bitbucket_repositories.repo_id as repo_id",
         "bitbucket_repositories.status as status",
         "bitbucket_repositories.clone_url_ssh as clone_url_ssh",
         "bitbucket_repositories.updated_on as updated_on"
     ]
+
+    # Add columns from combined_repo_metrics with aliases (except for repo_id)
     for key, col in filter_mapping.items():
         if key != 'repo_id':
             select_cols.append(f"{col} as {key}")
+
     select_clause = "SELECT " + ", ".join(select_cols)
     base_query = f"""
         {select_clause}
@@ -26,12 +44,16 @@ def build_query(payload):
           ON combined_repo_metrics.repo_id = bitbucket_repositories.repo_id
         WHERE 1=1
     """
+
     filters = []
+
     for key, column in filter_mapping.items():
-        if key in payload:
-            values = payload[key]
+        if key in inner_payload:
+            values = inner_payload[key]
             if not values:
-                continue
+
+                raise ValueError(f"Filter for '{key}' cannot be empty.")
+
             if key == 'repo_id':
                 filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
             else:
@@ -41,21 +63,31 @@ def build_query(payload):
                 else:
                     formatted_values = ", ".join(str(v) for v in values)
                     filters.append(f"{column} IN ({formatted_values})")
-    if filters:
-        base_query += " AND " + " AND ".join(filters)
-    return base_query
 
+    if not filters:
+        raise ValueError("No valid filters provided. Query would select all rows.")
+
+    final_query = base_query + " AND " + " AND ".join(filters)
+    return final_query
+
+# Example usage:
 if __name__ == "__main__":
     payload_example = {
-        'repo_id': ['abc'],
-        'host_name': ['github.com'],
-        'activity_status': ['ACTIVE'],
-        'tc': ['some_tc_value'],
-        'main_language': ['Python'],
-        'classification_label': ['A'],
-        'app_id': ['555'],
-        'number_of_contributors': [5]
+        "payload": {
+            'repo_id': ['abc'],
+            'host_name': ['github.com'],
+            'activity_status': ['ACTIVE'],
+            'tc': ['some_tc_value'],
+            'main_language': ['Python'],
+            'classification_label': ['A'],
+            'app_id': ['555'],
+            'number_of_contributors': [5]
+        }
     }
-    query = build_query(payload_example)
-    print("Constructed Query:")
-    print(query)
+
+    try:
+        query = build_query(payload_example)
+        print("Constructed Query:")
+        print(query)
+    except ValueError as e:
+        print("Error:", e)

@@ -9,23 +9,29 @@ import json
 from modular.shared.base_logger import BaseLogger
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.models import Session, Ruleset, Violation, Label, ViolationLabel
-from modular.shared.config import Config
+from config.config import Config
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 
 class KantraAnalyzer(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("KantraAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Kantra Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting Kantra analysis for repo_id: {repo.repo_id} ({repo.repo_slug}).")
 
+        kantra_rulesets = os.path.abspath(Config.KANTRA_RULESETS)
+
         if not os.path.exists(repo_dir):
             raise FileNotFoundError(f"Repository directory does not exist: {repo_dir}")
-        if not os.path.exists(Config.KANTRA_RULESETS):
-            raise FileNotFoundError(f"Ruleset file not found: {Config.KANTRA_RULESETS}")
+        if not os.path.exists(kantra_rulesets):
+            raise FileNotFoundError(f"Ruleset file not found: {kantra_rulesets}")
 
         maven_result = MavenHelper().generate_effective_pom(repo_dir)
         gradle_result = GradleHelper().generate_resolved_dependencies(repo_dir)
@@ -72,6 +78,7 @@ class KantraAnalyzer(BaseLogger):
 
         return json.dumps(analysis_data)
 
+
     def build_kantra_command(self, repo_dir, output_dir):
         return (
             f"kantra analyze "
@@ -81,6 +88,7 @@ class KantraAnalyzer(BaseLogger):
             f"--enable-default-rulesets=false "
             f"--overwrite"
         )
+
 
     def parse_output_yaml(self, yaml_file):
         if not os.path.isfile(yaml_file):

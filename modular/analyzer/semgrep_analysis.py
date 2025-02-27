@@ -6,15 +6,19 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import GoEnryAnalysis, SemgrepResult, Session
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import configparser
+from pathlib import Path
 
 class SemgrepAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("SemgrepAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Default logging level set to WARN
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("SemgrepAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.INFO)
 
     @analyze_execution(session_factory=Session, stage="Semgrep Analysis")
     def run_analysis(self, repo, repo_dir, session, run_id=None):
@@ -28,7 +32,7 @@ class SemgrepAnalyzer(BaseLogger):
                 self.logger.warning(message)
                 return message
 
-            semgrep_command = self.construct_semgrep_command(repo_dir, languages)
+            semgrep_command = self.construct_semgrep_command_specific_languages(repo_dir, languages)
             if not semgrep_command:
                 message = f"No valid Semgrep rulesets found for repo_id: {repo.repo_id}. Skipping Semgrep scan."
                 self.logger.warning(message)
@@ -52,7 +56,10 @@ class SemgrepAnalyzer(BaseLogger):
 
             message = f"Semgrep analysis completed for repo_id: {repo.repo_id} with {findings_count} findings."
             self.logger.info(message)
-            return json.dumps(semgrep_data)
+
+            #return json.dumps(semgrep_data)
+
+            return message
 
         except subprocess.TimeoutExpired as e:
             error_message = f"Semgrep command timed out after {e.timeout} seconds for repo {repo.repo_id}."
@@ -81,9 +88,27 @@ class SemgrepAnalyzer(BaseLogger):
         result = session.execute(stmt).fetchall()
         return [row.language for row in result] if result else []
 
-    def construct_semgrep_command(self, repo_dir, languages):
+
+    def construct_semgrep_command(self, repo_dir):
+        rules_dir = os.path.abspath(Config.SEMGREP_RULES)
+
+        if not os.path.exists(rules_dir):
+            self.logger.error(f"Semgrep rules directory not found: {rules_dir}")
+            return None
+
+        command = ["semgrep", "--experimental", "--json", "--skip-unknown", repo_dir, "--verbose"]
+        return command
+
+
+    def construct_semgrep_command_specific_languages(self, repo_dir, languages):
+
+        project_root = Path(__file__).resolve().parent.parent.parent
+        config_dir = project_root / Config.SEMGREP_CONFIG_DIR
+
+        ruleset_dir = os.path.abspath(Config.SEMGREP_RULES)
+
         config = configparser.ConfigParser()
-        config_file = os.path.join(Config.SEMGREP_CONFIG_DIR, "config.ini")
+        config_file = os.path.join(config_dir, "config.ini")
         if not os.path.exists(config_file):
             self.logger.error(f"Configuration file not found: {config_file}")
             return None
@@ -93,7 +118,7 @@ class SemgrepAnalyzer(BaseLogger):
             lang_lower = lang.lower()
             try:
                 relative_path = config.get(lang_lower, 'path')
-                ruleset_path = os.path.join(Config.SEMGREP_CONFIG_DIR, relative_path)
+                ruleset_path = os.path.join(ruleset_dir, relative_path)
                 if os.path.exists(ruleset_path):
                     rulesets.append(ruleset_path)
                     self.logger.info(f"Found Semgrep ruleset for language '{lang}': {ruleset_path}")

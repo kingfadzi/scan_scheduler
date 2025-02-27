@@ -3,16 +3,19 @@ import json
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, CheckovSummary
 from modular.shared.execution_decorator import analyze_execution
-from subprocess import run, DEVNULL, TimeoutExpired, CalledProcessError
+from subprocess import run, DEVNULL, TimeoutExpired
 from modular.shared.base_logger import BaseLogger
 import logging
-from modular.shared.config import Config
+from config.config import Config
 
 class CheckovAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("CheckovAnalyzer")
-        self.logger.setLevel(logging.WARN)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("CheckovAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -38,7 +41,11 @@ class CheckovAnalyzer(BaseLogger):
                         "--directory", repo_dir,
                         "--output", "json",
                         "--output-file-path", output_dir,
-                        "--skip-download"
+                        "--skip-download",
+                        "--framework",
+                        "cloudformation", "dockerfile", "gitlab_configuration", "gitlab_ci",
+                        "helm", "json", "yaml", "kubernetes",
+                        "serverless", "terraform", "terraform_plan"
                     ],
                     check=False,
                     text=True,
@@ -58,7 +65,9 @@ class CheckovAnalyzer(BaseLogger):
         results_file = os.path.join(output_dir, "results_json.json")
         if not os.path.isfile(results_file):
             raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
-        return results_file
+        message = f"Checkov results successfully produced at: {results_file}"
+        self.logger.info(message)
+        return message
 
 
     def _process_checkov_results(self, repo, session, results_file):
@@ -75,11 +84,10 @@ class CheckovAnalyzer(BaseLogger):
             self.logger.error(msg)
             raise RuntimeError(msg) from e
 
-
     def parse_and_process_checkov_output(self, repo_id, checkov_output_path, session):
 
         def process_summary(check_type, summary):
-            """Helper function to save summary data."""
+
             self.save_checkov_results(
                 session,
                 repo_id,
@@ -170,17 +178,14 @@ if __name__ == "__main__":
             self.repo_id = repo_id
             self.repo_slug = repo_slug
 
-    # Create a mock repo object
     repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
 
-    # Initialize a database session
     session = Session()
 
     analyzer = CheckovAnalyzer()
 
     try:
         analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo.repo_id}")
-        # Explicitly pass the repo object
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
     except Exception as e:

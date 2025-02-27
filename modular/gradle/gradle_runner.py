@@ -3,13 +3,18 @@ import logging
 import subprocess
 
 from modular.shared.base_logger import BaseLogger
-from modular.shared.config import Config
+from config.config import Config
 from modular.gradle.environment_manager import GradleEnvironmentManager
 import traceback
 
 class GradleRunner(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("GradleRunner")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GradleRunner")
+        else:
+            self.logger = logger
+
         self.logger.setLevel(logging.DEBUG)
         self.environment_manager = GradleEnvironmentManager()
 
@@ -25,14 +30,15 @@ class GradleRunner(BaseLogger):
         self.logger.info(f"Running Gradle command: {' '.join(cmd)} in {cwd}")
 
         try:
-            validation_cmd = cmd + ["-v"]
-            validation_result = subprocess.run(validation_cmd, cwd=cwd, env=env, capture_output=True, text=True, check=True)
-            self.logger.debug(f"Gradle version output:\n{validation_result.stdout}")
-        except subprocess.CalledProcessError as ex:
-            self.logger.warning(f"Validation of Gradle environment failed: {ex}. Proceeding with the main command.")
-
-        try:
-            result = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, check=check)
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=check,
+                timeout=300 #Config.DEFAULT_PROCESS_TIMEOUT
+            )
             self.logger.debug(f"Return code: {result.returncode}")
             if result.stdout:
                 self.logger.debug(f"Stdout:\n{result.stdout}")
@@ -40,14 +46,21 @@ class GradleRunner(BaseLogger):
                 self.logger.debug(f"Stderr:\n{result.stderr}")
             return result
         except subprocess.CalledProcessError as cpe:
-            self.logger.error(f"Gradle command failed with CalledProcessError: {cpe}")
-            self.logger.error(f"Stderr:\n{cpe.stderr}")
-            self.logger.error(f"Gradle error:\n{traceback.format_exc()}")
+            self.logger.error(f"Command failed with exit code {cpe.returncode}:")
+            self.logger.error(f"STDOUT:\n{cpe.stdout}")
+            self.logger.error(f"STDERR:\n{cpe.stderr}")
+            self.logger.error(f"Traceback:\n{traceback.format_exc()}")
+            return None
+        except subprocess.TimeoutExpired as te:
+            self.logger.error(f"Timeout after {Config.DEFAULT_PROCESS_TIMEOUT} seconds:")
+            self.logger.error(f"Captured STDOUT:\n{te.stdout}")
+            self.logger.error(f"Captured STDERR:\n{te.stderr}")
             return None
         except Exception as ex:
             self.logger.error(f"Unexpected error: {ex}")
-            self.logger.error(f"Gradle error:\n{traceback.format_exc()}")
+            self.logger.error(f"Traceback:\n{traceback.format_exc()}")
             return None
+
 
     def _setup_env(self, java_home):
         env = os.environ.copy()

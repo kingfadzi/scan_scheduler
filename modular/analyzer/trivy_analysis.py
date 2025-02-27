@@ -6,14 +6,17 @@ import shutil
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.models import Session, TrivyVulnerability
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger  # Import the BaseLogger
 
 class TrivyAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("TrivyAnalyzer")
-        self.logger.setLevel(logging.WARN)  # Set default logging level
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("TrivyAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -26,21 +29,51 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
         try:
+            env = os.environ.copy()
+            env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
+            self.logger.debug("Using TRIVY_CACHE_DIR: %s", env['TRIVY_CACHE_DIR'])
+
+            command = [
+                "trivy",
+                "repo",
+                "--skip-db-update",
+                "--skip-java-db-update",
+                "--offline-scan",
+                "--format", "json",
+                repo_dir
+            ]
+            self.logger.debug("Executing command: %s", " ".join(command))
+
             result = subprocess.run(
-                ["trivy", "repo", "--skip-db-update", "--skip-java-db-update", "--offline-scan", "--format", "json", repo_dir],
+                command,
+                env=env,
                 capture_output=True,
                 text=True,
-                check=True,
+                check=False,
                 timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
+
+            if result.returncode != 0:
+                error_message = (
+                    f"Trivy command failed for repo_id {repo.repo_id}. "
+                    f"Return code: {result.returncode}. Error: {result.stderr.strip()}"
+                )
+                self.logger.error(error_message)
+                raise RuntimeError(error_message)
+
             self.logger.debug(f"Trivy command completed successfully for repo_id: {repo.repo_id}")
+
         except subprocess.TimeoutExpired as e:
             error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
+
+
         except subprocess.CalledProcessError as e:
-            error_message = (f"Trivy command failed for repo_id {repo.repo_id}. "
-                             f"Return code: {e.returncode}. Error: {e.stderr.strip()}")
+            self.logger.error("Trivy command execution encountered an error: %s", e)
+
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Trivy command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
@@ -66,7 +99,10 @@ class TrivyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-        return json.dumps(trivy_data)
+        #return json.dumps(trivy_data)
+        message = f"Found {total_vulnerabilities} vulnerabilities for repo_id: {repo.repo_id}"
+        self.logger.info(message)
+        return message
 
 
     def prepare_trivyignore(self, repo_dir):

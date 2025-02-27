@@ -10,17 +10,22 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
+from modular.shared.utils import detect_repo_languages, detect_java_build_tool
 
 class DependencyAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("DependencyAnalyzer")
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("DependencyAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
-        self.python_helper = PythonHelper()
-        self.js_helper = JavaScriptHelper()
-        self.go_helper = GoHelper()
-        self.maven_helper = MavenHelper()
-        self.gradle_helper = GradleHelper()
+
+        self.python_helper = PythonHelper(logger=logger)
+        self.js_helper = JavaScriptHelper(logger=logger)
+        self.go_helper = GoHelper(logger=logger)
+        self.maven_helper = MavenHelper(logger=logger)
+        self.gradle_helper = GradleHelper(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -31,7 +36,7 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = self.detect_repo_languages(repo.repo_id, session)
+        repo_languages = detect_repo_languages(repo.repo_id, session)
         if not repo_languages:
             self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
             return f"skipped: No detected languages for repo {repo.repo_id}."
@@ -53,7 +58,7 @@ class DependencyAnalyzer(BaseLogger):
 
             if "Java" in repo_languages:
                 self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
-                build_tool = self.detect_java_build_tool(repo_dir)
+                build_tool = detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
                     self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
@@ -65,7 +70,13 @@ class DependencyAnalyzer(BaseLogger):
 
             self.persist_dependencies(dependencies, session)
 
-            return f"success: Analyzed dependencies for repo {repo.repo_id}, languages: {', '.join(repo_languages)}, dependencies found: {len(dependencies)}."
+            #return f"Dependencies: {dependencies}"
+            return f"Dependencies: {len(dependencies)}"
+
+
+        except Exception as e:
+            self.logger.error(f"Error during dependency analysis: {e}")
+            raise
 
         except FileNotFoundError as e:
             self.logger.error(str(e))
@@ -74,44 +85,6 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
             return f"error: {str(e)}"
 
-    def detect_java_build_tool(self, repo_dir):
-        maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
-        gradle_build = os.path.isfile(os.path.join(repo_dir, "build.gradle"))
-        if maven_pom and gradle_build:
-            self.logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
-            return "Maven"
-        elif maven_pom:
-            self.logger.debug("Maven pom.xml detected")
-            return "Maven"
-        elif gradle_build:
-            self.logger.debug("Gradle build.gradle detected")
-            return "Gradle"
-        self.logger.warning("No Java build system detected (checked for pom.xml and build.gradle)")
-        return None
-
-    def detect_repo_languages(self, repo_id, session):
-        self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
-
-        results = session.query(
-            GoEnryAnalysis.language,
-            GoEnryAnalysis.percent_usage
-        ).filter(
-            GoEnryAnalysis.repo_id == repo_id
-        ).order_by(
-            GoEnryAnalysis.percent_usage.desc()
-        ).all()
-
-        if results:
-            main_language = [results[0].language]
-            main_percent = results[0].percent_usage
-            self.logger.info(
-                f"Primary language for repo_id {repo_id}: {main_language} ({main_percent}%)"
-            )
-            return main_language
-
-        self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
-        return []  # Return empty list instead of None
-
 
     def persist_dependencies(self, dependencies, session):
         if not dependencies:
@@ -119,7 +92,7 @@ class DependencyAnalyzer(BaseLogger):
             return
 
         try:
-            self.logger.info(f"Upserting {len(dependencies)} dependencies to the database.")
+            self.logger.info(f"Inserting {len(dependencies)} dependencies into the database.")
 
             dep_dicts = [
                 {
@@ -133,28 +106,23 @@ class DependencyAnalyzer(BaseLogger):
 
             ins_stmt = insert(Dependency)
 
-            upsert_stmt = ins_stmt.on_conflict_do_update(
-                index_elements=['repo_id', 'name', 'version'],
-                set_={
-                    "repo_id": ins_stmt.excluded.repo_id,
-                    "name": ins_stmt.excluded.name,
-                    "version": ins_stmt.excluded.version,
-                    "package_type": ins_stmt.excluded.package_type,
-                }
+            upsert_stmt = ins_stmt.on_conflict_do_nothing(
+                index_elements=['repo_id', 'name', 'version']
             )
 
             session.execute(upsert_stmt, dep_dicts)
             session.commit()
-            self.logger.info("Dependency upsert successful.")
+            self.logger.info("Dependency insertion successful.")
 
         except Exception as e:
             session.rollback()
-            self.logger.error(f"Failed to upsert dependencies: {e}")
+            self.logger.error(f"Failed to insert dependencies: {e}")
             raise
 
+
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "spring-boot"
+    repo_slug = "VulnerableApp"
+    repo_id = "vulnerable-apps/VulnerableApp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
@@ -164,7 +132,7 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/Users/fadzi/tools/{repo.repo_slug}"
+    repo_dir = "/tmp/VulnerableApp"
     session = Session()
 
     try:

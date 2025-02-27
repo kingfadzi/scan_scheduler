@@ -6,22 +6,24 @@ load_dotenv()
 
 class Config:
 
-    RULESET_MAPPING_FILE = os.getenv("RULESET_MAPPING_FILE", "./tools/semgrep/language_ruleset_map.txt")
     METRICS_DATABASE_USER = os.getenv("METRICS_DATABASE_USER", "postgres")
     METRICS_DATABASE_PASSWORD = os.getenv("METRICS_DATABASE_PASSWORD", "postgres")
     METRICS_DATABASE_HOST = os.getenv("METRICS_DATABASE_HOST", "192.168.1.188")
     METRICS_DATABASE_PORT = os.getenv("METRICS_DATABASE_PORT", "5422")
     METRICS_DATABASE_NAME = os.getenv("METRICS_DATABASE_NAME", "gitlab-usage")
     CLONED_REPOSITORIES_DIR = os.getenv("CLONED_REPOSITORIES_DIR", "./cloned_repositories")
-    TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./tools/trivy/.trivyignore")
-    SYFT_CONFIG_PATH = os.getenv("SYFT_CONFIG_PATH", "/root/.syft/config.yaml")
-    GRYPE_CONFIG_PATH = os.getenv("GRYPE_CONFIG_PATH", "/root/.grype/config.yaml")
-    SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./tools/semgrep")
+    TRIVYIGNORE_TEMPLATE = os.getenv("TRIVYIGNORE_TEMPLATE", "./config/trivy/.trivyignore")
+    SEMGREP_CONFIG_DIR = os.getenv("SEMGREP_CONFIG_DIR", "./config/semgrep")
 
-    BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME", "bitbucket.org")
-    GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME", "gitlab.com")
+    SEMGREP_RULES = os.getenv("SEMGREP_RULES", f"{os.environ['HOME']}/.semgrep/semgrep-rules")
+    TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", f"{os.environ['HOME']}/.cache/trivy")
+    GRYPE_DB_CACHE_DIR = os.getenv("GRYPE_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/grype/db")
 
-    KANTRA_RULESETS = os.getenv("KANTRA_RULESETS", "/Users/fadzi/tools/porfolios/tools/kantra/custom-rulesets")
+    BITBUCKET_HOSTNAME = os.getenv("BITBUCKET_HOSTNAME")
+    GITLAB_HOSTNAME = os.getenv("GITLAB_HOSTNAME")
+
+    KANTRA_RULESETS = os.getenv("KANTRA_RULESETS", f"{os.environ['HOME']}/.kantra/custom-rulesets")
+
     KANTRA_OUTPUT_ROOT = os.getenv("KANTRA_OUTPUT_ROOT", "./output")
 
     JAVA_HOME = os.getenv("JAVA_HOME", "/opt/homebrew/opt/openjdk")
@@ -34,16 +36,16 @@ class Config:
     HTTP_PROXY_PORT = os.getenv("HTTP_PROXY_PORT", "")
     HTTP_PROXY_USER = os.getenv("HTTP_PROXY_USER", "")
     HTTP_PROXY_PASSWORD = os.getenv("HTTP_PROXY_PASSWORD", "")
-    NO_PROXY = os.getenv("NO_PROXY", "")
-
-    HTTPS_PROXY_HOST = os.getenv("HTTPS_PROXY_HOST", "")
-    HTTPS_PROXY_PORT = os.getenv("HTTPS_PROXY_PORT", "")
-    HTTPS_PROXY_USER = os.getenv("HTTPS_PROXY_USER", "")
-    HTTPS_PROXY_PASSWORD = os.getenv("HTTPS_PROXY_PASSWORD", "")
 
     TRUSTSTORE_PATH = os.getenv("TRUSTSTORE_PATH", "")
     TRUSTSTORE_PASSWORD = os.getenv("TRUSTSTORE_PASSWORD", "")
 
-    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "/home/airflow/airflow/dags/sql")
+    SQL_SCRIPTS_DIR = os.getenv("SQL_SCRIPTS_DIR", "./sql")
 
     DEFAULT_PROCESS_TIMEOUT = int(os.getenv("DEFAULT_PROCESS_TIMEOUT", 60))
+
+
+    FLOW_GIT_STORAGE = os.getenv("FLOW_GIT_STORAGE")
+    FLOW_GIT_BRANCH = os.getenv("FLOW_GIT_BRANCH")
+
+    XEOL_DB_CACHE_DIR = os.getenv("XEOL_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/xeol/db")

@@ -8,11 +8,15 @@ from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
 import csv
 import io
+from config.config import Config
 
 class LizardAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("LizardAnalyzer")
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("LizardAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.INFO)
 
     def _read_analysis_file(self, analysis_file, repo):
@@ -44,9 +48,17 @@ class LizardAnalyzer(BaseLogger):
                     stdout=outfile,
                     stderr=subprocess.DEVNULL,
                     check=True,
-                    cwd=repo_dir
+                    cwd=repo_dir,
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
             self.logger.info(f"Lizard analysis completed successfully. Output file: {analysis_file}")
+
+        except subprocess.TimeoutExpired as e:
+            error_message = f"Lizard command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            self.logger.error(error_message)
+            raise RuntimeError(error_message)
+
+
         except subprocess.CalledProcessError as e:
             error_message = f"Lizard command failed for repo_id {repo.repo_id}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)

@@ -2,12 +2,17 @@ import os
 import logging
 import subprocess
 from modular.shared.base_logger import BaseLogger
-from modular.shared.config import Config
+from config.config import Config
 import re
 
 class GradleEnvironmentManager(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger("GradleEnvironmentManager")
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("GradleEnvironmentManager")
+        else:
+            self.logger = logger
+
         self.logger.setLevel(logging.DEBUG)
         self.available_gradle_versions = {
             4: "4.10.3",
@@ -103,7 +108,7 @@ class GradleEnvironmentManager(BaseLogger):
             self.logger.debug(f"Using Gradle wrapper executable: {wrapper_path}")
             return wrapper_path
 
-        # Check system Gradle version
+
         try:
             output = subprocess.run(["gradle", "-v"], capture_output=True, text=True, check=True).stdout
             detected_version = self._parse_version_from_output(output, r"Gradle\s+(\d+\.\d+)")
@@ -113,13 +118,11 @@ class GradleEnvironmentManager(BaseLogger):
         except FileNotFoundError:
             self.logger.warning("System Gradle not found.")
 
-        # Check for compatible version in /opt/gradle
         gradle_path = self._get_compatible_gradle_path(gradle_version)
         if gradle_path and self._is_executable(gradle_path):
             self.logger.debug(f"Using Gradle executable from /opt: {gradle_path}")
             return gradle_path
 
-        # Fall back to system Gradle
         if self._is_executable("gradle"):
             self.logger.info("Using system Gradle as fallback.")
             return "gradle"
@@ -209,6 +212,100 @@ class GradleEnvironmentManager(BaseLogger):
 
     def _is_executable(self, path):
         return os.path.isfile(path) and os.access(path, os.X_OK)
+
+
+    def get_java_and_gradle_versions(self, repo_dir):
+
+        gradle_version = self._detect_gradle_version(repo_dir)
+        if not gradle_version:
+            self.logger.error("Gradle version detection failed")
+            return None
+
+        java_version = self._detect_java_version(repo_dir, gradle_version)
+
+        return {
+            "gradle_version": gradle_version,
+            "java_version": java_version or "unknown"
+        }
+
+    def _detect_java_version(self, repo_dir, gradle_version):
+
+        # Level 1: Check gradle.properties
+        properties_path = os.path.join(repo_dir, "gradle.properties")
+        from_properties = self._get_java_version_from_properties(properties_path)
+
+        if from_properties:
+            self.logger.debug(f"Java version from properties: {from_properties}")
+            return from_properties
+
+        # Level 2: Check build files
+        from_build_files = self._get_java_version_from_build_files(repo_dir)
+        if from_build_files:
+            self.logger.debug(f"Java version from build files: {from_build_files}")
+            return from_build_files
+
+        # Level 3: Use Gradle-Java compatibility
+        default_version = self._get_default_java_version(gradle_version)
+        self.logger.debug(f"Using default Java version for Gradle {gradle_version}: {default_version}")
+        return default_version
+
+    def _get_java_version_from_properties(self, properties_path):
+
+        version = self._parse_version_from_file(
+            properties_path,
+            r"org\.gradle\.java\.home=.*[\/-]java-?(\d+)"
+        )
+        return self._format_java_version(version) if version else None
+
+    def _get_java_version_from_build_files(self, repo_dir):
+        """Extracts Java version from build.gradle* files"""
+        build_files = [
+            os.path.join(repo_dir, "build.gradle"),
+            os.path.join(repo_dir, "build.gradle.kts")
+        ]
+
+        for build_file in build_files:
+            version = self._parse_version_from_file(
+                build_file,
+                r"(?:sourceCompatibility|targetCompatibility)\s*[=:]\s*(\d+(\.\d+)?)"
+            ) or self._parse_version_from_file(
+                build_file,
+                r"languageVersion\s*=\s*JavaLanguageVersion\.of\((\d+)\)"
+            )
+
+            if version:
+                return self._format_java_version(version)
+
+        return None
+
+    def _get_default_java_version(self, gradle_version):
+
+        major, minor = self._parse_version(gradle_version)
+
+        version_map = [
+            (5, "1.8"),    # Gradle <5
+            (7, "11"),      # Gradle 5-6
+            (9, "17"),      # Gradle 7-8.2
+            (float('inf'), "21")  # Gradle 8.3+
+        ]
+
+        for cutoff, java_ver in version_map:
+            if major < cutoff:
+                if major == 8 and minor >= 3:  # Special case
+                    return "21"
+                return java_ver
+
+        return "21"
+
+    def _format_java_version(self, raw_version):
+        """Formats version numbers consistently"""
+        try:
+            version_num = int(raw_version)
+            return f"1.{version_num}" if version_num <= 8 else str(version_num)
+        except ValueError:
+            self.logger.warning(f"Invalid Java version format: {raw_version}")
+            return "unknown"
+
 
 if __name__ == "__main__":
     manager = GradleEnvironmentManager()

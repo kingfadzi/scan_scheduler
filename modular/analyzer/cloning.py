@@ -4,28 +4,34 @@ import threading
 import re
 from modular.shared.models import Session, Repository, RepoMetrics
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.config import Config
+from config.config import Config
 from modular.shared.base_logger import BaseLogger
 import logging
 
 clone_semaphore = threading.Semaphore(10)
 
 class CloningAnalyzer(BaseLogger):
-    def __init__(self):
-        self.logger = self.get_logger()
+
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("CloningAnalyzer")
+        else:
+            self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Clone Repository")
     def clone_repository(self, repo, timeout_seconds=300, run_id=None, sub_dir=None):
         self.logger.info(f"Starting cloning for repo: {repo.repo_id}")
 
-        base_dir = Config.CLONED_REPOSITORIES_DIR
+        base_dir = os.path.abspath(Config.CLONED_REPOSITORIES_DIR)
+
+        repo_dir = os.path.join(base_dir, repo.repo_slug)
+
         if sub_dir:
             repo_dir = os.path.join(base_dir, sub_dir, repo.repo_slug)
-        else:
-            repo_dir = os.path.join(base_dir, repo.repo_slug)
 
         os.makedirs(os.path.dirname(repo_dir), exist_ok=True)
+
 
         clone_url = self.ensure_ssh_url(repo)
         repo.clone_url_ssh = clone_url
@@ -45,7 +51,7 @@ class CloningAnalyzer(BaseLogger):
                     clone_command,
                     shell=True,
                     check=True,
-                    timeout=timeout_seconds,
+                    timeout=Config.DEFAULT_PROCESS_TIMEOUT,
                     capture_output=True,
                     text=True,
                 )
@@ -55,7 +61,7 @@ class CloningAnalyzer(BaseLogger):
                 return repo_dir
             except subprocess.TimeoutExpired:
                 error_msg = (
-                    f"Cloning repository {repo.repo_name} took too long (>{timeout_seconds}s)."
+                    f"Cloning repository {repo.repo_name} took too long (>{Config.DEFAULT_PROCESS_TIMEOUT}s)."
                 )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)

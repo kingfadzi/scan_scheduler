@@ -6,12 +6,16 @@ from modular.shared.models import Session, ClocMetric
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
 import logging
+from config.config import Config
 
 class ClocAnalyzer(BaseLogger):
 
-    def __init__(self):
-        self.logger = self.get_logger("ClocAnalyzer")
-        self.logger.setLevel(logging.INFO)
+    def __init__(self, logger=None):
+        if logger is None:
+            self.logger = self.get_logger("ClocAnalyzer")
+        else:
+            self.logger = logger
+        self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="CLOC Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -29,7 +33,8 @@ class ClocAnalyzer(BaseLogger):
                 ["cloc", "--vcs=git", "--json", str(repo_dir)],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
+                timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
 
             stdout_str = result.stdout.strip()
@@ -41,6 +46,11 @@ class ClocAnalyzer(BaseLogger):
             self.logger.info(f"Parsing CLOC output for repo_id: {repo.repo_id}")
             try:
                 cloc_data = json.loads(stdout_str)
+
+            except subprocess.TimeoutExpired as e:
+                error_message = f"CLOC command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+                self.logger.error(error_message)
+                raise RuntimeError(error_message)
             except json.JSONDecodeError as e:
                 error_message = f"Error decoding CLOC JSON output for repo_id {repo.repo_id}: {e}"
                 self.logger.error(error_message)
@@ -48,6 +58,7 @@ class ClocAnalyzer(BaseLogger):
 
             self.logger.info(f"Saving CLOC results to the database for repo_id: {repo.repo_id}")
             processed_languages = self.save_cloc_results(session, repo.repo_id, cloc_data)
+
 
         except Exception as e:
             self.logger.exception(f"Error during CLOC execution for repo_id {repo.repo_id}: {e}")

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from modular.shared.config import Config
+from config.config import Config
 
 # Construct the database URL using Config
 DB_URL = (
@@ -316,10 +316,46 @@ class Dependency(Base):
     __tablename__ = 'dependencies'
 
     id = Column(Integer, primary_key=True)
-    repo_id = Column(String)
+    repo_id = Column(String, nullable=False)
     name = Column(String, nullable=False)
     version = Column(String, nullable=False)
     package_type = Column(String, nullable=False)
 
-    __table_args__ = (UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),)
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'name', 'version', name='uq_repo_name_version'),
+    )
 
+class XeolResult(Base):
+    __tablename__ = 'xeol_results'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    repo_id = Column(String, nullable=False)
+    product_name = Column(String, nullable=True)
+    product_permalink = Column(String, nullable=True)
+    release_cycle = Column(String, nullable=True)
+    eol_date = Column(String, nullable=True)
+    latest_release = Column(String, nullable=True)
+    latest_release_date = Column(String, nullable=True)
+    release_date = Column(String, nullable=True)
+    artifact_name = Column(String, nullable=True)
+    artifact_version = Column(String, nullable=True)
+    artifact_type = Column(String, nullable=True)
+    file_path = Column(String, nullable=True)
+    language = Column(String, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'artifact_name', 'artifact_version', name='_xeol_result_uc'),
+    )
+
+class BuildTool(Base):
+    __tablename__ = 'build_tools'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    repo_id = Column(String, nullable=False)
+    tool = Column(String, nullable=False)  # e.g., Maven, Gradle, npm, pip, etc.
+    tool_version = Column(String, nullable=True)  # version of the build tool
+    runtime_version = Column(String, nullable=True)  # language/runtime version (e.g., Java, Node, Python)
+
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'tool', name='_build_tools_uc'),
+    )
