@@ -30,15 +30,18 @@ class GradleRunner(BaseLogger):
         self.logger.info(f"Running Gradle command: {' '.join(cmd)} in {cwd}")
 
         try:
+
             result = subprocess.run(
                 cmd,
                 cwd=cwd,
                 env=env,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 check=check,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                timeout=180
             )
+
             self.logger.debug(f"Return code: {result.returncode}")
             if result.stdout:
                 self.logger.debug(f"Stdout:\n{result.stdout}")
