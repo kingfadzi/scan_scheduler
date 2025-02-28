@@ -28,7 +28,7 @@ async def component_patterns_flow(payload: dict):
         flow_prefix="Component Patterns",
         batch_size=1000,
         num_partitions=10,
-        concurrency_limit=10
+        concurrency_limit=5
     )
 
 

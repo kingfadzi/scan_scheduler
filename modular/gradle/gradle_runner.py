@@ -36,7 +36,7 @@ class GradleRunner(BaseLogger):
                 cmd,
                 cwd=cwd,
                 env=env,
-                stdout=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 text=True,
                 start_new_session=True
@@ -48,8 +48,8 @@ class GradleRunner(BaseLogger):
                 raise subprocess.CalledProcessError(retcode, cmd, stdout, stderr)
 
             self.logger.debug(f"Return code: {retcode}")
-            if stdout:
-                self.logger.debug(f"Stdout:\n{stdout}")
+            #if stdout:
+            #    self.logger.debug(f"Stdout:\n{stdout}")
             if stderr:
                 self.logger.debug(f"Stderr:\n{stderr}")
 
@@ -60,13 +60,13 @@ class GradleRunner(BaseLogger):
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 stdout, stderr = proc.communicate()
             self.logger.error("Timeout after 180 seconds:")
-            self.logger.error(f"Captured STDOUT:\n{stdout}")
+            #self.logger.error(f"Captured STDOUT:\n{stdout}")
             self.logger.error(f"Captured STDERR:\n{stderr}")
             return None
 
         except subprocess.CalledProcessError as cpe:
             self.logger.error(f"Command failed with exit code {cpe.returncode}:")
-            self.logger.error(f"STDOUT:\n{cpe.stdout}")
+            #self.logger.error(f"STDOUT:\n{cpe.stdout}")
             self.logger.error(f"STDERR:\n{cpe.stderr}")
             self.logger.error(f"Traceback:\n{traceback.format_exc()}")
             return None
