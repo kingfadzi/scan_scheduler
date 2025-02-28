@@ -116,7 +116,6 @@ class MavenHelper(BaseLogger):
         return dependencies
 
 
-# Define Repo class similar to PythonHelper
 class Repo:
     def __init__(self, repo_id):
         self.repo_id = repo_id
