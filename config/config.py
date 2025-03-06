@@ -49,3 +49,8 @@ class Config:
     FLOW_GIT_BRANCH = os.getenv("FLOW_GIT_BRANCH")
 
     XEOL_DB_CACHE_DIR = os.getenv("XEOL_DB_CACHE_DIR", f"{os.environ['HOME']}/.cache/xeol/db")
+    
+    
+    CATEGORY_RULES_PATH = os.getenv("CATEGORY_RULES_PATH", "config/category_rules")
+    
+    
