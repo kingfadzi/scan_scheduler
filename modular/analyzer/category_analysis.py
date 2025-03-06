@@ -83,7 +83,7 @@ class DependencyCategorizer(BaseLogger):
 
     def process_data(self):
         self.logger.info("Starting data processing...")
-
+    
         query = """
             SELECT d.repo_id, d.name, d.version, d.package_type, 
                    b.tool, b.tool_version, b.runtime_version
@@ -91,32 +91,32 @@ class DependencyCategorizer(BaseLogger):
             LEFT JOIN build_tools b ON d.repo_id = b.repo_id
             WHERE d.package_type IS NOT NULL
         """
-
+    
         total_rows = 0
         start_time = time.time()
-
+    
         with Session() as session:
-            session.execute(f"TRUNCATE {MATERIALIZED_VIEW};")
-
+            session.execute(text(f"TRUNCATE {MATERIALIZED_VIEW};"))  # ✅ Fix: Explicitly declare as text
+    
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 chunk_start_time = time.time()
                 self.logger.info(f"Processing chunk {chunk_idx + 1} (size: {len(chunk)})...")
-
+    
                 chunk = self.apply_categorization(chunk)
-
                 chunk.to_sql(MATERIALIZED_VIEW, con=session.connection(), if_exists="append", index=False)
-
+    
                 total_rows += len(chunk)
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
-
-            session.execute(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};")
+    
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Fix here too
             session.commit()
-
+    
         total_duration = time.time() - start_time
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
         print(f"Processing complete. Materialized view updated.")
-
+        
+    
 if __name__ == '__main__':
     categorizer = DependencyCategorizer()
     categorizer.process_data()
