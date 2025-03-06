@@ -7,6 +7,7 @@ import os
 from modular.shared.models import Session
 from config.config import Config
 from modular.shared.base_logger import BaseLogger
+from sqlalchemy text
 
 CHUNK_SIZE = 50000
 MATERIALIZED_VIEW = "categorized_dependencies_mv"
