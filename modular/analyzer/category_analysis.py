@@ -11,7 +11,7 @@ from sqlalchemy import text
 
 CHUNK_SIZE = 50000
 MATERIALIZED_VIEW = "categorized_dependencies_mv"
-RULES_PATH = Config.CATEGORY_RULES_PATH
+RULES_PATH = Config.CATEGORY_RULES_PATH  # Loaded from Config class
 
 RULES_MAPPING = {
     "pip": "rules_python.yaml",
@@ -63,9 +63,8 @@ class DependencyCategorizer(BaseLogger):
     def apply_categorization(self, df):
         start_time = time.time()
         df["category"], df["sub_category"] = "Other", ""
-        
-        # Process each package type separately.
         package_types = df["package_type"].unique()
+        
         for pkg_type in package_types:
             self.logger.debug(f"Processing package type: {pkg_type}")
             group = df.loc[df["package_type"] == pkg_type]
@@ -80,15 +79,24 @@ class DependencyCategorizer(BaseLogger):
             regex_patterns, categories, sub_categories = zip(*compiled_rules)
             full_regex = "|".join(f"({pattern.pattern})" for pattern in regex_patterns)
             matches = group["name"].str.extract(full_regex, expand=False)
-            
+
+            # For each regex group, log sample matches and update the dataframe
             for i, col in enumerate(matches.columns):
                 matched_rows = matches[col].notna()
                 num_matches = matched_rows.sum()
                 self.logger.debug(f"Regex {i}: found {num_matches} matches for package type {pkg_type}")
                 if num_matches > 0:
-                    # Update only for rows in the group that are still "Other"
-                    indices = group.index[matched_rows & (group["category"] == "Other")]
-                    df.loc[indices, ["category", "sub_category"]] = (categories[i], sub_categories[i])
+                    # Log sample row indices and names for the first 3 matches
+                    matched_indices = group.index[matched_rows]
+                    sample_indices = matched_indices[:3].tolist()
+                    sample_values = group.loc[sample_indices, "name"].tolist()
+                    self.logger.debug(
+                        f"Regex {i} updating rows {sample_indices} with category='{categories[i]}' and sub_category='{sub_categories[i]}'. "
+                        f"Sample names: {sample_values}"
+                    )
+                    # Update only rows that haven't been categorized yet
+                    indices_to_update = group.index[matched_rows & (group["category"] == "Other")]
+                    df.loc[indices_to_update, ["category", "sub_category"]] = (categories[i], sub_categories[i])
         
         duration = time.time() - start_time
         self.logger.info(f"Categorization completed for {len(df)} rows in {duration:.2f} seconds")
