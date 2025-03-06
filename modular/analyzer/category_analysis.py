@@ -40,7 +40,7 @@ class DependencyCategorizer(BaseLogger):
             compiled_list = [
                 (re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', ""))
                 for cat in rules.get('categories', [])
-                for sub in cat.get('subcategories', [{"name": ""}]) 
+                for sub in cat.get('subcategories', [{"name": ""}])
                 for pattern in sub.get('patterns', cat.get('patterns', []))
             ]
             self.logger.info(f"Loaded {len(compiled_list)} rules from {rule_path}")
@@ -52,40 +52,42 @@ class DependencyCategorizer(BaseLogger):
     def get_compiled_rules(self, package_type):
         rule_file = RULES_MAPPING.get(package_type.lower())
         if not rule_file:
+            self.logger.warning(f"No rule file mapped for package type: {package_type}")
             return []
         if rule_file not in compiled_rules_cache:
             compiled_rules_cache[rule_file] = self.load_rules(rule_file)
-        return compiled_rules_cache[rule_file]
+        rules = compiled_rules_cache[rule_file]
+        self.logger.info(f"Using {len(rules)} compiled rules for package type {package_type} from {rule_file}")
+        return rules
 
     def apply_categorization(self, df):
         start_time = time.time()
         df["category"], df["sub_category"] = "Other", ""
-
         package_types = df["package_type"].unique()
         
         for pkg_type in package_types:
+            self.logger.debug(f"Processing package type: {pkg_type}")
+            sample_names = df.loc[df["package_type"] == pkg_type, "name"].head(5).tolist()
+            self.logger.debug(f"Sample dependency names for {pkg_type}: {sample_names}")
             compiled_rules = self.get_compiled_rules(pkg_type)
             if not compiled_rules:
+                self.logger.warning(f"No compiled rules for package type: {pkg_type}")
                 continue
-
             regex_patterns, categories, sub_categories = zip(*compiled_rules)
             full_regex = "|".join(f"({pattern.pattern})" for pattern in regex_patterns)
+            self.logger.debug(f"Full regex for {pkg_type}: {full_regex}")
             matches = df["name"].str.extract(full_regex, expand=False)
-
             for i, col in enumerate(matches.columns):
                 matched_rows = matches[col].notna()
                 df.loc[matched_rows & (df["category"] == "Other"), ["category", "sub_category"]] = (
                     categories[i], sub_categories[i]
                 )
-
         duration = time.time() - start_time
         self.logger.info(f"Categorization completed for {len(df)} rows in {duration:.2f} seconds")
         return df
 
-
     def process_data(self):
         self.logger.info("Starting data processing...")
-    
         query = """
             SELECT d.repo_id, d.name, d.version, d.package_type, 
                    b.tool, b.tool_version, b.runtime_version
@@ -93,31 +95,24 @@ class DependencyCategorizer(BaseLogger):
             LEFT JOIN build_tools b ON d.repo_id = b.repo_id
             WHERE d.package_type IS NOT NULL
         """
-    
         start_time = time.time()
-    
         with Session() as session:
             self.logger.info("Refreshing materialized view before processing...")
-            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Ensure view updates first
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-    
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 chunk_start_time = time.time()
                 self.logger.info(f"Processing chunk {chunk_idx + 1} (size: {len(chunk)})...")
-    
                 chunk = self.apply_categorization(chunk)
-    
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
-    
             self.logger.info("Final refresh of materialized view...")
-            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Refresh after processing
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-    
         total_duration = time.time() - start_time
         self.logger.info(f"Processing complete in {total_duration:.2f} seconds.")
-        print(f"Processing complete. Materialized view updated.")
-    
+        print("Processing complete. Materialized view updated.")
+
 if __name__ == '__main__':
     categorizer = DependencyCategorizer()
     categorizer.process_data()
