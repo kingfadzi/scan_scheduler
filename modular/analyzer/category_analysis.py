@@ -94,28 +94,28 @@ class DependencyCategorizer(BaseLogger):
             WHERE d.package_type IS NOT NULL
         """
     
-        total_rows = 0
         start_time = time.time()
     
         with Session() as session:
-            session.execute(text("TRUNCATE categorized_dependencies_temp;"))  # ✅ Clear temp table
+            self.logger.info("Refreshing materialized view before processing...")
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Ensure view updates first
+            session.commit()
     
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 chunk_start_time = time.time()
                 self.logger.info(f"Processing chunk {chunk_idx + 1} (size: {len(chunk)})...")
     
                 chunk = self.apply_categorization(chunk)
-                chunk.to_sql("categorized_dependencies_temp", con=session.connection(), if_exists="append", index=False)
     
-                total_rows += len(chunk)
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
     
-            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Refresh from temp table
+            self.logger.info("Final refresh of materialized view...")
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Refresh after processing
             session.commit()
     
         total_duration = time.time() - start_time
-        self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
+        self.logger.info(f"Processing complete in {total_duration:.2f} seconds.")
         print(f"Processing complete. Materialized view updated.")
     
 if __name__ == '__main__':
