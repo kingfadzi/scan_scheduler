@@ -98,24 +98,25 @@ class DependencyCategorizer(BaseLogger):
         start_time = time.time()
     
         with Session() as session:
-            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Fix: No truncate, just refresh
+            session.execute(text("TRUNCATE categorized_dependencies_temp;"))  # ✅ Clear temp table
     
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 chunk_start_time = time.time()
                 self.logger.info(f"Processing chunk {chunk_idx + 1} (size: {len(chunk)})...")
     
                 chunk = self.apply_categorization(chunk)
-                chunk.to_sql(MATERIALIZED_VIEW, con=session.connection(), if_exists="append", index=False)
+                chunk.to_sql("categorized_dependencies_temp", con=session.connection(), if_exists="append", index=False)
     
                 total_rows += len(chunk)
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
     
-            session.commit()  # ✅ Ensure all inserts are committed
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Refresh from temp table
+            session.commit()
     
         total_duration = time.time() - start_time
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
-        print(f"Processing complete. Materialized view updated.")      
+        print(f"Processing complete. Materialized view updated.")
     
 if __name__ == '__main__':
     categorizer = DependencyCategorizer()
