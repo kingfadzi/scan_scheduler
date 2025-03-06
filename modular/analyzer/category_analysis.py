@@ -63,29 +63,33 @@ class DependencyCategorizer(BaseLogger):
     def apply_categorization(self, df):
         start_time = time.time()
         df["category"], df["sub_category"] = "Other", ""
+        
+        # Process each package type separately.
         package_types = df["package_type"].unique()
-
         for pkg_type in package_types:
             self.logger.debug(f"Processing package type: {pkg_type}")
-            sample_names = df.loc[df["package_type"] == pkg_type, "name"].head(5).tolist()
+            group = df.loc[df["package_type"] == pkg_type]
+            sample_names = group["name"].head(5).tolist()
             self.logger.debug(f"Sample dependency names for {pkg_type}: {sample_names}")
+            
             compiled_rules = self.get_compiled_rules(pkg_type)
             if not compiled_rules:
                 self.logger.warning(f"No compiled rules for package type: {pkg_type}")
                 continue
-            regex_patterns, categories, sub_categories = zip(*compiled_rules)
-            # Removed verbose logging of full regex here.
-            full_regex = "|".join(f"({pattern.pattern})" for pattern in regex_patterns)
-            matches = df["name"].str.extract(full_regex, expand=False)
 
+            regex_patterns, categories, sub_categories = zip(*compiled_rules)
+            full_regex = "|".join(f"({pattern.pattern})" for pattern in regex_patterns)
+            matches = group["name"].str.extract(full_regex, expand=False)
+            
             for i, col in enumerate(matches.columns):
                 matched_rows = matches[col].notna()
                 num_matches = matched_rows.sum()
-                self.logger.debug(f"Regex {i}: found {num_matches} matches")
-                df.loc[matched_rows & (df["category"] == "Other"), ["category", "sub_category"]] = (
-                    categories[i], sub_categories[i]
-                )
-
+                self.logger.debug(f"Regex {i}: found {num_matches} matches for package type {pkg_type}")
+                if num_matches > 0:
+                    # Update only for rows in the group that are still "Other"
+                    indices = group.index[matched_rows & (group["category"] == "Other")]
+                    df.loc[indices, ["category", "sub_category"]] = (categories[i], sub_categories[i])
+        
         duration = time.time() - start_time
         self.logger.info(f"Categorization completed for {len(df)} rows in {duration:.2f} seconds")
         return df
@@ -100,13 +104,11 @@ class DependencyCategorizer(BaseLogger):
             WHERE d.package_type IS NOT NULL
         """
         start_time = time.time()
-        total_rows = 0
-
         with Session() as session:
             self.logger.info("Refreshing materialized view before processing...")
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-
+            
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 if chunk.empty:
                     self.logger.warning(f"Chunk {chunk_idx + 1} returned no rows.")
@@ -116,14 +118,13 @@ class DependencyCategorizer(BaseLogger):
                 chunk = self.apply_categorization(chunk)
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
-                total_rows += len(chunk)
-
+            
             self.logger.info("Final refresh of materialized view...")
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-
+        
         total_duration = time.time() - start_time
-        self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
+        self.logger.info(f"Processing complete in {total_duration:.2f} seconds.")
         print("Processing complete. Materialized view updated.")
 
 if __name__ == '__main__':
