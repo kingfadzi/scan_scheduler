@@ -82,6 +82,7 @@ class DependencyCategorizer(BaseLogger):
         self.logger.info(f"Categorization completed for {len(df)} rows in {duration:.2f} seconds")
         return df
 
+
     def process_data(self):
         self.logger.info("Starting data processing...")
     
@@ -97,7 +98,7 @@ class DependencyCategorizer(BaseLogger):
         start_time = time.time()
     
         with Session() as session:
-            session.execute(text(f"TRUNCATE {MATERIALIZED_VIEW};"))  # ✅ Fix: Explicitly declare as text
+            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Fix: No truncate, just refresh
     
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 chunk_start_time = time.time()
@@ -110,13 +111,11 @@ class DependencyCategorizer(BaseLogger):
                 chunk_duration = time.time() - chunk_start_time
                 self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
     
-            session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))  # ✅ Fix here too
-            session.commit()
+            session.commit()  # ✅ Ensure all inserts are committed
     
         total_duration = time.time() - start_time
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
-        print(f"Processing complete. Materialized view updated.")
-        
+        print(f"Processing complete. Materialized view updated.")      
     
 if __name__ == '__main__':
     categorizer = DependencyCategorizer()
