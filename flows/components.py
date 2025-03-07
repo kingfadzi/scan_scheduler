@@ -8,6 +8,7 @@ from modular.analyzer.xeol_analysis import XeolAnalyzer
 from modular.analyzer.syft_analysis import SyftAnalyzer
 from modular.analyzer.maven_analysis import MavenAnalyzer
 from modular.analyzer.gradle_analysis import GradleAnalyzer
+from modular.analyzer.category_analysis import CategoryAnalyzer
 from config.config import Config
 from modular.shared.utils import Utils
 from flows.tasks import (
@@ -37,7 +38,6 @@ def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
         run_syft_analysis_task,
         run_grype_analysis_task,
         run_xeol_analysis_task,
-        # run_kantra_analysis_task
     ]
 
     generic_single_repo_processing_flow(
@@ -148,6 +148,14 @@ def run_gradle_analysis_task(repo_dir, repo, session, run_id):
     logger.info(f"[Component Patterns] Completed Gradle analysis for repository: {repo.repo_id}")
     return result
 
+
+@task(name="Category Analysis Task", cache_policy=NO_CACHE)
+def run_catgeory_analysis_task(session, run_id):
+    logger = get_run_logger()
+    logger.info(f"[Component Patterns] Starting Category analysis")
+    analyzer = CategoryAnalyzer(logger=logger)
+    analyzer.run_analysis()
+    logger.info(f"[Component Patterns] Completed Category analysis.")
 
 
 if __name__ == "__main__":
