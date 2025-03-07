@@ -3,7 +3,7 @@ import json
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.utils import detect_repo_languages
+from modular.shared.utils import Utils
 from modular.javascript.javascript_helper import detect_js_build_tool
 from modular.shared.base_logger import BaseLogger
 import logging
@@ -50,12 +50,12 @@ class JavaScriptAnalyzer(BaseLogger):
             try:
                 with open(package_json_path) as f:
                     package_data = json.load(f)
-                    
+
                     # Node version detection
                     engines = package_data.get('engines', {})
                     if 'node' in engines:
                         node_version = engines['node'].strip()
-                    
+
                     # Tool version detection
                     if js_build_tool == 'npm':
                         tool_version = package_data.get('dependencies', {}).get('npm', 'bundled')

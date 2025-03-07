@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.models import Session, TrivyVulnerability
 from config.config import Config
-from modular.shared.base_logger import BaseLogger  # Import the BaseLogger
+from modular.shared.base_logger import BaseLogger
 
 class TrivyAnalyzer(BaseLogger):
 

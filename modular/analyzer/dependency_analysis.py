@@ -37,7 +37,7 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
         if not repo_languages:
             self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
             return f"skipped: No detected languages for repo {repo.repo_id}."
@@ -59,7 +59,7 @@ class DependencyAnalyzer(BaseLogger):
 
             if "Java" in repo_languages:
                 self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
-                build_tool = detect_java_build_tool(repo_dir)
+                build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
                     self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
