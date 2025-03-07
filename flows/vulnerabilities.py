@@ -2,17 +2,16 @@ import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
-
+from modular.shared.utils import Utils
 from modular.analyzer.trivy_analysis import TrivyAnalyzer
 from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
 from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
-@flow(flow_run_name=generate_main_flow_run_name)
+@flow(flow_run_name=Utils.generate_main_flow_run_name)
 async def vulnerabilities_flow(payload: dict):
 
     await generic_main_flow(
@@ -24,7 +23,7 @@ async def vulnerabilities_flow(payload: dict):
         concurrency_limit=10
     )
 
-@flow(flow_run_name=generate_repo_flow_run_name)
+@flow(flow_run_name=Utils.generate_repo_flow_run_name)
 def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [

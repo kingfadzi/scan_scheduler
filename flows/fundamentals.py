@@ -7,15 +7,14 @@ from modular.analyzer.gitlog_analysis import GitLogAnalyzer
 from modular.analyzer.go_enry_analysis import GoEnryAnalyzer
 from modular.analyzer.lizard_analysis import LizardAnalyzer
 from modular.analyzer.cloc_analysis import ClocAnalyzer
-
+from modular.shared.utils import Utils
 from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
-@flow(flow_run_name=generate_main_flow_run_name)
+@flow(flow_run_name=Utils.generate_main_flow_run_name)
 async def fundamental_metrics_flow(payload: dict):
     await generic_main_flow(
         payload=payload,
@@ -27,7 +26,7 @@ async def fundamental_metrics_flow(payload: dict):
     )
 
 
-@flow(flow_run_name=generate_repo_flow_run_name)
+@flow(flow_run_name=Utils.generate_repo_flow_run_name)
 def fundamental_metrics_repo_processing_flow(repo, repo_slug, run_id):
     sub_tasks = [
         run_lizard_task,
