@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import logging
@@ -5,7 +6,7 @@ from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.utils import detect_repo_languages
+from modular.shared.utils import Utils
 from modular.shared.base_logger import BaseLogger
 
 class PythonAnalyzer(BaseLogger):
@@ -14,13 +15,14 @@ class PythonAnalyzer(BaseLogger):
         self.logger = logger or self.get_logger("PythonAnalyzer")
         self.logger.setLevel(logging.DEBUG)
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
+        self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Python Build Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting Python analysis for {repo.repo_id}")
 
         # Language validation
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
         if 'Python' not in repo_languages:
             msg = f"Skipping non-Python repo {repo.repo_id}"
             self.logger.info(msg)
@@ -77,7 +79,7 @@ class PythonAnalyzer(BaseLogger):
             ('setup.cfg', 'Setuptools'),
             ('hatch.toml', 'Hatch')
         ]
-        
+
         for file_name, tool in detection_order:
             path = Path(repo_dir) / file_name
             if path.exists():
@@ -105,7 +107,7 @@ class PythonAnalyzer(BaseLogger):
             'pip': lambda: self._parse_runtime_file(repo_dir),
             'Setuptools': lambda: self._parse_setup_py_python(repo_dir)
         }
-        
+
         return version_sources.get(build_tool, lambda: "Unknown")()
 
     def detect_tool_version(self, repo_dir, build_tool):
@@ -116,7 +118,7 @@ class PythonAnalyzer(BaseLogger):
             'pip': lambda: self._parse_pip_version(repo_dir),
             'Setuptools': lambda: self._parse_setuptools_version(repo_dir)
         }
-        
+
         return version_methods.get(build_tool, lambda: "Unknown")()
 
     # Version detection helpers
@@ -193,7 +195,7 @@ class PythonAnalyzer(BaseLogger):
                     return re.search(r'setuptools(?:==|\s+)(\d+\.\d+\.?\d*)', match.group(1)).group(1)
         except FileNotFoundError:
             pass
-            
+
         # Check setup.cfg
         setup_cfg = Path(repo_dir) / 'setup.cfg'
         try:
@@ -203,7 +205,7 @@ class PythonAnalyzer(BaseLogger):
                         return re.search(r'setuptools(?:==|\s+)(\d+\.\d+\.?\d*)', line).group(1)
         except FileNotFoundError:
             pass
-        
+
         return "Unknown"
 if __name__ == "__main__":
     # Configure logging
@@ -235,11 +237,11 @@ if __name__ == "__main__":
             session=session,
             run_id="LOCAL_PYTHON_TEST"
         )
-        
+
         # Show results
         print("\nAnalysis Results:")
         print(json.dumps(json.loads(result), indent=2))
-        
+
     except Exception as e:
         print(f"\nAnalysis failed: {str(e)}")
     finally:

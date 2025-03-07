@@ -5,8 +5,7 @@ from config.config import Config
 
 from modular.analyzer.checkov_analysis import CheckovAnalyzer
 from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
-from modular.shared.models import Session
-from modular.shared.tasks import (
+from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
@@ -79,7 +78,7 @@ def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
 
 
 if __name__ == "__main__":
-    
+
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
@@ -87,5 +86,5 @@ if __name__ == "__main__":
             "main_language": ["Python"]
         }
     }
-    
+
     asyncio.run(standards_assessment_flow(payload=example_payload))

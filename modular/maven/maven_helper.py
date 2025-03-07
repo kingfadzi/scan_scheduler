@@ -4,7 +4,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 from config.config import Config
 from modular.shared.base_logger import BaseLogger
-from modular.shared.models import Dependency  # Assuming Dependency model is similar to other helpers
+from modular.shared.models import Dependency
 
 class MavenHelper(BaseLogger):
     def __init__(self, logger=None):

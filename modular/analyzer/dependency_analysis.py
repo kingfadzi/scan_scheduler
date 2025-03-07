@@ -10,7 +10,7 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
-from modular.shared.utils import detect_repo_languages, detect_java_build_tool
+from modular.shared.utils import Utils
 
 class DependencyAnalyzer(BaseLogger):
 
@@ -26,6 +26,7 @@ class DependencyAnalyzer(BaseLogger):
         self.go_helper = GoHelper(logger=logger)
         self.maven_helper = MavenHelper(logger=logger)
         self.gradle_helper = GradleHelper(logger=logger)
+        self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):

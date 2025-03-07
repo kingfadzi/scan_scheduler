@@ -1,13 +1,12 @@
 from modular.analyzer.cloning import CloningAnalyzer
-from modular.shared.utils import determine_final_status
+from modular.shared.utils import Utils
 from prefect.cache_policies import NO_CACHE
-from modular.shared.utils import refresh_views, create_batches
 import asyncio
-from prefect import task, get_run_logger
+from prefect import task
 from prefect.context import get_run_context
 from modular.shared.models import Session
 from datetime import datetime
-from modular.shared.utils import generate_repo_flow_run_name
+from prefect import flow, get_run_logger
 
 
 @task(name="Start Task")
@@ -18,9 +17,17 @@ def start_task(flow_prefix: str) -> str:
 
 
 @task(name="Create Batches Task")
-def create_batches_task(payload: dict, batch_size: int = 1000, num_partitions: int = 10) -> list:
-    batches = create_batches(payload, batch_size, num_partitions)
-    all_repos = [repo for batch in batches for repo in batch]
+def create_batches_task(payload: dict, batch_size) -> list:
+    utils = Utils(logger = get_run_logger())
+    partitions = utils.create_batches(payload, batch_size)
+    return partitions
+
+@task(name="Fetch Repositories Task")
+def fetch_repositories_task(payload: dict, batch_size):
+    utils = Utils(logger = get_run_logger())
+    all_repos = []
+    for batch in utils.fetch_repositories(payload, batch_size=batch_size):
+        all_repos.extend(batch)
     return all_repos
 
 
@@ -41,14 +48,16 @@ def cleanup_repo_task(repo_dir):
 
 @task(name="Update Processing Status Task", cache_policy=NO_CACHE)
 def update_status_task(repo, run_id, session):
-    determine_final_status(repo, run_id, session)
+    utils = Utils(logger = get_run_logger())
+    utils.determine_final_status(repo, run_id, session)
 
 
 @task(name="Refresh Views Task")
 def refresh_views_task(flow_prefix: str) -> None:
     logger = get_run_logger()
     logger.info(f"[{flow_prefix}] Refreshing views")
-    refresh_views()
+    utils = Utils(logger = get_run_logger())
+    utils.refresh_views()
     logger.info(f"[{flow_prefix}] Views refreshed")
 
 
@@ -67,12 +76,12 @@ async def worker(queue, run_id, single_repo_processing_flow):
         finally:
             queue.task_done()
 
+
 async def generic_main_flow(
         payload: dict,
         single_repo_processing_flow,
         flow_prefix: str,
         batch_size: int,
-        num_partitions: int,
         concurrency_limit: int
 ):
     logger = get_run_logger()
@@ -81,7 +90,7 @@ async def generic_main_flow(
     start_task(flow_prefix)
 
     # Step 2: Create batches from the payload.
-    repos = create_batches_task(payload, batch_size, num_partitions)
+    repos = fetch_repositories_task(payload, batch_size)
     logger.info(f"[{flow_prefix}] Processing {len(repos)} repositories.")
 
     # Step 3: Retrieve run_id from Prefect context (or use default if not available).
@@ -108,7 +117,6 @@ async def generic_main_flow(
     # Step 6: Refresh views after processing.
     refresh_views_task(flow_prefix)
     logger.info(f"[{flow_prefix}] Finished flow")
-
 
 
 def generic_single_repo_processing_flow(

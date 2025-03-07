@@ -5,8 +5,7 @@ from config.config import Config
 
 from modular.analyzer.trivy_analysis import TrivyAnalyzer
 from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
-from modular.shared.models import Session
-from modular.shared.tasks import (
+from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )

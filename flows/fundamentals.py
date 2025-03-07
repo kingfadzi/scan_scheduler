@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
@@ -9,8 +8,7 @@ from modular.analyzer.go_enry_analysis import GoEnryAnalyzer
 from modular.analyzer.lizard_analysis import LizardAnalyzer
 from modular.analyzer.cloc_analysis import ClocAnalyzer
 
-from modular.shared.models import Session, Repository
-from modular.shared.tasks import (
+from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
@@ -104,7 +102,7 @@ def run_gitlog_task(repo_dir, repo, session, run_id):
 
 
 if __name__ == "__main__":
-    
+
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
@@ -112,5 +110,5 @@ if __name__ == "__main__":
             "main_language": ["Python"]
         }
     }
-    
+
     asyncio.run(fundamental_metrics_flow(payload=example_payload))
