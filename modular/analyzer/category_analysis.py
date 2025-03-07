@@ -1,17 +1,17 @@
+from modular.shared.models import Session, Dependency
+from config.config import Config
+from modular.shared.base_logger import BaseLogger
 import pandas as pd
 import re
 import yaml
 import time
 import logging
 import os
-from modular.shared.models import Session
-from config.config import Config
-from modular.shared.base_logger import BaseLogger
 from sqlalchemy import text
 
 CHUNK_SIZE = 50000
 MATERIALIZED_VIEW = "categorized_dependencies_mv"
-RULES_PATH = Config.CATEGORY_RULES_PATH  # Loaded from Config class
+RULES_PATH = Config.CATEGORY_RULES_PATH
 
 RULES_MAPPING = {
     "pip": "rules_python.yaml",
@@ -37,12 +37,16 @@ class DependencyCategorizer(BaseLogger):
         try:
             with open(rule_path, 'r') as f:
                 rules = yaml.safe_load(f)
-            compiled_list = [
-                (re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', ""))
-                for cat in rules.get('categories', [])
-                for sub in cat.get('subcategories', [{"name": ""}])
-                for pattern in sub.get('patterns', cat.get('patterns', []))
-            ]
+            # Flatten rules: if subcategories exist, use them; otherwise use an empty sub_category.
+            compiled_list = []
+            for cat in rules.get('categories', []):
+                if 'subcategories' in cat:
+                    for sub in cat['subcategories']:
+                        for pattern in sub.get('patterns', []):
+                            compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', "")))
+                else:
+                    for pattern in cat.get('patterns', []):
+                        compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], ""))
             self.logger.info(f"Loaded {len(compiled_list)} rules from {rule_path}")
             return compiled_list
         except Exception as e:
@@ -56,83 +60,53 @@ class DependencyCategorizer(BaseLogger):
             return []
         if rule_file not in compiled_rules_cache:
             compiled_rules_cache[rule_file] = self.load_rules(rule_file)
-        rules = compiled_rules_cache[rule_file]
-        self.logger.info(f"Using {len(rules)} compiled rules for package type {package_type} from {rule_file}")
-        return rules
+        return compiled_rules_cache[rule_file]
 
-    def apply_categorization(self, df):
-        start_time = time.time()
-        df["category"], df["sub_category"] = "Other", ""
-        package_types = df["package_type"].unique()
-        
-        for pkg_type in package_types:
-            self.logger.debug(f"Processing package type: {pkg_type}")
-            group = df.loc[df["package_type"] == pkg_type]
-            sample_names = group["name"].head(5).tolist()
-            self.logger.debug(f"Sample dependency names for {pkg_type}: {sample_names}")
-            
-            compiled_rules = self.get_compiled_rules(pkg_type)
-            if not compiled_rules:
-                self.logger.warning(f"No compiled rules for package type: {pkg_type}")
-                continue
-
-            regex_patterns, categories, sub_categories = zip(*compiled_rules)
-            full_regex = "|".join(f"({pattern.pattern})" for pattern in regex_patterns)
-            matches = group["name"].str.extract(full_regex, expand=False)
-
-            # For each regex group, log sample matches and update the dataframe
-            for i, col in enumerate(matches.columns):
-                matched_rows = matches[col].notna()
-                num_matches = matched_rows.sum()
-                self.logger.debug(f"Regex {i}: found {num_matches} matches for package type {pkg_type}")
-                if num_matches > 0:
-                    # Log sample row indices and names for the first 3 matches
-                    matched_indices = group.index[matched_rows]
-                    sample_indices = matched_indices[:3].tolist()
-                    sample_values = group.loc[sample_indices, "name"].tolist()
-                    self.logger.debug(
-                        f"Regex {i} updating rows {sample_indices} with category='{categories[i]}' and sub_category='{sub_categories[i]}'. "
-                        f"Sample names: {sample_values}"
-                    )
-                    # Update only rows that haven't been categorized yet
-                    indices_to_update = group.index[matched_rows & (group["category"] == "Other")]
-                    df.loc[indices_to_update, ["category", "sub_category"]] = (categories[i], sub_categories[i])
-        
-        duration = time.time() - start_time
-        self.logger.info(f"Categorization completed for {len(df)} rows in {duration:.2f} seconds")
-        return df
+    def categorize_row(self, row):
+        rules = self.get_compiled_rules(row['package_type'])
+        for regex, top_cat, sub_cat in rules:
+            if regex.search(row['name']):
+                return pd.Series({"category": top_cat, "sub_category": sub_cat})
+        return pd.Series({"category": "Other", "sub_category": ""})
 
     def process_data(self):
         self.logger.info("Starting data processing...")
         query = """
-            SELECT d.repo_id, d.name, d.version, d.package_type, 
+            SELECT d.id, d.repo_id, d.name, d.version, d.package_type, 
                    b.tool, b.tool_version, b.runtime_version
             FROM dependencies d 
             LEFT JOIN build_tools b ON d.repo_id = b.repo_id
             WHERE d.package_type IS NOT NULL
         """
         start_time = time.time()
+        total_rows = 0
+
         with Session() as session:
-            self.logger.info("Refreshing materialized view before processing...")
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-            
+
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 if chunk.empty:
-                    self.logger.warning(f"Chunk {chunk_idx + 1} returned no rows.")
+                    self.logger.warning(f"Chunk {chunk_idx+1} returned no rows.")
                     continue
-                self.logger.info(f"Processing chunk {chunk_idx + 1} (size: {len(chunk)})...")
-                chunk_start_time = time.time()
-                chunk = self.apply_categorization(chunk)
-                chunk_duration = time.time() - chunk_start_time
-                self.logger.info(f"Chunk {chunk_idx + 1} processed in {chunk_duration:.2f} seconds")
-            
-            self.logger.info("Final refresh of materialized view...")
+                self.logger.info(f"Processing chunk {chunk_idx+1} (size: {len(chunk)})...")
+                chunk_start = time.time()
+                # Apply categorization row-wise
+                cat_values = chunk.apply(self.categorize_row, axis=1)
+                chunk["category"] = cat_values["category"]
+                chunk["sub_category"] = cat_values["sub_category"]
+                updates = chunk[['id', 'category', 'sub_category']].to_dict(orient='records')
+                if updates:
+                    session.bulk_update_mappings(Dependency, updates)
+                    session.commit()
+                self.logger.info(f"Chunk {chunk_idx+1} processed in {time.time() - chunk_start:.2f} seconds")
+                total_rows += len(chunk)
+
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
-        
+
         total_duration = time.time() - start_time
-        self.logger.info(f"Processing complete in {total_duration:.2f} seconds.")
+        self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
         print("Processing complete. Materialized view updated.")
 
 if __name__ == '__main__':
