@@ -19,7 +19,6 @@ async def vulnerabilities_flow(payload: dict):
         single_repo_processing_flow=vulnerabilities_repo_processing_flow,
         flow_prefix="Vulnerabilities",
         batch_size=1000,
-        num_partitions=10,
         concurrency_limit=10
     )
 
