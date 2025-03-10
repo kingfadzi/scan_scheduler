@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import logging
@@ -5,7 +6,7 @@ from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.utils import detect_repo_languages
+from modular.shared.utils import Utils
 from modular.shared.base_logger import BaseLogger
 
 class GoAnalyzer(BaseLogger):
@@ -20,7 +21,8 @@ class GoAnalyzer(BaseLogger):
         self.logger.info(f"Starting Go analysis for {repo.repo_id}")
 
         # Language validation
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        utils = Utils(0)
+        repo_languages = utils.detect_repo_languages(repo.repo_id, session)
         if 'Go' not in repo_languages:
             msg = f"Skipping non-Go repo {repo.repo_id}"
             self.logger.info(msg)
@@ -68,7 +70,7 @@ class GoAnalyzer(BaseLogger):
             ('glide.yaml', 'glide'),
             ('vendor/vendor.json', 'govendor')
         ]
-        
+
         for file_name, tool in tool_files:
             if (Path(repo_dir) / file_name).exists():
                 return tool

@@ -3,7 +3,7 @@ import aiohttp
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 from config.config import Config
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
+from modular.shared.utils import Utils
 
 DEPLOYMENTS = [
     "fundamental-metrics-flow/fundamentals",
@@ -57,7 +57,7 @@ async def run_deployment_with_retries(deployment_name, payload, retries=3):
             else:
                 raise RuntimeError(f"Deployment {deployment_name} failed after {retries} attempts.")
 
-@flow(name="Flow Orchestrator", flow_run_name=generate_main_flow_run_name)
+@flow(name="Flow Orchestrator", flow_run_name=Utils.generate_main_flow_run_name)
 async def flow_orchestrator():
 
     client = get_client()

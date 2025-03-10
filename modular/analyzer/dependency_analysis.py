@@ -10,7 +10,7 @@ from modular.go.go_helper import GoHelper
 from modular.maven.maven_helper import MavenHelper
 from modular.gradle.gradle_helper import GradleHelper
 from sqlalchemy.dialects.postgresql import insert
-from modular.shared.utils import detect_repo_languages, detect_java_build_tool
+from modular.shared.utils import Utils
 
 class DependencyAnalyzer(BaseLogger):
 
@@ -26,6 +26,7 @@ class DependencyAnalyzer(BaseLogger):
         self.go_helper = GoHelper(logger=logger)
         self.maven_helper = MavenHelper(logger=logger)
         self.gradle_helper = GradleHelper(logger=logger)
+        self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
@@ -36,7 +37,7 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
         if not repo_languages:
             self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
             return f"skipped: No detected languages for repo {repo.repo_id}."
@@ -58,7 +59,7 @@ class DependencyAnalyzer(BaseLogger):
 
             if "Java" in repo_languages:
                 self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
-                build_tool = detect_java_build_tool(repo_dir)
+                build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
                     self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))

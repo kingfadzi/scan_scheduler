@@ -2,18 +2,16 @@ import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
-
+from modular.shared.utils import Utils
 from modular.analyzer.checkov_analysis import CheckovAnalyzer
 from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
-from modular.shared.models import Session
-from modular.shared.tasks import (
+from flows.tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
 
-@flow(flow_run_name=generate_main_flow_run_name)
+@flow(flow_run_name=Utils.generate_main_flow_run_name)
 async def standards_assessment_flow(payload: dict):
 
     await generic_main_flow(
@@ -21,12 +19,11 @@ async def standards_assessment_flow(payload: dict):
         single_repo_processing_flow=standards_assessment_repo_processing_flow,
         flow_prefix="Standards Assessment",
         batch_size=1000,
-        num_partitions=10,
         concurrency_limit=10
     )
 
 
-@flow(flow_run_name=generate_repo_flow_run_name)
+@flow(flow_run_name=Utils.generate_repo_flow_run_name)
 def standards_assessment_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [
@@ -79,7 +76,7 @@ def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
 
 
 if __name__ == "__main__":
-    
+
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
@@ -87,5 +84,5 @@ if __name__ == "__main__":
             "main_language": ["Python"]
         }
     }
-    
+
     asyncio.run(standards_assessment_flow(payload=example_payload))

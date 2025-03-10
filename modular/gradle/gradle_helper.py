@@ -68,7 +68,7 @@ class GradleHelper(BaseLogger):
         snippet = self.snippet_builder.build_snippet(gradle_version, task_name)
         self._inject_snippet(build_file, snippet)
 
-        cmd = [gradle_executable, task_name]
+        cmd = [gradle_executable, task_name, "--no-daemon"]
         result = self.runner.run(cmd=cmd, cwd=repo_dir, gradle_version=gradle_version, check=True)
 
         if not result or result.returncode != 0:
@@ -111,7 +111,7 @@ class GradleHelper(BaseLogger):
         return dependencies
 
     def _fallback_dependencies(self, repo_dir, gradle_executable, output_file, gradle_version):
-        cmd = [gradle_executable, "dependencies"]
+        [gradle_executable, "dependencies", "--no-daemon"]
         result = self.runner.run(cmd=cmd, cwd=repo_dir, gradle_version=gradle_version, check=False)
 
         if not result or result.returncode != 0:

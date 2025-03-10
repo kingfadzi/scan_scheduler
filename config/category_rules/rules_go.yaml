@@ -1,0 +1,85 @@
+categories:
+  - name: "Database & Persistence"
+    patterns:
+      - "github\\.com/go-sql-driver/mysql.*"
+      - "github\\.com/lib/pq.*"
+      - "github\\.com/mattn/go-sqlite3.*"
+      - "gorm\\.io/gorm.*"
+      - "go\\.mongodb\\.org/mongo-driver.*"
+  - name: "Messaging & Event Streaming"
+    patterns:
+      - "github\\.com/segmentio/kafka-go.*"
+      - "github\\.com/streadway/amqp.*"
+      - "github\\.com/nats-io/nats\\.go.*"
+  - name: "Web & Application Frameworks"
+    patterns:
+      - "github\\.com/gin-gonic/gin.*"
+      - "github\\.com/labstack/echo.*"
+      - "github\\.com/gorilla/mux.*"
+      - "github\\.com/go-chi/chi.*"
+  - name: "Application Servers & Runtime Containers"
+    patterns:
+      - "net/http.*"
+      - "github\\.com/valyala/fasthttp.*"
+  - name: "Security & Authentication"
+    patterns:
+      - "github\\.com/dgrijalva/jwt-go.*"
+      - "golang\\.org/x/crypto.*"
+      - "github\\.com/gorilla/securecookie.*"
+      - "github\\.com/auth0/go-jwt-middleware.*"
+  - name: "Caching & In-Memory Data Stores"
+    patterns:
+      - "github\\.com/go-redis/redis.*"
+      - "github\\.com/patrickmn/go-cache.*"
+      - "github\\.com/allegro/bigcache.*"
+  - name: "Logging, Monitoring & Observability"
+    patterns:
+      - "github\\.com/sirupsen/logrus.*"
+      - "go\\.uber\\.org/zap.*"
+      - "github\\.com/rs/zerolog.*"
+      - "github\\.com/prometheus/client_golang.*"
+  - name: "Testing, Quality Assurance & Mocking"
+    patterns:
+      - "github\\.com/stretchr/testify.*"
+      - "github\\.com/golang/mock.*"
+      - "github\\.com/onsi/ginkgo.*"
+      - "github\\.com/onsi/gomega.*"
+  - name: "Cloud, Containerization & Orchestration"
+    patterns:
+      - "github\\.com/aws/aws-sdk-go.*"
+      - "cloud\\.google\\.com/go.*"
+      - "github\\.com/Azure/azure-sdk-for-go.*"
+      - "k8s\\.io/client-go.*"
+      - "github\\.com/docker/docker.*"
+  - name: "Build, Dependency Management & Deployment Tools"
+    patterns:
+      - "github\\.com/goreleaser/goreleaser.*"
+      - "golang\\.org/x/tools.*"
+  - name: "Data Serialization, Transformation & Processing"
+    patterns:
+      - "github\\.com/json-iterator/go.*"
+      - "gopkg\\.in/yaml\\.v2.*"
+      - "github\\.com/mitchellh/mapstructure.*"
+  - name: "Networking & Communication"
+    patterns:
+      - "github\\.com/go-resty/resty.*"
+      - "github\\.com/gorilla/websocket.*"
+  - name: "Utility & Helper Libraries"
+    patterns:
+      - "github\\.com/pkg/errors.*"
+      - "golang\\.org/x/exp/slices.*"
+      - "golang\\.org/x/exp/maps.*"
+  - name: "User Interface & Client-Side"
+    patterns:
+      - "fyne\\.io/fyne.*"
+      - "github\\.com/andlabs/ui.*"
+  - name: "Documentation, Code Generation & Development Tools"
+    patterns:
+      - "github\\.com/swaggo/swag.*"
+      - "github\\.com/go-swagger/go-swagger.*"
+  - name: "Analytics, Machine Learning & Big Data"
+    patterns:
+      - "gonum\\.org/v1/gonum.*"
+      - "github\\.com/gonum/plot.*"
+      - "github\\.com/kniren/gota.*"
+      - "github\\.com/tensorflow/tensorflow/tensorflow/go.*"

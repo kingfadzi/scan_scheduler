@@ -3,7 +3,7 @@ import logging
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool  # Unified model for build tools
 from modular.shared.execution_decorator import analyze_execution
-from modular.shared.utils import detect_repo_languages, detect_java_build_tool
+from modular.shared.utils import Utils
 from modular.gradle.environment_manager import GradleEnvironmentManager
 from modular.shared.base_logger import BaseLogger
 
@@ -15,19 +15,20 @@ class GradleAnalyzer(BaseLogger):
         else:
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
+        self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Gradle Build Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         self.logger.info(f"Starting Gradle build analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
 
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
         if 'Java' not in repo_languages:
             message = f"Repo {repo.repo_id} is not a Java project. Skipping."
             self.logger.info(message)
             return message
 
         # Check if build tool is Gradle
-        java_build_tool = detect_java_build_tool(repo_dir)
+        java_build_tool = self.utils.detect_java_build_tool(repo_dir)
         if java_build_tool != 'Gradle':
             message = f"Repo {repo.repo_id} is Java but doesn't use Gradle. Skipping."
             self.logger.info(message)

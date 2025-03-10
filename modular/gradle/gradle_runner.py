@@ -1,7 +1,7 @@
 import os
 import logging
 import subprocess
-
+import signal
 from modular.shared.base_logger import BaseLogger
 from config.config import Config
 from modular.gradle.environment_manager import GradleEnvironmentManager
@@ -29,38 +29,52 @@ class GradleRunner(BaseLogger):
         self.logger.debug(f"Setting JAVA_HOME for Gradle: {env['JAVA_HOME']}")
         self.logger.info(f"Running Gradle command: {' '.join(cmd)} in {cwd}")
 
+        proc = None
         try:
-            result = subprocess.run(
+            # Launch the process in a new session so all children are grouped together.
+            proc = subprocess.Popen(
                 cmd,
                 cwd=cwd,
                 env=env,
-                capture_output=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
                 text=True,
-                check=check,
-                timeout=300 #Config.DEFAULT_PROCESS_TIMEOUT
+                start_new_session=True
             )
-            self.logger.debug(f"Return code: {result.returncode}")
-            if result.stdout:
-                self.logger.debug(f"Stdout:\n{result.stdout}")
-            if result.stderr:
-                self.logger.debug(f"Stderr:\n{result.stderr}")
-            return result
+            stdout, stderr = proc.communicate(timeout=180)
+            retcode = proc.returncode
+
+            if check and retcode != 0:
+                raise subprocess.CalledProcessError(retcode, cmd, stdout, stderr)
+
+            self.logger.debug(f"Return code: {retcode}")
+            #if stdout:
+            #    self.logger.debug(f"Stdout:\n{stdout}")
+            if stderr:
+                self.logger.debug(f"Stderr:\n{stderr}")
+
+            return subprocess.CompletedProcess(cmd, retcode, stdout, stderr)
+
+        except subprocess.TimeoutExpired:
+            if proc:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                stdout, stderr = proc.communicate()
+            self.logger.error("Timeout after 180 seconds:")
+            #self.logger.error(f"Captured STDOUT:\n{stdout}")
+            self.logger.error(f"Captured STDERR:\n{stderr}")
+            return None
+
         except subprocess.CalledProcessError as cpe:
             self.logger.error(f"Command failed with exit code {cpe.returncode}:")
-            self.logger.error(f"STDOUT:\n{cpe.stdout}")
+            #self.logger.error(f"STDOUT:\n{cpe.stdout}")
             self.logger.error(f"STDERR:\n{cpe.stderr}")
             self.logger.error(f"Traceback:\n{traceback.format_exc()}")
             return None
-        except subprocess.TimeoutExpired as te:
-            self.logger.error(f"Timeout after {Config.DEFAULT_PROCESS_TIMEOUT} seconds:")
-            self.logger.error(f"Captured STDOUT:\n{te.stdout}")
-            self.logger.error(f"Captured STDERR:\n{te.stderr}")
-            return None
+
         except Exception as ex:
             self.logger.error(f"Unexpected error: {ex}")
             self.logger.error(f"Traceback:\n{traceback.format_exc()}")
             return None
-
 
     def _setup_env(self, java_home):
         env = os.environ.copy()
@@ -68,7 +82,6 @@ class GradleRunner(BaseLogger):
         env["JAVA_HOME"] = java_home
         env["GRADLE_OPTS"] = self._build_gradle_opts(env.get("GRADLE_OPTS", ""))
         self.logger.debug(f"Environment setup for Gradle: JAVA_HOME={env['JAVA_HOME']}")
-        #self.logger.debug(f"Full environment for Gradle:\n{env}")
         return env
 
     def _build_gradle_opts(self, existing_opts):
