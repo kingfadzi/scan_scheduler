@@ -4,7 +4,10 @@ from config.config import Config
 
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
-    branch=Config.FLOW_GIT_BRANCH  # Use the correct branch
+    branch=Config.FLOW_GIT_BRANCH,  # Use the correct branch
+    git_clone_kwargs={
+        "env": {"GIT_SSH_COMMAND": "ssh -o StrictHostKeyChecking=no"}
+    }
 )
 
 DEPLOYMENT_VERSION = "3.2.1"
