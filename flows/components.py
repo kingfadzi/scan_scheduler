@@ -23,8 +23,8 @@ async def component_patterns_flow(payload: dict):
         payload=payload,
         single_repo_processing_flow=component_patterns_repo_processing_flow,
         flow_prefix="Component Patterns",
-        batch_size=20,
-        concurrency_limit=5
+        batch_size=1000,
+        concurrency_limit=10
     )
 
 
