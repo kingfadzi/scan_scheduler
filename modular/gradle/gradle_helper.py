@@ -73,7 +73,7 @@ class GradleHelper(BaseLogger):
 
         if not result or result.returncode != 0:
             self.logger.warning("Custom task failed; attempting fallback 'dependencies' command.")
-            return self._fallback_dependencies(repo_dir, gradle_executable, output_file, gradle_version)
+            return self._fallback_dependencies(cmd. repo_dir, gradle_executable, output_file, gradle_version)
 
         return self._find_output_file(repo_dir, output_file)
 
@@ -110,7 +110,7 @@ class GradleHelper(BaseLogger):
                 )
         return dependencies
 
-    def _fallback_dependencies(self, repo_dir, gradle_executable, output_file, gradle_version):
+    def _fallback_dependencies(self, cmd, repo_dir, gradle_executable, output_file, gradle_version):
         [gradle_executable, "dependencies", "--no-daemon"]
         result = self.runner.run(cmd=cmd, cwd=repo_dir, gradle_version=gradle_version, check=False)
 
