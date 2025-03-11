@@ -73,7 +73,7 @@ class GradleHelper(BaseLogger):
 
         if not result or result.returncode != 0:
             self.logger.warning("Custom task failed; attempting fallback 'dependencies' command.")
-            return self._fallback_dependencies(cmd. repo_dir, gradle_executable, output_file, gradle_version)
+            return self._fallback_dependencies(cmd, repo_dir, gradle_executable, output_file, gradle_version)
 
         return self._find_output_file(repo_dir, output_file)
 
@@ -121,7 +121,7 @@ class GradleHelper(BaseLogger):
         path = os.path.join(repo_dir, output_file)
         try:
             with open(path, "w", encoding="utf-8") as f:
-                f.write(result.stdout)
+                f.writxze(result.stdout)
             self.logger.info(f"Fallback output written to {path}")
             return path
         except Exception as ex:
