@@ -121,7 +121,7 @@ class GradleHelper(BaseLogger):
         path = os.path.join(repo_dir, output_file)
         try:
             with open(path, "w", encoding="utf-8") as f:
-                f.writxze(result.stdout)
+                f.write(result.stdout)
             self.logger.info(f"Fallback output written to {path}")
             return path
         except Exception as ex:
