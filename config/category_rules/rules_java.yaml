@@ -3,37 +3,91 @@ categories:
     subcategories:
       - name: "SQL"
         patterns:
-          - ".*mysql.*"
-          - ".*postgresql.*"
-          - ".*h2.*"
-          - "org\\.hibernate.*"
-          - "com\\.oracle.*"
+          - "org\\.hibernate\\.orm.*"
+          - "com\\.oracle\\..*"
+          - "org\\.apache\\.derby.*"
+          - "io\\.jooq.*"
+          - "org\\.jooq.*"
+          - "io\\.r2dbc.*"
+          - "com\\.querydsl.*"
+          - "org\\.flywaydb.*"
       - name: "NoSQL"
         patterns:
           - "org\\.mongodb.*"
-  - name: "Messaging & Event Streaming"
-    patterns:
-      - "org\\.apache\\.kafka.*"
-      - "org\\.springframework\\.kafka.*"
-      - "org\\.springframework\\.amqp.*"
-      - "com\\.rabbitmq.*"
-      - "org\\.apache\\.activemq.*"
+          - "com\\.datastax\\.oss.*"
+          - "org\\.elasticsearch\\.client.*"
+          - "org\\.apache\\.solr.*"
+
+  - name: "Cloud, Containerization & Orchestration"
+    subcategories:
+      - name: "AWS"
+        patterns:
+          - "software\\.amazon\\.awssdk.*"
+          - "com\\.amazonaws.*"
+      - name: "Azure"
+        patterns:
+          - "com\\.azure.*"
+      - name: "Google Cloud"
+        patterns:
+          - "com\\.google\\.cloud.*"
+      - name: "Oracle Cloud"
+        patterns:
+          - "com\\.oracle\\.oci.*"
+      - name: "General"
+        patterns:
+          - "io\\.fabric8.*"
+          - "org\\.springframework\\.cloud.*"
+
+  - name: "Logging, Monitoring & Observability"
+    subcategories:
+      - name: "Logging"
+        patterns:
+          - "ch\\.qos\\.logback.*"
+          - "org\\.slf4j.*"
+          - "org\\.apache\\.logging\\.log4j.*"
+      - name: "Metrics"
+        patterns:
+          - "io\\.micrometer.*"
+          - "io\\.dropwizard\\.metrics.*"
+          - "io\\.prometheus.*"
+      - name: "Tracing"
+        patterns:
+          - "io\\.zipkin\\.brave.*"
+          - "io\\.zipkin\\.reporter2.*"
+          - "io\\.opentelemetry.*"
+
+  - name: "Testing, Quality Assurance & Mocking"
+    subcategories:
+      - name: "Core"
+        patterns:
+          - "org\\.junit\\.jupiter.*"
+          - "org\\.junit\\.platform.*"
+      - name: "Tools"
+        patterns:
+          - "org\\.mockito.*"
+          - "org\\.testcontainers.*"
+          - "io\\.rest-assured.*"
+          - "org\\.seleniumhq\\.selenium.*"
+          - "org\\.awaitility.*"
+          - "org\\.xmlunit.*"
+          - "org\\.hamcrest.*"
+
   - name: "Web & Application Frameworks"
     subcategories:
       - name: "Spring: Boot"
         patterns:
-        - "^org\\.springframework\\.boot:.*"
-        - "^spring-boot-starter(-[a-z0-9-]+)?$"
-        - "^spring-boot-autoconfigure$"
-        - "^spring-boot-actuator(-autoconfigure)?$"
-        - "^spring-boot-configuration-processor$"
-        - "^spring-boot-devtools$"
-        - "^spring-boot-test(-autoconfigure)?$"
-        - "^spring-boot-loader$"
-        - "^spring-boot-properties-migrator$"
-        - "^org\\.springframework\\.boot:.*"
+          - "^org\\.springframework\\.boot.*"
+          - "^spring-boot-starter(-[a-z0-9-]+)?$"
+          - "^spring-boot-autoconfigure$"
+          - "^spring-boot-actuator(-autoconfigure)?$"
+          - "^spring-boot-configuration-processor$"
+          - "^spring-boot-devtools$"
+          - "^spring-boot-test(-autoconfigure)?$"
+          - "^spring-boot-loader$"
+          - "^spring-boot-properties-migrator$"
       - name: "Spring: Framework"
         patterns:
+          - "^org\\.springframework(?:\\.(?!boot|cloud|security).)*$"
           - "^spring-aop$"
           - "^spring-aspects$"
           - "^spring-beans$"
@@ -53,90 +107,74 @@ categories:
           - "^spring-webflux$"
           - "^spring-webmvc$"
           - "^spring-websocket$"
-          - "^org\\.springframework:spring-[a-z0-9-]+$"
       - name: "Other Web Frameworks"
         patterns:
-          - "jakarta\\.servlet.*"
-          - "javax\\.servlet.*"
-          - "org\\.apache\\.struts.*"
-          - "org\\.jsf.*"
-  - name: "Application Servers & Runtime Containers"
-    patterns:
-      - "org\\.apache\\.tomcat.*"
-      - "org\\.jboss.*"
-      - "org\\.eclipse\\.jetty.*"
-      - "io\\.undertow.*"
-      - "com\\.oracle\\.weblogic.*"
-      - "com\\.ibm\\.websphere.*"
+          - "io\\.ktor.*"
+          - "org\\.glassfish\\.jersey.*"
+          - "org\\.springframework\\.ws.*"
+          - "org\\.springframework\\.session.*"
+          - "org\\.springframework\\.batch.*"
+  - name: "Messaging & Event Streaming"
+    subcategories:
+      - name: "Brokers"
+        patterns:
+          - "org\\.apache\\.kafka.*"
+          - "org\\.apache\\.activemq.*"
+      - name: "Protocols"
+        patterns:
+          - "org\\.springframework\\.amqp.*"
+          - "org\\.springframework\\.integration.*"
+          - "org\\.apache\\.camel.*"
+
   - name: "Security & Authentication"
     patterns:
       - "org\\.springframework\\.security.*"
-      - "org\\.apache\\.shiro.*"
-      - "org\\.keycloak.*"
-      - "javax\\.security.*"
-  - name: "Caching & In-Memory Data Stores"
-    patterns:
-      - "org\\.ehcache.*"
-      - "com\\.hazelcast.*"
-      - "org\\.redis.*"
-      - "net\\.sf\\.ehcache.*"
-      - "com\\.infinispan.*"
-  - name: "Logging, Monitoring & Observability"
-    patterns:
-      - "org\\.apache\\.logging.*"
-      - "org\\.slf4j.*"
-      - "ch\\.qos\\.logback.*"
-      - "io\\.micrometer.*"
-      - "com\\.newrelic.*"
-  - name: "Testing, Quality Assurance & Mocking"
-    patterns:
-      - "org\\.junit.*"
-      - "org\\.testng.*"
-      - "org\\.mockito.*"
-      - "org\\.hamcrest.*"
-  - name: "Cloud, Containerization & Orchestration"
-    patterns:
-      - "org\\.springframework\\.cloud.*"
-      - "io\\.fabric8.*"
-      - "org\\.kubernetes.*"
-      - "com\\.docker.*"
-  - name: "Build, Dependency Management & Deployment Tools"
-    patterns:
-      - "org\\.apache\\.maven.*"
-      - "org\\.gradle.*"
-      - "org\\.sonatype.*"
-  - name: "Data Serialization, Transformation & Processing"
-    patterns:
-      - "com\\.fasterxml\\.jackson.*"
-      - "com\\.google\\.gson.*"
-      - "javax\\.json.*"
-      - "org\\.json.*"
+      - "org\\.springframework\\.ldap.*"
+      - "org\\.glassfish\\.jersey\\.security.*"
+
   - name: "Networking & Communication"
+    subcategories:
+      - name: "Clients"
+        patterns:
+          - "io\\.netty.*"
+          - "com\\.squareup\\.okhttp3.*"
+          - "org\\.apache\\.httpcomponents.*"
+          - "com\\.github\\.openfeign.*"
+      - name: "Protocols"
+        patterns:
+          - "com\\.google\\.api\\.grpc.*"
+          - "io\\.projectreactor\\.netty.*"
+
+  - name: "Utilities"
+    subcategories:
+      - name: "General"
+        patterns:
+          - "org\\.apache\\.commons.*"
+          - "org\\.aspectj.*"
+          - "org\\.jetbrains\\.kotlin.*"
+          - "org\\.codehaus\\.groovy.*"
+          - "com\\.github\\.resilience4j.*"
+      - name: "Caching"
+        patterns:
+          - "com\\.github\\.ben-manes\\.caffeine.*"
+          - "com\\.hazelcast.*"
+          - "org\\.ehcache.*"
+          - "org\\.infinispan.*"
+
+  - name: "Data Serialization, Transformation & Processing"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "com\\.fasterxml\\.jackson.*"
+          - "org\\.apache\\.johnzon.*"
+          - "org\\.glassfish\\.jaxb.*"
+
+  - name: "Application Servers & Runtime Containers"
     patterns:
-      - "org\\.apache\\.http.*"
-      - "com\\.okhttp3.*"
-      - "org\\.springframework\\.webclient.*"
-  - name: "Utility & Helper Libraries"
+      - "org\\.apache\\.tomcat.*"
+      - "io\\.undertow.*"
+      - "org\\.eclipse\\.jetty.*"
+
+  - name: "Documentation & Development Tools"
     patterns:
-      - "org\\.apache\\.commons.*"
-      - "com\\.google\\.guava.*"
-      - "org\\.apache\\.commons\\.lang.*"
-      - "org\\.apache\\.commons\\.io.*"
-  - name: "User Interface & Client-Side"
-    patterns:
-      - "javax\\.swing.*"
-      - "javafx\\..*"
-      - "org\\.eclipse\\.swt.*"
-  - name: "Documentation, Code Generation & Development Tools"
-    patterns:
-      - "io\\.swagger.*"
-      - "org\\.springdoc.*"
-      - "org\\.asciidoctor.*"
-      - "org\\.javadoc.*"
-  - name: "Analytics, Machine Learning & Big Data"
-    patterns:
-      - "org\\.apache\\.spark.*"
-      - "org\\.apache\\.flink.*"
-      - "org\\.tensorflow.*"
-      - "org\\.deeplearning4j.*"
-      - "org\\.apache\\.mahout.*"
+      - "org\\.springframework\\.restdocs.*"
