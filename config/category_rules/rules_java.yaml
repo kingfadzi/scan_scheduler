@@ -22,11 +22,18 @@ categories:
     subcategories:
       - name: "Spring: Boot"
         patterns:
-          - "^org\\.springframework\\.boot.*"
-          - "^spring-boot.*"
+        - "^org\\.springframework\\.boot:.*"
+        - "^spring-boot-starter(-[a-z0-9-]+)?$"
+        - "^spring-boot-autoconfigure$"
+        - "^spring-boot-actuator(-autoconfigure)?$"
+        - "^spring-boot-configuration-processor$"
+        - "^spring-boot-devtools$"
+        - "^spring-boot-test(-autoconfigure)?$"
+        - "^spring-boot-loader$"
+        - "^spring-boot-properties-migrator$"
+        - "^org\\.springframework\\.boot:.*"
       - name: "Spring: Framework"
         patterns:
-          - "^org\\.springframework\\.(?!boot|security|data|batch|cloud|integration|ldap|session|shell|social|ws).*"
           - "^spring-aop$"
           - "^spring-aspects$"
           - "^spring-beans$"
@@ -46,6 +53,7 @@ categories:
           - "^spring-webflux$"
           - "^spring-webmvc$"
           - "^spring-websocket$"
+          - "^org\\.springframework:spring-[a-z0-9-]+$"
       - name: "Other Web Frameworks"
         patterns:
           - "jakarta\\.servlet.*"
