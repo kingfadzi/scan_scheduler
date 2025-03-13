@@ -17,7 +17,7 @@ def build_query(payload):
         'repo_id': 'bitbucket_repositories.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
         'activity_status': 'combined_repo_metrics.activity_status',
-        'status': 'bitbucket_repositories.status',  # Added repository status field
+        'status': 'bitbucket_repositories.status',
         'tc': 'combined_repo_metrics.tc',
         'main_language': 'combined_repo_metrics.main_language',
         'classification_label': 'combined_repo_metrics.classification_label',
@@ -34,7 +34,7 @@ def build_query(payload):
 
     # Add columns from combined_repo_metrics with aliases (except for repo_id)
     for key, col in filter_mapping.items():
-        if key not in ['repo_id', 'status']:  # Exclude repo_id and status since they are already included
+        if key not in ['repo_id', 'status']:
             select_cols.append(f"{col} as {key}")
 
     select_clause = "SELECT " + ", ".join(select_cols)
@@ -70,14 +70,14 @@ def build_query(payload):
     final_query = base_query + " AND " + " AND ".join(filters)
     return final_query
 
-# Example usage:
+
 if __name__ == "__main__":
     payload_example = {
         "payload": {
             'repo_id': ['abc'],
             'host_name': ['github.com'],
             'activity_status': ['ACTIVE'],
-            'status': ['ARCHIVED'],  # Example repository status filter
+            'status': ['NEW'],
             'tc': ['some_tc_value'],
             'main_language': ['Python'],
             'classification_label': ['A'],
