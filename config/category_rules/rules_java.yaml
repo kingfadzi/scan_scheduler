@@ -87,7 +87,6 @@ categories:
           - "^spring-boot-properties-migrator$"
       - name: "Spring: Framework"
         patterns:
-          - "^org\\.springframework(?:\\.(?!boot|cloud|security).)*$"
           - "^spring-aop$"
           - "^spring-aspects$"
           - "^spring-beans$"
@@ -107,6 +106,7 @@ categories:
           - "^spring-webflux$"
           - "^spring-webmvc$"
           - "^spring-websocket$"
+          - "^org\\.springframework:spring-[a-z0-9-]+$"
       - name: "Other Web Frameworks"
         patterns:
           - "io\\.ktor.*"
