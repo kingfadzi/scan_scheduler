@@ -1,0 +1,10 @@
+categories:
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose (Apache Commons, Guava)"
+        patterns:
+          - "io\\.micronaut:micronaut-(serde|groovy|kotlin)"
+          - "javax\\.activation(\\..*)?"  # JAF
+          - "javax\\.annotation(\\..*)?"  # Common annotations
+          - "javax\\.money(\\..*)?"       # Monetary API
+          # Removed javax.xml.ws (moved to Data Serialization)

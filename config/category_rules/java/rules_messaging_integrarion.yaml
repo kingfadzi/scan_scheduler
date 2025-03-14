@@ -1,0 +1,8 @@
+categories:
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "io\\.micronaut:micronaut-(grpc|jaxrs|openapi)"
+          - "javax\\.ws\\.rs(\\..*)?"     # JAX-RS
+          # Removed JAX-WS (moved to Data Serialization)

@@ -1,0 +1,13 @@
+categories:
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases (ORM, JDBC, Migrations)"
+        patterns:
+          - "io\\.micronaut:micronaut-(data|sql)"
+          - "javax\\.persistence(\\..*)?"  # JPA
+          - "javax\\.transaction(\\..*)?"  # JTA
+          # Removed JAXB (moved to Data Serialization)
+      - name: "NoSQL & Big Data (Document/Key-Value Stores)"
+        patterns:
+          - "io\\.micronaut:micronaut-(mongodb|microstream)"
+          # Removed javax.json and javax.json.bind (moved to Data Serialization)

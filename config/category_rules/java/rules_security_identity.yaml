@@ -1,0 +1,10 @@
+categories:
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication (OAuth2, JWT, SAML)"
+        patterns:
+          - "io\\.micronaut:micronaut-security"
+      - name: "Transport & Data Security (TLS, Encryption)"
+        patterns: []
+      - name: "Identity Management (SSO, RBAC)"
+        patterns: []

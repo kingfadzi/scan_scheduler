@@ -1,0 +1,11 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+        patterns:
+          - "io\\.micronaut:micronaut-kubernetes"
+      - name: "Cloud Platforms (AWS/Azure/GCP)"
+        patterns:
+          - "io\\.micronaut:micronaut-(aws|azure|gcp|oraclecloud)"
+      - name: "Virtualization & Hypervisors"
+        patterns: []

@@ -1,0 +1,12 @@
+categories:
+  - name: "Data Serialization, Transformation & Processing"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "com\\.fasterxml\\.jackson.*"
+          - "org\\.apache\\.johnzon.*"
+          - "org\\.glassfish\\.jaxb.*"
+          # Added javax JSON/XML packages
+          - "javax\\.json(\\..*)?"          # JSON-P (javax.json)
+          - "javax\\.json\\.bind(\\..*)?"   # JSON-B (javax.json.bind)
+          - "javax\\.xml\\.bind(\\..*)?"    # JAXB (javax.xml.bind)

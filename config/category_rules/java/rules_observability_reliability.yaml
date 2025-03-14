@@ -1,0 +1,11 @@
+categories:
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        patterns: []
+      - name: "Metrics & Distributed Tracing"
+        patterns:
+          - "io\\.micronaut:micronaut-(micrometer|tracing)"
+      - name: "Resilience (Circuit Breakers, Rate Limiting)"
+        patterns:
+          - "io\\.micronaut:micronaut-netflix"

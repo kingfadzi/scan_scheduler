@@ -1,0 +1,50 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+      - name: "Cloud Platforms (AWS/Azure/GCP)"
+      - name: "Virtualization & Hypervisors"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases (ORM, JDBC, Migrations)"
+      - name: "NoSQL & Big Data (Document/Key-Value Stores)"
+      - name: "Caching (In-Memory/Distributed)"
+      - name: "Data Lakes & Analytics"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Event Streaming (Kafka, Pulsar)"
+      - name: "Message Brokers & ETL Tools"
+      - name: "API Gateways & REST/GraphQL"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks (Full-Stack, Micro, Reactive)"
+      - name: "Runtime Containers & Servers"
+      - name: "Concurrency & Async Libraries"
+      - name: "Dependency Injection (Spring, Guice)"
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication (OAuth2, JWT, SAML)"
+      - name: "Transport & Data Security (TLS, Encryption)"
+      - name: "Identity Management (SSO, RBAC)"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+      - name: "Metrics & Distributed Tracing"
+      - name: "Resilience (Circuit Breakers, Rate Limiting)"
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+      - name: "Testing (Unit, Integration, Performance)"
+      - name: "Code Quality & Profiling"
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "Functional/Reactive Libraries"
+      - name: "General-Purpose (Apache Commons, Guava)"
+      - name: "Template Engines & WebSockets"
