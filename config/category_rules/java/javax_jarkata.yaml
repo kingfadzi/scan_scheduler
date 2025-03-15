@@ -56,8 +56,7 @@ categories:
 
       - name: "JSON/XML"
         patterns:
-          - "(javax|jakarta)\\.(json|xml\\.bind)\\..*"
-          - "(javax|jakarta)\\.(el|validation|activation|xml\\.parsers)\\..*"
+          - "(javax|jakarta)\\.(el|validation|activation|xml\\.parsers)(\\..*)?"
 
       - name: "Protocol Buffers & Binary Formats"
         patterns:
