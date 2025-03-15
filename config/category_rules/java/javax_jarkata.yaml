@@ -1,0 +1,95 @@
+categories:
+  # Infrastructure & Deployment
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Application Servers"
+        patterns:
+          - "(javax|jakarta)\\.(servlet|ejb|management|concurrency|connector|resource)\\..*"
+      - name: "Cloud Platforms"
+        patterns:
+          - "javax\\.batch\\..*"          # Java EE Batch (no direct Jakarta equivalent)
+          - "jakarta\\.nosql\\..*"        # Jakarta NoSQL (new in Jakarta EE)
+
+  # Data Management & Storage
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        patterns:
+          - "(javax|jakarta)\\.(persistence|transaction)\\..*"  # JPA/JTA
+      - name: "NoSQL & Big Data"
+        patterns:
+          - "jakarta\\.nosql\\..*"        # Jakarta NoSQL (unique)
+          - "(javax|jakarta)\\.jms\\..*"  # JMS (shared)
+
+  # Messaging & Data Integration
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "(javax|jakarta)\\.jms\\..*"  # JMS (shared)
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "(javax|jakarta)\\.ws\\.(rs|soap|xml\\.ws)\\..*"  # JAX-RS/JAX-WS
+          - "jakarta\\.rest\\..*"          # Jakarta REST (new)
+
+  # Application Development
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        patterns:
+          - "(javax|jakarta)\\.(faces|servlet\\.jsp|websocket)\\..*"  # JSF/JSP/WebSocket
+      - name: "Dependency Injection"
+        patterns:
+          - "(javax|jakarta)\\.(inject|enterprise|interceptors|decorator)\\..*"  # CDI
+      - name: "Reactive Libraries"
+        patterns:
+          - "jakarta\\.reactive\\..*"     # Jakarta Reactive (new)
+
+  # Serialization
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "(javax|jakarta)\\.(json|xml\\.bind)\\..*"  # JSON-B/JSON-P/JAXB
+      - name: "Protocol Buffers & Binary Formats"
+        patterns:
+          - "jakarta\\.protobuf\\..*"     # Jakarta Protobuf (new)
+
+  # Security & Identity
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        patterns:
+          - "(javax|jakarta)\\.security\\.(auth\\.message|jacc)\\..*"  # JASPIC/JACC
+      - name: "Security Layers"
+        patterns:
+          - "jakarta\\.security\\..*"     # Jakarta Security (modern)
+          - "javax\\.security\\..*"       # Legacy Java EE Security
+
+  # Observability & Reliability
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Metrics & Distributed Tracing"
+        patterns:
+          - "jakarta\\.metrics\\..*"      # Jakarta Metrics (new)
+
+  # Development & Testing Tools
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "javax\\.annotation\\..*"     # Legacy annotations
+          - "jakarta\\.annotation\\..*"   # Modern annotations
+
+  # Utilities & Libraries
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        patterns:
+          - "(javax|jakarta)\\.(el|validation|activation|xml\\.parsers)\\..*"
+          - "org\\.eclipse\\.(yasson|parsson)\\..*"  # Jakarta JSON-B/JSON-P impls
+          - "com\\.fasterxml\\.jackson\\.module\\.jakarta\\.*"  # Jackson for Jakarta
+      - name: "Third-Party Migrations"
+        patterns:
+          - "org\\.apache\\.wss4j\\..*"   # Migrated from old WS-Security
+          - "net\\.sf\\.ehcache\\.jakarta\\..*"  # Ehcache Jakarta
