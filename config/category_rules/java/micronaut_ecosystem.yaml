@@ -15,43 +15,50 @@ categories:
 
       - name: "Service Discovery"
         patterns:
-          - "io\\.micronaut\\.discovery:micronaut-discovery.*"
-          - "io\\.micronaut\\.discovery\\.cloud.*"
-          - "io\\.micronaut\\.discovery\\.config.*"
-          - "io\\.micronaut\\.discovery\\.event.*"
-          - "io\\.micronaut\\.discovery\\.metadata.*"
-          - "io\\.micronaut\\.discovery\\.registration.*"
+          - "io\\.micronaut\\.discovery.*"
+
+      - name: "Platform Management"
+        patterns:
+          - "io\\.micronaut\\.platform.*"
+
+      - name: "Checkpoint & Restore"
+        patterns:
+          - "io\\.micronaut\\.crac.*"
 
   - name: "Data Management & Storage"
     subcategories:
       - name: "Relational Databases"
         patterns:
-          - "io\\.micronaut\\.(sql|jdbc|data):micronaut-(jdbc|hibernate-jpa|data-jpa|data-r2dbc).*"
+          - "io\\.micronaut\\.(sql|jdbc|data|r2dbc):micronaut-.*"
           - "io\\.micronaut\\.flyway:micronaut-flyway.*"
           - "io\\.micronaut\\.liquibase:micronaut-liquibase.*"
+          - "io\\.micronaut\\.neo4j.*"
 
       - name: "NoSQL & Big Data"
         patterns:
-          - "io\\.micronaut\\.(mongodb|cassandra|redis):micronaut-.*"
-          - "io\\.micronaut:micronaut-objectstorage"
+          - "io\\.micronaut\\.(mongodb|cassandra|redis|opensearch|microstream):micronaut-.*"
 
       - name: "Caching"
         patterns:
           - "io\\.micronaut\\.cache:micronaut-cache.*"
           - "io\\.micronaut\\.redis:micronaut-redis-lettuce.*"
-          - "io\\.micronaut:micronaut-(cache|coherence)"
+          - "io\\.micronaut\\.coherence.*"
+
+      - name: "File & Storage Utilities"
+        patterns:
+          - "io\\.micronaut\\.core\\.io.*"
+          - "io\\.micronaut\\.eclipsestore.*"
+          - "io\\.micronaut\\.objectstore.*"
 
   - name: "Messaging & Data Integration"
     subcategories:
       - name: "Message Brokers & ETL Tools"
         patterns:
-          - "io\\.micronaut\\.(kafka|rabbitmq|mqtt|nats):micronaut-.*"
-          - "io\\.micronaut\\.messaging.*"
-          - "io\\.micronaut:micronaut-(jms|mqtt)"
+          - "io\\.micronaut\\.(kafka|rabbitmq|mqtt|nats|pulsar|jms):micronaut-.*"
 
       - name: "API Gateways & REST/GraphQL"
         patterns:
-          - "io\\.micronaut\\.(http-client|grpc|openapi):micronaut-.*"
+          - "io\\.micronaut\\.(http-client|grpc|openapi|graphql):micronaut-.*"
 
       - name: "Event Streaming"
         patterns:
@@ -68,17 +75,21 @@ categories:
         patterns:
           - "io\\.micronaut:micronaut-http-server.*"
           - "io\\.micronaut\\.http.server.*"
-          - "io\\.micronaut:micronaut-servlet"
+          - "io\\.micronaut\\.servlet.*"
+          - "io\\.micronaut\\.jaxrs.*"
 
       - name: "Reactive Libraries"
         patterns:
           - "io\\.micronaut\\.reactor:micronaut-reactor.*"
           - "io\\.micronaut\\.rxjava:micronaut-rxjava.*"
+          - "io\\.micronaut\\.rxjava2.*"
 
       - name: "Dependency Injection"
         patterns:
           - "io\\.micronaut:micronaut-inject.*"
           - "io\\.micronaut\\.inject.*"
+          - "io\\.micronaut\\.spring.*"
+          - "io\\.micronaut\\.guice.*"
 
       - name: "Template Engines"
         patterns:
@@ -96,6 +107,8 @@ categories:
           - "io\\.micronaut\\.serde:micronaut-serde.*"
           - "io\\.micronaut\\.jackson:micronaut-jackson.*"
           - "io\\.micronaut\\.json.*"
+          - "io\\.micronaut\\.xml.*"
+          - "io\\.micronaut\\.toml.*"
 
       - name: "Protocol Buffers & Binary Formats"
         patterns:
@@ -110,6 +123,7 @@ categories:
       - name: "Security Layers"
         patterns:
           - "io\\.micronaut\\.security:micronaut-security.*"
+          - "io\\.micronaut\\.multitenancy.*"
 
       - name: "Transport & Data Security"
         patterns:
@@ -122,23 +136,17 @@ categories:
         patterns:
           - "io\\.micronaut\\.logging:micronaut-logging.*"
           - "io\\.micronaut\\.management\\.health.*"
-
-      - name: "Metrics & Distributed Tracing"
-        patterns:
-          - "io\\.micronaut\\.micrometer:micronaut-micrometer.*"
-          - "io\\.micronaut\\.tracing:micronaut-tracing.*"
-
-      - name: "Circuit Breakers & Rate Limiting"
-        patterns:
-          - "io\\.micronaut\\.resilience:micronaut-resilience.*"
+          - "io\\.micronaut\\.controlpanel.*"
+          - "io\\.micronaut\\.netflix.*"
 
   - name: "Development & Testing Tools"
     subcategories:
       - name: "Build Tools & Dependency Management"
         patterns:
           - "io\\.micronaut\\.gradle:micronaut-gradle-plugin.*"
+          - "io\\.micronaut\\.maven.*"
 
-      - name: "Testing"
+      - name: "Testing (Unit, Integration, Performance)"
         patterns:
           - "io\\.micronaut\\.test:micronaut-test-.*"
           - "io\\.micronaut\\.testresources:micronaut-test-resources.*"
@@ -148,12 +156,8 @@ categories:
     subcategories:
       - name: "General-Purpose"
         patterns:
-          - "io\\.micronaut\\.(groovy|kotlin):micronaut-.*"
-          - "io\\.micronaut\\.core.*"
-          - "io\\.micronaut\\.context.*"
-          - "io\\.micronaut\\.runtime.*"
-          - "io\\.micronaut\\.retry.*"
-          - "io\\.micronaut\\.scheduling.*"
-          - "io\\.micronaut\\.core\\.io.*"
-          - "io\\.micronaut:micronaut-(email|rss|chatbots)"
+          - "io\\.micronaut\\.picocli.*"
+          - "io\\.micronaut\\.sourcegen.*"
+          - "io\\.micronaut\\.Session.*"
+          - "io\\.micronaut\\.langchain4j.*"
 
