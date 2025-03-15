@@ -42,7 +42,14 @@ categories:
 
       - name: "Event Streaming"
         patterns:
-            - "io\\.micronaut:micronaut-kafka"
-            - "org\\.apache\\.kafka.*"
-            - "org\\.apache\\.pulsar.*"
-            - "io\\.projectreactor\\.kafka.*"
+          - "io\\.micronaut:micronaut-kafka"
+          - "org\\.apache\\.kafka.*"
+          - "org\\.apache\\.pulsar.*"
+          - "io\\.projectreactor\\.kafka.*"
+
+      - name: "Networking"
+        patterns:
+          - "io\\.netty.*"
+          - "io\\.projectreactor\\.netty.*"
+          - "com\\.jcraft.*"
+          - "org\\.tmatesoft.*"

@@ -2,7 +2,7 @@ categories:
   - name: "Security & Identity"
     subcategories:
 
-      - name: "Authentication (OAuth2, JWT, SAML)"
+      - name: "Authentication"
         patterns:
           - "io\\.micronaut:micronaut-security"
           - "com\\.google\\.auth.*"
@@ -14,7 +14,7 @@ categories:
         patterns:
           - "org\\.owasp\\..*"
 
-      - name: "Transport & Data Security (TLS, Encryption)"
+      - name: "Transport & Data Security"
         patterns:
           - "org\\.jasypt.*"
 

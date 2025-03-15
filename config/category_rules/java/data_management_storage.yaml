@@ -59,6 +59,7 @@ categories:
           - "org\\.cache2k.*"
           - "org\\.ehcache.*"
           - "org\\.infinispan.*"
+          - "com\\.github\\.ben-manes.*"
 
       - name: "Data Lakes & Analytics"
         patterns:

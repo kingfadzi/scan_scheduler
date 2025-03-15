@@ -1,6 +1,6 @@
 categories:
 
-  - name: "Data Serialization, Transformation & Processing"
+  - name: "Serialization"
     subcategories:
       - name: "JSON/XML"
         patterns:
@@ -26,6 +26,7 @@ categories:
           - "org\\.xmlunit.*"
           - "org\\.yaml.*"
           - "wsdl4j.*"
+          - "com\\.github\\.fge.*"
 
       - name: "Protocol Buffers & Binary Formats"
         patterns:

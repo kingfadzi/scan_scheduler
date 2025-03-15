@@ -16,9 +16,6 @@ categories:
           - "org\\.apache\\.groovy.*"
           - "org\\.apache\\.poi.*"
           - "cglib.*"
-          - "com\\.jcraft.*"
-          - "com\\.github\\.ben-manes.*"
-          - "com\\.github\\.fge.*"
           - "com\\.sun\\.(xml|activation|mail).*"
           - "commons-(beanutils|codec|fileupload|lang).*"
           - "com\\.samskivert.*"
@@ -49,8 +46,3 @@ categories:
           - "org\\.webjars.*"
           - "org\\.tmatesoft.*"
           - "org\\.projectionhok.*"
-
-      - name: "Networking"
-        patterns:
-          - "io\\.netty.*"
-          - "io\\.projectreactor\\.netty.*"

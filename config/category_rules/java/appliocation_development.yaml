@@ -3,7 +3,7 @@ categories:
 
     subcategories:
 
-      - name: "Web Frameworks (Full-Stack, Micro, Reactive)"
+      - name: "Web Frameworks"
         patterns:
           - "io\\.micronaut:micronaut-(views|reactor)"
           - "(javax|jakarta)\\.websocket(\\..*)?"

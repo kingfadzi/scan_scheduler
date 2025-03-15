@@ -15,12 +15,12 @@ MATERIALIZED_VIEW = "categorized_dependencies_mv"
 RULES_PATH = Config.CATEGORY_RULES_PATH
 
 RULES_MAPPING = {
-    "pip": "rules_python.yaml",
-    "maven": "rules_java.yaml",
-    "gradle": "rules_java.yaml",
-    "npm": "rules_javascript.yaml",
-    "yarn": "rules_javascript.yaml",
-    "go": "rules_go.yaml"
+    "pip": "python",
+    "maven": "java",
+    "gradle": "java",
+    "npm": "javascript",
+    "yarn": "javascript",
+    "go": "go"
 }
 
 compiled_rules_cache = {}
@@ -77,36 +77,56 @@ class CategoryAnalyzer(BaseLogger):
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
         print("Processing complete. Materialized view updated.")
 
+    def load_rules(self, rule_path_component):
+        full_path = os.path.join(RULES_PATH, rule_path_component)
+        compiled_list = []
 
-    def load_rules(self, rule_file):
-        rule_path = os.path.join(RULES_PATH, rule_file)
-        try:
-            with open(rule_path, 'r') as f:
-                rules = yaml.safe_load(f)
-            # Flatten rules: if subcategories exist, use them; otherwise use an empty sub_category.
-            compiled_list = []
-            for cat in rules.get('categories', []):
-                if 'subcategories' in cat:
-                    for sub in cat['subcategories']:
-                        for pattern in sub.get('patterns', []):
-                            compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', "")))
-                else:
-                    for pattern in cat.get('patterns', []):
-                        compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], ""))
-            self.logger.info(f"Loaded {len(compiled_list)} rules from {rule_path}")
-            return compiled_list
-        except Exception as e:
-            self.logger.error(f"Error loading {rule_path}: {e}")
-            return []
+        if os.path.isdir(full_path):
+            # If it's a directory, iterate over all YAML files
+            for file_name in os.listdir(full_path):
+                if file_name.endswith((".yaml", ".yml")):
+                    file_path = os.path.join(full_path, file_name)
+                    self.logger.info(f"Loading rules from {file_path}")
+                    try:
+                        with open(file_path, 'r') as f:
+                            rules = yaml.safe_load(f)
+                        for cat in rules.get('categories', []):
+                            if 'subcategories' in cat:
+                                for sub in cat['subcategories']:
+                                    for pattern in sub.get('patterns', []):
+                                        compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', "")))
+                            else:
+                                for pattern in cat.get('patterns', []):
+                                    compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], ""))
+                    except Exception as e:
+                        self.logger.error(f"Error loading {file_path}: {e}")
+        else:
+            # Fallback: treat as a single file
+            try:
+                with open(full_path, 'r') as f:
+                    rules = yaml.safe_load(f)
+                for cat in rules.get('categories', []):
+                    if 'subcategories' in cat:
+                        for sub in cat['subcategories']:
+                            for pattern in sub.get('patterns', []):
+                                compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], sub.get('name', "")))
+                    else:
+                        for pattern in cat.get('patterns', []):
+                            compiled_list.append((re.compile(pattern, re.IGNORECASE), cat['name'], ""))
+            except Exception as e:
+                self.logger.error(f"Error loading {full_path}: {e}")
+
+        self.logger.info(f"Loaded {len(compiled_list)} rules from {full_path}")
+        return compiled_list
 
     def get_compiled_rules(self, package_type):
-        rule_file = RULES_MAPPING.get(package_type.lower())
-        if not rule_file:
-            self.logger.warning(f"No rule file mapped for package type: {package_type}")
+        rule_path_component = RULES_MAPPING.get(package_type.lower())
+        if not rule_path_component:
+            self.logger.warning(f"No rule path mapped for package type: {package_type}")
             return []
-        if rule_file not in compiled_rules_cache:
-            compiled_rules_cache[rule_file] = self.load_rules(rule_file)
-        return compiled_rules_cache[rule_file]
+        if rule_path_component not in compiled_rules_cache:
+            compiled_rules_cache[rule_path_component] = self.load_rules(rule_path_component)
+        return compiled_rules_cache[rule_path_component]
 
     def categorize_row(self, row):
         rules = self.get_compiled_rules(row['package_type'])
@@ -114,7 +134,6 @@ class CategoryAnalyzer(BaseLogger):
             if regex.search(row['name']):
                 return pd.Series({"category": top_cat, "sub_category": sub_cat})
         return pd.Series({"category": "Other", "sub_category": ""})
-
 
     def bulk_update_dependencies(self, connection, updates):
         if not updates:
