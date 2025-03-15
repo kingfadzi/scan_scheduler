@@ -3,9 +3,6 @@ categories:
     subcategories:
       - name: "Relational Databases"
         patterns:
-          - "io\\.micronaut:micronaut-(data|sql)"
-          - "(javax|jakarta)\\.persistence(\\..*)?"
-          - "(javax|jakarta)\\.transaction(\\..*)?"
           - "org\\.apache\\.derby.*"
           - "com\\.h2database.*"
           - "com\\.ibm\\.db2.*"
@@ -35,7 +32,6 @@ categories:
 
       - name: "NoSQL & Big Data"
         patterns:
-          - "io\\.micronaut:micronaut-(mongodb|microstream)"
           - "org\\.apache\\.cassandra.*"
           - "org\\.apache\\.solr.*"
           - "org\\.apache\\.hadoop.*"
@@ -52,7 +48,6 @@ categories:
 
       - name: "Caching"
         patterns:
-          - "io\\.micronaut:micronaut-(cache|coherence)"
           - "org\\.apache\\.ignite.*"
           - "com\\.hazelcast.*"
           - "net\\.sf\\.encache.*"
@@ -61,6 +56,4 @@ categories:
           - "org\\.infinispan.*"
           - "com\\.github\\.ben-manes.*"
 
-      - name: "Data Lakes & Analytics"
-        patterns:
-          - "io\\.micronaut:micronaut-objectstorage"
+

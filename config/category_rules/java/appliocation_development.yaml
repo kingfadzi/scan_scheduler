@@ -5,9 +5,6 @@ categories:
 
       - name: "Web Frameworks"
         patterns:
-          - "io\\.micronaut:micronaut-(views|reactor)"
-          - "(javax|jakarta)\\.websocket(\\..*)?"
-          - "(javax|jakarta)\\.validation(\\..*)?"
           - "io\\.ktor.*"
           - "gg\\.jte.*"
           - "io\\.searchbox.*"
@@ -16,7 +13,6 @@ categories:
 
       - name: "Reactive Libraries"
         patterns:
-          - "io\\.micronaut:micronaut-rxjava[2-3]"
           - "io\\.projectreactor.*"
           - "io\\.projectreactor\\.(spring|kafka|netty|addons).*"
           - "io\\.reactivex\\.(rxjava2|rxjava3).*"
@@ -29,7 +25,6 @@ categories:
 
       - name: "Template Engines"
         patterns:
-          - "io\\.micronaut:micronaut-(email|rss|chatbots)"
           - "org\\.apache\\.velocity.*"
           - "com\\.querydsl.*"
           - "org\\.freemarker.*"

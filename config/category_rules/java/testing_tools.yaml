@@ -38,6 +38,7 @@ categories:
             - "io\\.rest-assured.*"
             - "org\\.hamcrest.*"
             - "io\\.micronaut:micronaut-test(resources)?"
+            - "org\\.codehaus\\.groovy:*testing*"
 
       - name: "Code Quality & Profiling"
         patterns:

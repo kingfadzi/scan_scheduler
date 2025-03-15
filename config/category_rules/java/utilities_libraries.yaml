@@ -4,12 +4,6 @@ categories:
 
       - name: "General Purpose"
         patterns:
-          - "io\\.micronaut:micronaut-(serde|groovy|kotlin)"
-          - "(javax|jakarta)\\.activation(\\..*)?"
-          - "(javax|jakarta)\\.annotation(\\..*)?"
-          - "(javax|jakarta)\\.inject(\\..*)?"
-          - "(javax|jakarta)\\.mail(\\..*)?"
-          - "(javax|jakarta)\\.management\\.j2ee(\\..*)?"
           - "com\\.google\\.guava.*"
           - "com\\.google\\.code.*"
           - "org\\.apache\\.commons.*"

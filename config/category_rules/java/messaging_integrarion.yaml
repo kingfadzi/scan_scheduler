@@ -4,8 +4,6 @@ categories:
 
       - name: "Message Brokers & ETL Tools"
         patterns:
-          - "io\\.micronaut:micronaut-(jms|mqtt)"
-          - "(javax|jakarta)\\.jms(\\..*)?"
           - "org\\.apache\\.activemq.*"
           - "org\\.apache\\.camel.*"
           - "com\\.ibm\\.(mq|wmq).*"
@@ -42,7 +40,6 @@ categories:
 
       - name: "Event Streaming"
         patterns:
-          - "io\\.micronaut:micronaut-kafka"
           - "org\\.apache\\.kafka.*"
           - "org\\.apache\\.pulsar.*"
           - "io\\.projectreactor\\.kafka.*"

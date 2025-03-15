@@ -4,7 +4,6 @@ categories:
 
       - name: "Authentication"
         patterns:
-          - "io\\.micronaut:micronaut-security"
           - "com\\.google\\.auth.*"
           - "com\\.nimbusds.*"
           - "com\\.unboundid.*"

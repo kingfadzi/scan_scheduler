@@ -33,15 +33,13 @@ categories:
       - name: "NoSQL & Big Data"
         patterns:
           - "io\\.micronaut\\.(mongodb|cassandra|redis):micronaut-.*"
+          - "io\\.micronaut:micronaut-objectstorage"
 
       - name: "Caching"
         patterns:
           - "io\\.micronaut\\.cache:micronaut-cache.*"
           - "io\\.micronaut\\.redis:micronaut-redis-lettuce.*"
-
-      - name: "File & Storage Utilities"
-        patterns:
-          - "io\\.micronaut\\.core\\.io.*"
+          - "io\\.micronaut:micronaut-(cache|coherence)"
 
   - name: "Messaging & Data Integration"
     subcategories:
@@ -49,6 +47,7 @@ categories:
         patterns:
           - "io\\.micronaut\\.(kafka|rabbitmq|mqtt|nats):micronaut-.*"
           - "io\\.micronaut\\.messaging.*"
+          - "io\\.micronaut:micronaut-(jms|mqtt)"
 
       - name: "API Gateways & REST/GraphQL"
         patterns:
@@ -69,6 +68,7 @@ categories:
         patterns:
           - "io\\.micronaut:micronaut-http-server.*"
           - "io\\.micronaut\\.http.server.*"
+          - "io\\.micronaut:micronaut-servlet"
 
       - name: "Reactive Libraries"
         patterns:
@@ -138,7 +138,7 @@ categories:
         patterns:
           - "io\\.micronaut\\.gradle:micronaut-gradle-plugin.*"
 
-      - name: "Testing (Unit, Integration, Performance)"
+      - name: "Testing"
         patterns:
           - "io\\.micronaut\\.test:micronaut-test-.*"
           - "io\\.micronaut\\.testresources:micronaut-test-resources.*"
@@ -154,4 +154,6 @@ categories:
           - "io\\.micronaut\\.runtime.*"
           - "io\\.micronaut\\.retry.*"
           - "io\\.micronaut\\.scheduling.*"
+          - "io\\.micronaut\\.core\\.io.*"
+          - "io\\.micronaut:micronaut-(email|rss|chatbots)"
 

@@ -4,7 +4,6 @@ categories:
 
       - name: "Containerization & Orchestration"
         patterns:
-          - "io\\.micronaut:micronaut-kubernetes"
           - "com\\.google\\.cloud.*"
           - "io\\.dekorate.*"
           - "io\\.fabric8\\.kubernetes.*"
@@ -13,7 +12,6 @@ categories:
 
       - name: "Cloud Platforms"
         patterns:
-          - "io\\.micronaut:micronaut-(aws|azure|gcp|oraclecloud)"
           - "com\\.(amazonaws|azure).*"
           - "com\\.oracle\\.oci.*"
           - "software\\.amazon\\.awssdk.*"
@@ -26,9 +24,6 @@ categories:
           - "io\\.undertow.*"
           - "org\\.eclipse\\.jetty.*"
           - "org\\.apache\\.geronimo.*"
-          - "io\\.micronaut:micronaut-servlet"
-          - "(javax|jakarta)\\.servlet(\\..*)?"
-          - "(javax|jakarta)\\.servlet\\.jsp(\\..*)?"
           - "org\\.glassfish\\.*"
 
       - name: "Virtualization & Hypervisors"

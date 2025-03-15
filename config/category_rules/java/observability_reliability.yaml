@@ -16,7 +16,6 @@ categories:
 
       - name: "Metrics & Distributed Tracing"
         patterns:
-          - "io\\.micronaut:micronaut-(micrometer|tracing)"
           - "com\\.netflix\\.netflix-commons.*"
           - "io\\.dropwizard\\.metrics.*"
           - "io\\.micrometer.*"
@@ -28,7 +27,6 @@ categories:
 
       - name: "Circuit Breakers & Rate Limiting"
         patterns:
-          - "io\\.micronaut:micronaut-netflix"
           - "com\\.netflix\\.hystrix.*"
           - "org\\.jboss\\.narayana.*"
 
