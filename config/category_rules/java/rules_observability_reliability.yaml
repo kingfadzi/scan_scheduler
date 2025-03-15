@@ -1,11 +1,34 @@
 categories:
   - name: "Observability & Reliability"
     subcategories:
+
       - name: "Logging & Monitoring"
-        patterns: []
+        patterns:
+          - "org\\.apache\\.logging.*"
+          - "ch\\.qos\\.logback.*"
+          - "io\\.github\\.lognet.*"
+          - "commons-logging.*"
+          - "log4j.*"
+          - "net\\.logstash\\.logback.*"
+          - "org\\.jboss\\.logging.*"
+          - "org\\.slf4j\\.*"
+          - "org\\.apache\\.logging\\.log4j.*"
+
       - name: "Metrics & Distributed Tracing"
         patterns:
           - "io\\.micronaut:micronaut-(micrometer|tracing)"
-      - name: "Resilience (Circuit Breakers, Rate Limiting)"
+          - "com\\.netflix\\.netflix-commons.*"
+          - "io\\.dropwizard\\.metrics.*"
+          - "io\\.micrometer.*"
+          - "io\\.opentelemetry.*"
+          - "io\\.opentracing\\.brave.*"
+          - "io\\.prometheus.*"
+          - "io\\.zipkin\\.(brave|proto3|reporter2|zipkin2).*"
+          - "org\\.eclipse\\.jgit.*"
+
+      - name: "Circuit Breakers & Rate Limiting"
         patterns:
           - "io\\.micronaut:micronaut-netflix"
+          - "com\\.netflix\\.hystrix.*"
+          - "org\\.jboss\\.narayana.*"
+

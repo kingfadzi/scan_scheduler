@@ -1,0 +1,33 @@
+categories:
+
+  - name: "Data Serialization, Transformation & Processing"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "com\\.fasterxml\\.jackson.*"
+          - "org\\.apache\\.johnzon.*"
+          - "org\\.apache\\.xmlgraphics.*"
+          - "org\\.glassfish\\.jaxb.*"
+          - "(javax|jakarta)\\.json(\\..*)?"
+          - "(javax|jakarta)\\.json\\.bind(\\..*)?"
+          - "(javax|jakarta)\\.xml\\.bind(\\..*)?"
+          - "(javax|jakarta)\\.xml\\.soap(\\..*)?"
+          - "com\\.jayway\\.jsonpath.*" #
+          - "com\\.googlecode\\.json-simple.*"
+          - "com\\.thoughtworks\\.xstream.*"
+          - "commons-collections.*"
+          - "dom4j.*"
+          - "jaxen.*"
+          - "net\\.minidev.*"
+          - "org\\.codehaus\\.(jackson|woodstox).*"
+          - "org\\.jdom.*"
+          - "org\\.json.*"
+          - "org\\.jvnet\\.(staxex|mimepull).*"
+          - "org\\.xmlunit.*"
+          - "org\\.yaml.*"
+          - "wsdl4j.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        patterns:
+          - "com\\.google\\.protobuf.*"
+          - "org\\.apache\\.avro.*"

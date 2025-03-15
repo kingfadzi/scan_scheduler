@@ -1,11 +1,37 @@
 categories:
   - name: "Application Development"
+
     subcategories:
-      - name: "Runtime Containers & Servers"
-        patterns:
-          - "io\\.micronaut:micronaut-servlet"
-          - "javax\\.servlet(\\..*)?"  # Servlet API (e.g., javax.servlet.Filter)
+
       - name: "Web Frameworks (Full-Stack, Micro, Reactive)"
         patterns:
           - "io\\.micronaut:micronaut-(views|reactor)"
-          - "javax\\.websocket(\\..*)?"  # WebSocket API (e.g., javax.websocket.Endpoint)
+          - "(javax|jakarta)\\.websocket(\\..*)?"
+          - "(javax|jakarta)\\.validation(\\..*)?"
+          - "io\\.ktor.*"
+          - "gg\\.jte.*"
+          - "io\\.searchbox.*"
+          - "io\\.specto.*"
+          - "org\\.grails.*"
+
+      - name: "Reactive Libraries"
+        patterns:
+          - "io\\.micronaut:micronaut-rxjava[2-3]"
+          - "io\\.projectreactor.*"
+          - "io\\.projectreactor\\.(spring|kafka|netty|addons).*"
+          - "io\\.reactivex\\.(rxjava2|rxjava3).*"
+          - "io\\.vertx.*"
+          - "org\\.reactivesteams.*"
+
+      - name: "Dependency Injection (Spring, Guice)"
+        patterns:
+          - "io\\.micronaut:micronaut-spring"
+
+      - name: "Template Engines"
+        patterns:
+          - "io\\.micronaut:micronaut-(email|rss|chatbots)"
+          - "org\\.apache\\.velocity.*"
+          - "com\\.querydsl.*"
+          - "org\\.freemarker.*"
+          - "org\\.thymeleaf\\.extras.*"
+          - "org\\.springdoc.*"

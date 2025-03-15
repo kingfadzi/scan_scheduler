@@ -1,8 +1,48 @@
 categories:
   - name: "Messaging & Data Integration"
     subcategories:
+
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "io\\.micronaut:micronaut-(jms|mqtt)"
+          - "(javax|jakarta)\\.jms(\\..*)?"
+          - "org\\.apache\\.activemq.*"
+          - "org\\.apache\\.camel.*"
+          - "com\\.ibm\\.(mq|wmq).*"
+          - "com\\.atomikos.*"
+          - "com\\.rabbitmq.*"
+          - "com\\.solacesystems.*"
+          - "io\\.projectreactor\\.rabbitmq.*"
+          - "org\\.eclipse\\.paho.*"
+          - "org\\.messaginghub.*"
+          - "org\\.synchronoss\\.cloud.*"
+
       - name: "API Gateways & REST/GraphQL"
         patterns:
           - "io\\.micronaut:micronaut-(grpc|jaxrs|openapi)"
-          - "javax\\.ws\\.rs(\\..*)?"     # JAX-RS
-          # Removed JAX-WS (moved to Data Serialization)
+          - "(javax|jakarta)\\.ws\\.rs(\\..*)?"
+          - "(javax|jakarta)\\.xml\\.ws(\\..*)?"
+          - "com\\.google\\.api.*"
+          - "com\\.google\\.http-client.*"
+          - "org\\.apache\\.cxf.*"
+          - "org\\.apache\\.httpcomponents.*"
+          - "org\\.apache\\.ws.*"
+          - "com\\.graphql-java.*"
+          - "com\\.github\\.tomakehurst.*"
+          - "com\\.netflix\\.eureka.*"
+          - "com\\.netflix\\.ribbon.*"
+          - "com\\.squareup\\.okhttp3.*"
+          - "com\\.sun\\.jersey.*"
+          - "io\\.grpc.*"
+          - "io\\.github\\.openfeign.*"
+          - "io\\.rsocket.*"
+          - "io\\.rest-assured.*"
+          - "io\\.springfox.*"
+          - "io\\.swagger\\.core.*"
+
+      - name: "Event Streaming"
+        patterns:
+            - "io\\.micronaut:micronaut-kafka"
+            - "org\\.apache\\.kafka.*"
+            - "org\\.apache\\.pulsar.*"
+            - "io\\.projectreactor\\.kafka.*"

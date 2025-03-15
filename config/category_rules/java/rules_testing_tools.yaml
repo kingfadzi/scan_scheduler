@@ -1,0 +1,45 @@
+categories:
+
+  - name: "Development & Testing Tools"
+    subcategories:
+
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "biz\\.aQute\\.bnd.*"
+          - "io\\.spring\\.gradle.*"
+          - "org\\.codehaus\\.btm.*"
+          - "org\\.codehaus\\.janino.*"
+
+      - name: "Testing"
+        patterns:
+            - "com\\.github\\.ulisesbochio.*"
+            - "com\\.intuit\\.karate.*"
+            - "com\\.toomuchcoding\\.jsonassert.*"
+            - "info\\.cukes.*"
+            - "io\\.cucumber.*"
+            - "io\\.kotest.*"
+            - "de\\.flapdoodle\\.embed.*"
+            - "junit.*"
+            - "net\\.serenity-bdd.*"
+            - "net\\.sourceforge\\.htmlunit.*"
+            - "org\\.assertj.*"
+            - "org\\.awaitility.*"
+            - "net\\.sourceforge\\.htmlunit.*"
+            - "org\\.hamcrest.*"
+            - "org\\.jmock.*"
+            - "org\\.junit\\.(jupiter|platform|vintage).*"
+            - "org\\.jboss\\.arquillian.*"
+            - "org\\.mockito.*"
+            - "org\\.powermock.*"
+            - "org\\.spockframework.*"
+            - "org\\.testcontainers.*"
+            - "org\\.seleniumhq\\.selenium.*"
+            - "org\\.testing.*"
+            - "io\\.rest-assured.*"
+            - "org\\.hamcrest.*"
+            - "io\\.micronaut:micronaut-test(resources)?"
+
+      - name: "Code Quality & Profiling"
+        patterns:
+            - "com\\.github\\.spotbugs.*"
+            - "org\\.jacoco.*"

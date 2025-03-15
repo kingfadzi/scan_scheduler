@@ -1,10 +1,22 @@
 categories:
   - name: "Security & Identity"
     subcategories:
+
       - name: "Authentication (OAuth2, JWT, SAML)"
         patterns:
           - "io\\.micronaut:micronaut-security"
+          - "com\\.google\\.auth.*"
+          - "com\\.nimbusds.*"
+          - "com\\.unboundid.*"
+          - "org\\.crac.*"
+
+      - name: "Security Layers"
+        patterns:
+          - "org\\.owasp\\..*"
+
       - name: "Transport & Data Security (TLS, Encryption)"
-        patterns: []
+        patterns:
+          - "org\\.jasypt.*"
+
       - name: "Identity Management (SSO, RBAC)"
         patterns: []

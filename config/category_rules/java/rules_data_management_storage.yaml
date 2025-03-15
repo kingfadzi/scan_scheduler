@@ -1,13 +1,65 @@
 categories:
   - name: "Data Management & Storage"
     subcategories:
-      - name: "Relational Databases (ORM, JDBC, Migrations)"
+      - name: "Relational Databases"
         patterns:
           - "io\\.micronaut:micronaut-(data|sql)"
-          - "javax\\.persistence(\\..*)?"  # JPA
-          - "javax\\.transaction(\\..*)?"  # JTA
-          # Removed JAXB (moved to Data Serialization)
-      - name: "NoSQL & Big Data (Document/Key-Value Stores)"
+          - "(javax|jakarta)\\.persistence(\\..*)?"
+          - "(javax|jakarta)\\.transaction(\\..*)?"
+          - "org\\.apache\\.derby.*"
+          - "com\\.h2database.*"
+          - "com\\.ibm\\.db2.*"
+          - "com\\.microsoft\\.sqlserver.*"
+          - "com\\.mysql.*"
+          - "com\\.oracle\\.(jdbc|ojdbc|database).*"
+          - "commons-dbcp.*"
+          - "com\\.zaxxer.*"
+          - "commons-pool.*"
+          - "io\\.r2dbc.*"
+          - "net\\.sourceforge\\.jtds.*"
+          - "mysql.*"
+          - "org\\.flywaydb.*"
+          - "org\\.firebirdsql\\.jdbc.*"
+          - "org\\.hibernate\\.(orm|validator).*"
+          - "org\\.hsqldb.*"
+          - "org\\.jooq.*"
+          - "org\\.liquibase.*"
+          - "org\\.mariadb.*"
+          - "org\\.postgresql.*"
+          - "org\\.xerial.*"
+          - "com\\.oracle\\..*"
+          - "org\\.apache\\.derby.*"
+          - "io\\.r2dbc.*"
+          - "com\\.querydsl.*"
+          - "org\\.flywaydb.*"
+
+      - name: "NoSQL & Big Data"
         patterns:
           - "io\\.micronaut:micronaut-(mongodb|microstream)"
-          # Removed javax.json and javax.json.bind (moved to Data Serialization)
+          - "org\\.apache\\.cassandra.*"
+          - "org\\.apache\\.solr.*"
+          - "org\\.apache\\.hadoop.*"
+          - "com\\.couchbase\\.client.*"
+          - "com\\.datastax\\.(cassandra|oss).*"
+          - "co\\.elastic\\.clients.*"
+          - "com\\.oracle\\.coherence.*"
+          - "io\\.lettuce.*"
+          - "org\\.influxdb.*"
+          - "org\\.mongodb.*"
+          - "org\\.neo4j.*"
+          - "redis\\.clients\\.*"
+          - "org\\.elasticsearch\\.client.*"
+
+      - name: "Caching"
+        patterns:
+          - "io\\.micronaut:micronaut-(cache|coherence)"
+          - "org\\.apache\\.ignite.*"
+          - "com\\.hazelcast.*"
+          - "net\\.sf\\.encache.*"
+          - "org\\.cache2k.*"
+          - "org\\.ehcache.*"
+          - "org\\.infinispan.*"
+
+      - name: "Data Lakes & Analytics"
+        patterns:
+          - "io\\.micronaut:micronaut-objectstorage"
