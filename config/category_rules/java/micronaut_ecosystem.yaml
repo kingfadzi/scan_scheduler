@@ -1,0 +1,113 @@
+categories:
+
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+        patterns:
+          - "io\\.micronaut\\.kubernetes:micronaut-kubernetes.*"
+      - name: "Cloud Platforms"
+        patterns:
+          - "io\\.micronaut\\.(aws|azure|gcp|oraclecloud):micronaut-.*"
+      - name: "Virtualization & Hypervisors"
+        patterns: []
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        patterns:
+          - "io\\.micronaut\\.(sql|jdbc|data):micronaut-(jdbc|hibernate-jpa|data-jpa|data-r2dbc).*"
+          - "io\\.micronaut\\.flyway:micronaut-flyway.*"
+          - "io\\.micronaut\\.liquibase:micronaut-liquibase.*"
+      - name: "NoSQL & Big Data"
+        patterns:
+          - "io\\.micronaut\\.(mongodb|cassandra|redis):micronaut-.*"
+      - name: "Caching"
+        patterns:
+          - "io\\.micronaut\\.cache:micronaut-cache.*"
+          - "io\\.micronaut\\.redis:micronaut-redis-lettuce.*"
+
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "io\\.micronaut\\.(kafka|rabbitmq|mqtt|nats):micronaut-.*"
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "io\\.micronaut\\.(http-client|grpc|openapi):micronaut-.*"
+      - name: "Event Streaming"
+        patterns:
+          - "io\\.micronaut\\.kafka:micronaut-kafka-streams.*"
+      - name: "Networking"
+        patterns:
+          - "io\\.micronaut\\.netty:micronaut-netty.*"
+          - "io\\.micronaut\\.websocket:micronaut-websocket.*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        patterns:
+          - "io\\.micronaut:micronaut-http-server.*"
+      - name: "Reactive Libraries"
+        patterns:
+          - "io\\.micronaut\\.reactor:micronaut-reactor.*"
+          - "io\\.micronaut\\.rxjava:micronaut-rxjava.*"
+      - name: "Dependency Injection"
+        patterns:
+          - "io\\.micronaut:micronaut-inject.*"
+      - name: "Template Engines"
+        patterns:
+          - "io\\.micronaut\\.thymeleaf:micronaut-thymeleaf.*"
+          - "io\\.micronaut\\.views:micronaut-views.*"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "io\\.micronaut\\.serde:micronaut-serde.*"
+          - "io\\.micronaut\\.jackson:micronaut-jackson.*"
+      - name: "Protocol Buffers & Binary Formats"
+        patterns:
+          - "io\\.micronaut\\.protobuf:micronaut-protobuf.*"
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        patterns:
+          - "io\\.micronaut\\.security:micronaut-security-(jwt|oauth2|ldap).*"
+      - name: "Security Layers"
+        patterns:
+          - "io\\.micronaut\\.security:micronaut-security.*"
+      - name: "Transport & Data Security"
+        patterns:
+          - "io\\.micronaut\\.ssl:micronaut-ssl.*"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        patterns:
+          - "io\\.micronaut\\.logging:micronaut-logging.*"
+      - name: "Metrics & Distributed Tracing"
+        patterns:
+          - "io\\.micronaut\\.micrometer:micronaut-micrometer.*"
+          - "io\\.micronaut\\.tracing:micronaut-tracing.*"
+      - name: "Circuit Breakers & Rate Limiting"
+        patterns:
+          - "io\\.micronaut\\.resilience:micronaut-resilience.*"
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "io\\.micronaut\\.gradle:micronaut-gradle-plugin.*"
+      - name: "Testing (Unit, Integration, Performance)"
+        patterns:
+          - "io\\.micronaut\\.test:micronaut-test-.*"
+          - "io\\.micronaut\\.testresources:micronaut-test-resources.*"
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        patterns:
+          - "io\\.micronaut\\.(groovy|kotlin):micronaut-.*"
+
