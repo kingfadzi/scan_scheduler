@@ -4,7 +4,6 @@ categories:
       - name: "Containerization & Orchestration"
       - name: "Cloud Platforms"
       - name: "Application Servers"
-      - name: "Virtualization & Hypervisors"
 
   - name: "Data Management & Storage"
     subcategories:
@@ -50,11 +49,10 @@ categories:
   - name: "Development & Testing Tools"
     subcategories:
       - name: "Build Tools & Dependency Management"
-      - name: "Testing (Unit, Integration, Performance)"
+      - name: "Testing"
       - name: "Code Quality & Profiling"
 
   - name: "Utilities & Libraries"
     subcategories:
-      - name: "Functional/Reactive Libraries"
-      - name: "General-Purpose (Apache Commons, Guava)"
-      - name: "Template Engines & WebSockets"
+      - name: "General-Purpose"
+

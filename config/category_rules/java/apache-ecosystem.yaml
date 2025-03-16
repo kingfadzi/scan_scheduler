@@ -1,0 +1,113 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+        patterns: []
+      - name: "Cloud Platforms"
+        patterns:
+          - "org\\.apache\\.jclouds.*"
+      - name: "Application Servers"
+        patterns:
+          - "org\\.apache\\.(felix|openejb|tomcat|aries|james).*"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        patterns:
+          - "org\\.apache\\.ibatis.*"
+      - name: "NoSQL & Big Data"
+        patterns:
+          - "org\\.apache\\.(hbase|hive|flume|accumulo|omid|oozie|nifi|solr|lucene).*"
+      - name: "Caching"
+        patterns: []
+      - name: "Data Lakes & Analytics"
+        patterns:
+          - "org\\.apache\\.atlas.*"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        patterns: []
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "org\\.apache\\.(axis|axis2|cxf).*"
+          - "org\\.apache\\.olingo.*"
+      - name: "Event Streaming"
+        patterns: []
+      - name: "Networking"
+        patterns:
+          - "org\\.apache\\.(mina|ftpserver).*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        patterns:
+          - "org\\.apache\\.(click|cocoon|myfaces|wicket).*"
+          - "org\\.apache\\.causeway.*"
+      - name: "Spring: Boot"
+        patterns: []
+      - name: "Spring: Framework"
+        patterns: []
+      - name: "Reactive Libraries"
+        patterns: []
+      - name: "Dependency Injection"
+        patterns: []
+      - name: "Template Engines"
+        patterns: []
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "org\\.apache\\.(axiom|xmlbeans|abdera).*"
+      - name: "Protocol Buffers & Binary Formats"
+        patterns: []
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        patterns:
+          - "org\\.apache\\.kerby.*"
+      - name: "Security Layers"
+        patterns:
+          - "org\\.apache\\.bcel.*"
+      - name: "Transport & Data Security "
+        patterns: []
+      - name: "Identity Management"
+        patterns:
+          - "org\\.apache\\.directory.*"
+          - "org\\.apache\\.openipa.*"
+          - "org\\.apache\\.oltu.*"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        patterns:
+          - "org\\.apache\\.log4j.*"
+      - name: "Metrics & Distributed Tracing"
+        patterns:
+          - "org\\.apache\\.htrace.*"
+      - name: "Circuit Breakers & Rate Limiting"
+        patterns: []
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "org\\.apache\\.(ant|maven|ivy).*"
+      - name: "Testing"
+        patterns:
+          - "org\\.apache\\.jmeter.*"
+      - name: "Code Quality & Profiling"
+        patterns: []
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        patterns:
+          - "^(org\\.apache\\.)?commons.*"
+          - "org\\.apache\\.(lang3|codec).*"
+          - "org\\.apache\\.jackrabbit.*"
+          - "org\\.apache\\.any23.*"
+          - "org\\.apache\\.curator.*"
+          - "org\\.apache\\.methi.*"

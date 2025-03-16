@@ -17,7 +17,6 @@ categories:
 
       - name: "API Gateways & REST/GraphQL"
         patterns:
-          - "io\\.micronaut:micronaut-(grpc|jaxrs|openapi)"
           - "com\\.google\\.api.*"
           - "com\\.google\\.http-client.*"
           - "org\\.apache\\.cxf.*"

@@ -19,7 +19,7 @@ categories:
           - "io\\.vertx.*"
           - "org\\.reactivesteams.*"
 
-      - name: "Dependency Injection (Spring, Guice)"
+      - name: "Dependency Injection"
         patterns:
           - "io\\.micronaut:micronaut-spring"
 
