@@ -2,47 +2,67 @@ categories:
   - name: "Infrastructure & Deployment"
     subcategories:
       - name: "Containerization & Orchestration"
-        patterns: []
+        patterns:
+          - "^micronaut-kubernetes-"
+          - "^micronaut-test-resources-testcontainers$"
       - name: "Cloud Platforms"
         patterns:
           - "^micronaut-discovery$"
+          - "^micronaut-aws-"
+          - "^micronaut-gcp-"
+          - "^micronaut-azure-"
+          - "^micronaut-oraclecloud-"
+          - "^micronact-openstack-"
       - name: "Application Servers"
         patterns:
           - "^micronaut-http-(server|simple|netty)$"
           - "^micronaut-runtime$"
+          - "^micronaut-servlet-"
 
   - name: "Data Management & Storage"
     subcategories:
       - name: "Relational Databases"
         patterns:
-          - "^micronaut-data-(jdbc|jpa|r2dbc|hibernate)$"
+          - "^micronaut-data-(jdbc|jpa|r2dbc|hibernate|spring-jpa|spring-jdbc)$"
+          - "^micronaut-jdbc-"
+          - "^micronaut-jooq$"
       - name: "NoSQL & Big Data"
         patterns:
-          - "^micronaut-data-(mongodb|cosmos)$"
+          - "^micronaut-data-(mongodb|cosmos|redis|neo4j|cassandra|elasticsearch|opensearch)$"
+          - "^micronaut-mongo-"
       - name: "Data Access Core"
         patterns:
           - "^micronaut-data-(annotation|connection|model|operations|repository)$"
       - name: "Data Operations & Internals"
         patterns:
-          - "^micronaut-data-(event|exceptions|intercept|processor|document)$"
+          - "^micronaut-data-(event|exceptions|intercept|processor|document|tx)$"
       - name: "Caching"
-        patterns: []
+        patterns:
+          - "^micronaut-cache-"
+          - "^micronaut-microstream-"
       - name: "Data Lakes & Analytics"
-        patterns: []
+        patterns:
+          - "^micronaut-sql-"
+          - "^micronaut-jasync-sql$"
 
   - name: "Messaging & Data Integration"
     subcategories:
       - name: "Message Brokers & ETL Tools"
         patterns:
           - "^micronaut-messaging$"
+          - "^micronaut-(kafka|rabbitmq|nats|pulsar|mqtt)-"
       - name: "API Gateways & REST/GraphQL"
         patterns:
           - "^micronaut-http(-[a-z]+)?$"
+          - "^micronaut-graphql-"
       - name: "Event Streaming"
-        patterns: []
+        patterns:
+          - "^micronaut-reactor-"
+          - "^micronaut-rxjava[2-3]-"
       - name: "Networking"
         patterns:
           - "^micronaut-buffer-netty$"
+          - "^micronaut-grpc-"
 
   - name: "Application Development"
     subcategories:
@@ -50,69 +70,82 @@ categories:
         patterns:
           - "^micronaut-web-router$"
           - "^micronaut-websocket$"
-          - "^micronaut-function$"
-      - name: "Spring: Boot"
-        patterns: []
-      - name: "Spring: Framework"
-        patterns: []
+          - "^micronaut-function-"
+          - "^micronaut-views-"
+      - name: "Spring Integration"
+        patterns:
+          - "^micronaut-spring-"
       - name: "Reactive Libraries"
         patterns:
           - "^micronaut-http-reactive$"
+          - "^micronaut-r2dbc-"
       - name: "Dependency Injection"
         patterns:
-          - "^micronaut-context$"
-          - "^micronaut-inject$"
-          - "^micronaut-aop$"
+          - "^micronaut-(context|inject|aop)$"
+          - "^micronaut-guice-"
       - name: "Template Engines"
-        patterns: []
+        patterns:
+          - "^micronaut-views-(thymeleaf|freemarker|handlebars|pebble)$"
 
   - name: "Serialization"
     subcategories:
       - name: "JSON/XML"
         patterns:
-          - "^micronaut-j(ackson|son)$"
+          - "^micronaut-j(ackson|son|ackson-xml)$"
+          - "^micronaut-serde-"
       - name: "Protocol Buffers & Binary Formats"
-        patterns: []
+        patterns:
+          - "^micronaut-protobuff-"
+          - "^micronaut-grpc-"
 
   - name: "Security & Identity"
     subcategories:
       - name: "Authentication"
-        patterns: []
+        patterns:
+          - "^micronaut-security-(jwt|oauth2|ldap)$"
       - name: "Security Layers"
-        patterns: []
+        patterns:
+          - "^micronaut-security-(session|annotations)$"
+          - "^micronaut-vault$"
       - name: "Transport & Data Security"
-        patterns: []
+        patterns:
+          - "^micronaut-tls-"
       - name: "Identity Management"
-        patterns: []
+        patterns:
+          - "^micronaut-okta-"
 
   - name: "Observability & Reliability"
     subcategories:
       - name: "Logging & Monitoring"
         patterns:
-          - "^micronaut-logging$"
-          - "^micronaut-management-(endpoint|health)$"
-          - "^micronaut-health$"
+          - "^micronaut-(logging|management|health)-"
+          - "^micronaut-micrometer-registry-"
       - name: "Metrics & Distributed Tracing"
-        patterns: []
+        patterns:
+          - "^micronaut-tracing-"
+          - "^micronaut-micrometer-observation-"
       - name: "Circuit Breakers & Rate Limiting"
-        patterns: []
+        patterns:
+          - "^micronaut-resilience4j-"
 
   - name: "Development & Testing Tools"
     subcategories:
       - name: "Build Tools & Dependency Management"
         patterns:
-          - "^micronaut-annotation-processing$"
-          - "^micronaut-ast-groovy$"
+          - "^micronaut-(gradle|maven)-"
+          - "^micronaut-build-"
       - name: "Testing"
         patterns:
-          - "^micronaut-http-tck$"
-          - "^micronaut-testsuitehelper$"
+          - "^micronaut-test(-resources|-utils)?$"
+          - "^micronaut-tck$"
       - name: "Code Quality & Profiling"
-        patterns: []
+        patterns:
+          - "^micronaut-aot-"
 
   - name: "Utilities & Libraries"
     subcategories:
       - name: "General-Purpose"
         patterns:
           - "^micronaut-core-[a-z-]+$"
-          - "^micronaut-(docs-expressions|expressions|graal-reflect|retry|scheduling|validation)$"
+          - "^micronaut-(email|object-storage|control-panel|langchain4j)-"
+          - "^micronaut-(retry|scheduling|validation|expressions)$"
