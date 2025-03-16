@@ -23,6 +23,7 @@ categories:
           - "io\\.undertow.*"
           - "org\\.eclipse\\.jetty.*"
           - "org\\.glassfish\\.*"
+          - "^(org\\.codehaus\\.)?fabric3.*"
 
       - name: "Virtualization & Hypervisors"
         patterns: []

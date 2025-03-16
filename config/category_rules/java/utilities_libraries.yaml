@@ -35,3 +35,6 @@ categories:
           - "org\\.webjars.*"
           - "org\\.tmatesoft.*"
           - "org\\.projectionhok.*"
+          - "^(org\\.codehaus\\.)?groovy.*"
+          - "^(org\\.codehaus\\.)?plexus.*"
+          - "^org\\.codehaus(\\..+)?$"

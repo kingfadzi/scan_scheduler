@@ -9,6 +9,7 @@ categories:
           - "io\\.spring\\.gradle.*"
           - "org\\.codehaus\\.btm.*"
           - "org\\.codehaus\\.janino.*"
+          - "^(org\\.codehaus\\.)?mojo.*"
 
       - name: "Testing"
         patterns:
@@ -44,3 +45,4 @@ categories:
         patterns:
             - "com\\.github\\.spotbugs.*"
             - "org\\.jacoco.*"
+            - "^(org\\.codehaus\\.)?(sonar|sonar-plugins).*"

@@ -13,7 +13,7 @@ categories:
           - "dom4j.*"
           - "jaxen.*"
           - "net\\.minidev.*"
-          - "org\\.codehaus\\.(jackson|woodstox).*"
+          - "org\\.codehaus\\.(jackson|woodstox|castor|jettison).*"
           - "org\\.jdom.*"
           - "org\\.json.*"
           - "org\\.jvnet\\.(staxex|mimepull).*"
