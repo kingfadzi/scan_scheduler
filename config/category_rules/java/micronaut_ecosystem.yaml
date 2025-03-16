@@ -5,6 +5,7 @@ categories:
         patterns:
           - "^io\\.micronaut\\.kubernetes:.*"
           - "^io\\.micronaut\\.testresources:.*testcontainers$"
+          - "^io\\.micronaut:micronaut-graal.*"
       - name: "Cloud Platforms"
         patterns:
           - "^io\\.micronaut\\.aws:.*"
@@ -24,82 +25,129 @@ categories:
           - "^io\\.micronaut\\.data:.*(jdbc|jpa|r2dbc|hibernate|spring-jpa).*"
           - "^io\\.micronaut\\.sql:micronaut-jdbc-.*"
           - "^io\\.micronaut\\.jasync:.*"
+          - "^io\\.micronaut\\.flyway:.*"
+          - "^io\\.micronaut\\.liquibase:.*"
       - name: "NoSQL & Big Data"
         patterns:
           - "^io\\.micronaut\\.data:.*(mongodb|cosmos|redis).*"
           - "^io\\.micronaut\\.mongodb:.*"
           - "^io\\.micronaut\\.redis:.*"
           - "^io\\.micronaut\\.cassandra:.*"
+          - "^io\\.micronaut\\.coherence:.*"
+          - "^io\\.micronaut\\.eclipsestore:.*"
       - name: "Caching"
         patterns:
           - "^io\\.micronaut\\.cache:.*"
           - "^io\\.micronaut\\.microstream:.*"
+      - name: "Data Lakes & Analytics"
+        patterns: []
 
   - name: "Messaging & Data Integration"
     subcategories:
-      - name: "Message Brokers"
+      - name: "Message Brokers & ETL Tools"
         patterns:
           - "^io\\.micronaut\\.kafka:.*"
           - "^io\\.micronaut\\.rabbitmq:.*"
           - "^io\\.micronaut\\.nats:.*"
-          - "^io\\.micronaut\\.pulsar:.*"
           - "^io\\.micronaut\\.mqtt:.*"
+          - "^io\\.micronaut\\.jms:.*"
       - name: "API Gateways & REST/GraphQL"
         patterns:
           - "^io\\.micronaut:micronaut-http.*"
           - "^io\\.micronaut\\.graphql:.*"
+          - "^io\\.micronaut\\.openapi:.*"
+      - name: "Event Streaming"
+        patterns:
+          - "^io\\.micronaut\\.pulsar:.*"
+      - name: "Networking"
+        patterns:
+          - "^io\\.micronaut(?:\\.|:)discovery.*"
 
   - name: "Application Development"
     subcategories:
+      - name: "Web Frameworks"
+        patterns:
+          - "^io\\.micronaut:micronaut-(websocket|router|views).*"
+      - name: "Spring: Boot"
+        patterns: []
+      - name: "Spring: Framework"
+        patterns:
+          - "^io\\.micronaut\\.spring:.*"
+      - name: "Reactive Libraries"
+        patterns: []
       - name: "Dependency Injection"
         patterns:
           - "^io\\.micronaut:micronaut-(inject|context|aop).*"
           - "^io\\.micronaut\\.guice:.*"
-      - name: "Web Frameworks"
-        patterns:
-          - "^io\\.micronaut:micronaut-(websocket|router|views).*"
       - name: "Template Engines"
         patterns:
           - "^io\\.micronaut\\.views:.*(thymeleaf|freemarker|handlebars|pebble).*"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "^io\\.micronaut\\.jsonschema:.*"
+      - name: "Protocol Buffers & Binary Formats"
+        patterns:
+          - "^io\\.micronaut\\.grpc:.*"
 
   - name: "Security & Identity"
     subcategories:
       - name: "Authentication"
         patterns:
           - "^io\\.micronaut\\.security:.*(jwt|oauth2|ldap).*"
-      - name: "Security Tooling"
+      - name: "Security Layers"
         patterns:
           - "^io\\.micronaut\\.security:.*session.*"
           - "^io\\.micronaut\\.vault:.*"
+      - name: "Transport & Data Security"
+        patterns: []
+      - name: "Identity Management"
+        patterns: []
 
   - name: "Observability & Reliability"
     subcategories:
-      - name: "Metrics & Tracing"
+      - name: "Logging & Monitoring"
+        patterns:
+          - "^io\\.micronaut\\.logging:.*"
+      - name: "Metrics & Distributed Tracing"
         patterns:
           - "^io\\.micronaut\\.micrometer:.*"
           - "^io\\.micronaut\\.tracing:.*"
-      - name: "Logging"
-        patterns:
-          - "^io\\.micronaut\\.logging:.*"
+      - name: "Circuit Breakers & Rate Limiting"
+        patterns: []
 
   - name: "Development & Testing Tools"
     subcategories:
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "^io\\.micronaut\\.build:.*"
+          - "^io\\.micronaut\\.gradle:.*"
+          - "^io\\.micronaut\\.maven:.*"
+          - "^io\\.micronaut\\.sourcegen:.*"
       - name: "Testing"
         patterns:
           - ".*:.*(-tck|-test)$"
           - "^io\\.micronaut\\.test:.*"
-      - name: "Build Tools"
-        patterns:
-          - "^io\\.micronaut\\.build:.*"
-          - "^io\\.micronaut\\.gradle:.*"
+      - name: "Code Quality & Profiling"
+        patterns: []
 
   - name: "Utilities & Libraries"
     subcategories:
-      - name: "Core Utilities"
+      - name: "General-Purpose"
         patterns:
           - "^io\\.micronaut:micronaut-(core|validation|retry).*"
-      - name: "Specialized Libraries"
-        patterns:
           - "^io\\.micronaut\\.email:.*"
           - "^io\\.micronaut\\.langchain4j:.*"
           - "^io\\.micronaut\\.objectstorage:.*"
+          - "^io\\.micronaut\\.groovy:.*"
+          - "^io\\.micronaut\\.kotlin:.*"
+
+  - name: "Miscellaneous"
+    subcategories:
+      - name: "Other Micronaut Artifacts"
+        patterns:
+          - "^io\\.micronaut.*"
+          - "^io\\.micronaut\\.chatbots:.*"
+          - "^io\\.micronaut\\.jaxrs:.*"
