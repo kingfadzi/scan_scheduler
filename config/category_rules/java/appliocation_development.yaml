@@ -25,7 +25,6 @@ categories:
 
       - name: "Template Engines"
         patterns:
-          - "org\\.apache\\.velocity.*"
           - "com\\.querydsl.*"
           - "org\\.freemarker.*"
           - "org\\.thymeleaf\\.extras.*"

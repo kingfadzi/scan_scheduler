@@ -4,8 +4,6 @@ categories:
 
       - name: "Message Brokers & ETL Tools"
         patterns:
-          - "org\\.apache\\.activemq.*"
-          - "org\\.apache\\.camel.*"
           - "com\\.ibm\\.(mq|wmq).*"
           - "com\\.atomikos.*"
           - "com\\.rabbitmq.*"
@@ -19,9 +17,6 @@ categories:
         patterns:
           - "com\\.google\\.api.*"
           - "com\\.google\\.http-client.*"
-          - "org\\.apache\\.cxf.*"
-          - "org\\.apache\\.httpcomponents.*"
-          - "org\\.apache\\.ws.*"
           - "com\\.graphql-java.*"
           - "com\\.github\\.tomakehurst.*"
           - "com\\.netflix\\.eureka.*"
@@ -37,8 +32,6 @@ categories:
 
       - name: "Event Streaming"
         patterns:
-          - "org\\.apache\\.kafka.*"
-          - "org\\.apache\\.pulsar.*"
           - "io\\.projectreactor\\.kafka.*"
 
       - name: "Networking"

@@ -4,11 +4,6 @@ categories:
 
       - name: "General Purpose"
         patterns:
-          - "com\\.google\\.guava.*"
-          - "com\\.google\\.code.*"
-          - "org\\.apache\\.commons.*"
-          - "org\\.apache\\.groovy.*"
-          - "org\\.apache\\.poi.*"
           - "cglib.*"
           - "com\\.sun\\.(xml|activation|mail).*"
           - "commons-(beanutils|codec|fileupload|lang).*"

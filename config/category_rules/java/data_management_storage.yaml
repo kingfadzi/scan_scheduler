@@ -3,7 +3,6 @@ categories:
     subcategories:
       - name: "Relational Databases"
         patterns:
-          - "org\\.apache\\.derby.*"
           - "com\\.h2database.*"
           - "com\\.ibm\\.db2.*"
           - "com\\.microsoft\\.sqlserver.*"
@@ -25,16 +24,12 @@ categories:
           - "org\\.postgresql.*"
           - "org\\.xerial.*"
           - "com\\.oracle\\..*"
-          - "org\\.apache\\.derby.*"
           - "io\\.r2dbc.*"
           - "com\\.querydsl.*"
           - "org\\.flywaydb.*"
 
       - name: "NoSQL & Big Data"
         patterns:
-          - "org\\.apache\\.cassandra.*"
-          - "org\\.apache\\.solr.*"
-          - "org\\.apache\\.hadoop.*"
           - "com\\.couchbase\\.client.*"
           - "com\\.datastax\\.(cassandra|oss).*"
           - "co\\.elastic\\.clients.*"
@@ -48,7 +43,6 @@ categories:
 
       - name: "Caching"
         patterns:
-          - "org\\.apache\\.ignite.*"
           - "com\\.hazelcast.*"
           - "net\\.sf\\.encache.*"
           - "org\\.cache2k.*"

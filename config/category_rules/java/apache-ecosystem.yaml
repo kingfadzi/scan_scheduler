@@ -8,7 +8,7 @@ categories:
           - "org\\.apache\\.jclouds.*"
       - name: "Application Servers"
         patterns:
-          - "org\\.apache\\.(felix|openejb|tomcat|aries|james).*"
+          - "org\\.apache\\.(felix|openejb|tomcat|aries|james|geronimo).*"
 
   - name: "Data Management & Storage"
     subcategories:
@@ -17,23 +17,37 @@ categories:
           - "org\\.apache\\.ibatis.*"
       - name: "NoSQL & Big Data"
         patterns:
-          - "org\\.apache\\.(hbase|hive|flume|accumulo|omid|oozie|nifi|solr|lucene).*"
+          - "org\\.apache\\.(hbase|hive|flume|accumulo|omid|oozie|nifi|solr|lucene|derby).*"
+          - "org\\.apache\\.cassandra.*"
+          - "org\\.apache\\.solr.*"
+          - "org\\.apache\\.hadoop.*"
+
       - name: "Caching"
         patterns: []
       - name: "Data Lakes & Analytics"
         patterns:
           - "org\\.apache\\.atlas.*"
+          - "org\\.apache\\.ignite.*"
 
   - name: "Messaging & Data Integration"
     subcategories:
       - name: "Message Brokers & ETL Tools"
-        patterns: []
+        patterns:
+          - "org\\.apache\\.activemq.*"
+          - "org\\.apache\\.camel.*"
+
       - name: "API Gateways & REST/GraphQL"
         patterns:
           - "org\\.apache\\.(axis|axis2|cxf).*"
           - "org\\.apache\\.olingo.*"
+          - "org\\.apache\\.httpcomponents.*"
+          - "org\\.apache\\.ws.*"
+
       - name: "Event Streaming"
-        patterns: []
+        patterns:
+          - "org\\.apache\\.kafka.*"
+          - "org\\.apache\\.pulsar.*"
+
       - name: "Networking"
         patterns:
           - "org\\.apache\\.(mina|ftpserver).*"
@@ -53,13 +67,17 @@ categories:
       - name: "Dependency Injection"
         patterns: []
       - name: "Template Engines"
-        patterns: []
+        patterns:
+          - "org\\.apache\\.velocity.*"
 
   - name: "Serialization"
     subcategories:
       - name: "JSON/XML"
         patterns:
           - "org\\.apache\\.(axiom|xmlbeans|abdera).*"
+          - "org\\.apache\\.johnzon.*"
+          - "org\\.apache\\.xmlgraphics.*"
+
       - name: "Protocol Buffers & Binary Formats"
         patterns: []
 
@@ -84,6 +102,8 @@ categories:
       - name: "Logging & Monitoring"
         patterns:
           - "org\\.apache\\.log4j.*"
+          - "org\\.apache\\.logging.*"
+
       - name: "Metrics & Distributed Tracing"
         patterns:
           - "org\\.apache\\.htrace.*"
@@ -111,3 +131,7 @@ categories:
           - "org\\.apache\\.any23.*"
           - "org\\.apache\\.curator.*"
           - "org\\.apache\\.methi.*"
+          - "com\\.google\\.guava.*"
+          - "com\\.google\\.code.*"
+          - "org\\.apache\\.groovy.*"
+          - "org\\.apache\\.poi.*"

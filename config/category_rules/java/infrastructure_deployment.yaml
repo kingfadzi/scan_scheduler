@@ -20,10 +20,8 @@ categories:
 
       - name: "Application Servers"
         patterns:
-          - "org\\.apache\\.tomcat.*"
           - "io\\.undertow.*"
           - "org\\.eclipse\\.jetty.*"
-          - "org\\.apache\\.geronimo.*"
           - "org\\.glassfish\\.*"
 
       - name: "Virtualization & Hypervisors"

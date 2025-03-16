@@ -5,8 +5,6 @@ categories:
       - name: "JSON/XML"
         patterns:
           - "com\\.fasterxml\\.jackson.*"
-          - "org\\.apache\\.johnzon.*"
-          - "org\\.apache\\.xmlgraphics.*"
           - "org\\.glassfish\\.jaxb.*"
           - "com\\.jayway\\.jsonpath.*" #
           - "com\\.googlecode\\.json-simple.*"
