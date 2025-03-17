@@ -1,13 +1,19 @@
 extraction_rules:
   - file: "gradle/wrapper/gradle-wrapper.properties"
-    regex: "gradle-(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)-bin\\.zip"
+    regex: "distributionUrl=.*/gradle-(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)-(?:bin|all)\\.zip"
+    priority: 1
   - file: "build.gradle"
-    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+    regex: "gradleVersion\\s*[=:]\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+    priority: 2
   - file: "build.gradle.kts"
-    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+    regex: "gradleVersion\\s*=?\\s*[\"'](\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']"
+    priority: 3
   - file: "settings.gradle"
     regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+    priority: 4
   - file: "settings.gradle.kts"
-    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+    regex: "gradleVersion\\s*=?\\s*[\"'](\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']"
+    priority: 5
   - file: "gradle.properties"
     regex: "gradleVersion\\s*=\\s*(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)"
+    priority: 6

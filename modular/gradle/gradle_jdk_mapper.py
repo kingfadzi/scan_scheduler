@@ -32,7 +32,7 @@ def parse_args():
     return parser.parse_args()
 
 def find_gradle_files(root: Path, verbose: bool = False) -> List[Path]:
-    """Locate Gradle configuration files with improved detection"""
+    """Enhanced Gradle file detection with exact path matching"""
     gradle_files = []
     
     for path in root.rglob('*'):
@@ -44,35 +44,34 @@ def find_gradle_files(root: Path, verbose: bool = False) -> List[Path]:
         if not path.is_file():
             continue
 
-        # Match build configuration files
-        if path.name in {'build.gradle', 'build.gradle.kts'}:
-            gradle_files.append(path)
-            if verbose:
-                print(f"Found build file: {path}")
-        # Match settings files
-        elif path.name in {'settings.gradle', 'settings.gradle.kts'}:
-            gradle_files.append(path)
-            if verbose:
-                print(f"Found settings file: {path}")
-        # Match wrapper properties
-        elif path.name == 'gradle-wrapper.properties' and 'gradle/wrapper' in path.parts:
+        # Exact match for gradle wrapper properties
+        if path.parts[-3:] == ('gradle', 'wrapper', 'gradle-wrapper.properties'):
             gradle_files.append(path)
             if verbose:
                 print(f"Found wrapper properties: {path}")
-        # Match gradle.properties
-        elif path.name == 'gradle.properties':
+            continue
+
+        # Standard file detection
+        if path.name in {'build.gradle', 'build.gradle.kts',
+                        'settings.gradle', 'settings.gradle.kts',
+                        'gradle.properties'}:
             gradle_files.append(path)
             if verbose:
-                print(f"Found gradle.properties: {path}")
-    
+                print(f"Found Gradle file: {path}")
+
     # Prioritize wrapper properties first
     return sorted(gradle_files, key=lambda p: 0 if 'wrapper' in p.parts else 1)
 
-def extract_version(content: str, pattern: str) -> Optional[str]:
-    """Extract and normalize Gradle version with debug"""
+def extract_version(content: str, pattern: str, verbose: bool = False) -> Optional[str]:
+    """Enhanced version extraction with debug logging"""
     try:
-        if match := re.search(pattern, content):
+        if verbose:
+            print(f"Applying regex: {pattern}")
+            
+        if match := re.search(pattern, content, re.MULTILINE):
             version = match.group(1).split('-')[0]
+            if verbose:
+                print(f"Matched version: {version}")
             return version
     except Exception as e:
         print(f"Regex error: {str(e)}")
@@ -139,6 +138,7 @@ def main():
             content = file.read_text(encoding='utf-8')
             if args.verbose:
                 print(f"\nChecking file: {file.relative_to(repo_root)}")
+                print("File content sample:", content[:200].replace('\n', ' ') + "...")
                 
             for rule in rules:
                 try:
@@ -146,7 +146,7 @@ def main():
                         if args.verbose:
                             print(f" Applying rule: {rule['regex']}")
                             
-                        if version := extract_version(content, rule['regex']):
+                        if version := extract_version(content, rule['regex'], args.verbose):
                             print(f"Found Gradle {version} in {file.relative_to(repo_root)}")
                             gradle_version = version
                             break
