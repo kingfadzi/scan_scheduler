@@ -1,0 +1,13 @@
+extraction_rules:
+  - file: "gradle/wrapper/gradle-wrapper.properties"
+    regex: "gradle-(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)-bin\\.zip"
+  - file: "build.gradle"
+    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+  - file: "build.gradle.kts"
+    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+  - file: "settings.gradle"
+    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+  - file: "settings.gradle.kts"
+    regex: "gradleVersion\\s*=\\s*['\"]?(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)[\"']?"
+  - file: "gradle.properties"
+    regex: "gradleVersion\\s*=\\s*(\\d+(?:\\.\\d+){0,3}(?:-\\w+)?)"
