@@ -10,6 +10,7 @@ from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
 from modular.shared.utils import Utils
+import Optional 
 
 class GradlejdkAnalyzer(BaseLogger):
     # Path configuration
