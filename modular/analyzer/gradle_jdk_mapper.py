@@ -182,6 +182,7 @@ class GradlejdkAnalyzer(BaseLogger):
                 error_msg = [
                     "Gradle version detection failed in:",
                     *[f"  - {f.relative_to(repo_path)}" for f in found_files]
+                ]
                 raise RuntimeError("\n".join(error_msg))
             
             jdk_version = self.find_jdk_version(gradle_version)
