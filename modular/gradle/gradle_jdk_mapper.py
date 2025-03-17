@@ -4,8 +4,7 @@ import re
 import yaml
 import argparse
 import sys
-from typing import Optional
-
+from typing import Optional, List
 
 # Configuration
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -25,29 +24,58 @@ def parse_args():
         default='.',
         help='Path to repository root (default: current directory)'
     )
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Enable debug output'
+    )
     return parser.parse_args()
 
-def find_gradle_files(root: Path) -> list[Path]:
-    """Locate Gradle configuration files with exclusions"""
+def find_gradle_files(root: Path, verbose: bool = False) -> List[Path]:
+    """Locate Gradle configuration files with improved detection"""
     gradle_files = []
     
     for path in root.rglob('*'):
         if any(part in EXCLUDE_DIRS for part in path.parts):
+            if verbose:
+                print(f"Skipping excluded path: {path}")
             continue
             
-        if path.name in {'build.gradle', 'build.gradle.kts', 
-                        'settings.gradle', 'settings.gradle.kts',
-                        'gradle.properties'}:
+        if not path.is_file():
+            continue
+
+        # Match build configuration files
+        if path.name in {'build.gradle', 'build.gradle.kts'}:
             gradle_files.append(path)
-        elif path.parts[-2:] == ('gradle', 'wrapper') and path.name == 'gradle-wrapper.properties':
+            if verbose:
+                print(f"Found build file: {path}")
+        # Match settings files
+        elif path.name in {'settings.gradle', 'settings.gradle.kts'}:
             gradle_files.append(path)
+            if verbose:
+                print(f"Found settings file: {path}")
+        # Match wrapper properties
+        elif path.name == 'gradle-wrapper.properties' and 'gradle/wrapper' in path.parts:
+            gradle_files.append(path)
+            if verbose:
+                print(f"Found wrapper properties: {path}")
+        # Match gradle.properties
+        elif path.name == 'gradle.properties':
+            gradle_files.append(path)
+            if verbose:
+                print(f"Found gradle.properties: {path}")
     
-    return gradle_files
+    # Prioritize wrapper properties first
+    return sorted(gradle_files, key=lambda p: 0 if 'wrapper' in p.parts else 1)
 
 def extract_version(content: str, pattern: str) -> Optional[str]:
-    """Extract and normalize Gradle version"""
-    if match := re.search(pattern, content):
-        return match.group(1).split('-')[0]
+    """Extract and normalize Gradle version with debug"""
+    try:
+        if match := re.search(pattern, content):
+            version = match.group(1).split('-')[0]
+            return version
+    except Exception as e:
+        print(f"Regex error: {str(e)}")
     return None
 
 def find_jdk_version(gradle_version: str, mapping: dict) -> str:
@@ -64,11 +92,14 @@ def main():
     args = parse_args()
     
     # Validate configuration files
+    config_errors = False
     if not GRADLE_RULES_FILE.exists():
         print(f"Error: Missing rules file at {GRADLE_RULES_FILE}")
-        sys.exit(1)
+        config_errors = True
     if not JDK_MAPPING_FILE.exists():
         print(f"Error: Missing JDK mapping at {JDK_MAPPING_FILE}")
+        config_errors = True
+    if config_errors:
         sys.exit(1)
 
     # Load configuration
@@ -90,26 +121,52 @@ def main():
         print(f"Error: Path is not a directory - {repo_root}")
         sys.exit(1)
 
-    # Process files
-    found_files = find_gradle_files(repo_root)
-    gradle_version = None
+    # Find and process files
+    found_files = find_gradle_files(repo_root, args.verbose)
     
-    for file in sorted(found_files, key=lambda p: p.as_posix()):
+    if args.verbose:
+        print(f"\nFound {len(found_files)} potential Gradle files:")
+        for f in found_files:
+            print(f"  - {f.relative_to(repo_root)}")
+
+    if not found_files:
+        print("No Gradle configuration files found")
+        sys.exit(1)
+
+    gradle_version = None
+    for file in found_files:
         try:
             content = file.read_text(encoding='utf-8')
+            if args.verbose:
+                print(f"\nChecking file: {file.relative_to(repo_root)}")
+                
             for rule in rules:
-                if file.match(rule['file']):
-                    if version := extract_version(content, rule['regex']):
-                        print(f"Found Gradle {version} in {file.relative_to(repo_root)}")
-                        gradle_version = version
-                        break
+                try:
+                    if file.match(rule['file']):
+                        if args.verbose:
+                            print(f" Applying rule: {rule['regex']}")
+                            
+                        if version := extract_version(content, rule['regex']):
+                            print(f"Found Gradle {version} in {file.relative_to(repo_root)}")
+                            gradle_version = version
+                            break
+                except Exception as e:
+                    print(f"Rule error: {str(e)}")
+                    continue
+                
             if gradle_version:
                 break
         except Exception as e:
             print(f"Error reading {file.relative_to(repo_root)}: {str(e)}")
-    
+
     if not gradle_version:
-        print("No Gradle version detected in project files")
+        print("\nNo Gradle version detected. Possible reasons:")
+        print("- Version not declared in standard locations")
+        print("- Version format doesn't match regex patterns")
+        print("- Missing gradle-wrapper.properties file")
+        print("\nChecked files:")
+        for f in found_files:
+            print(f"  - {f.relative_to(repo_root)}")
         sys.exit(1)
     
     jdk_version = find_jdk_version(gradle_version, jdk_mapping)
