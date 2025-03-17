@@ -187,7 +187,7 @@ if __name__ == "__main__":
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradlejdkAnalyzer()
-    analyzer.logger.setLevel(logging.INFO)
+    #analyzer.logger.setLevel(logging.INFO)
 
     try:
         result = analyzer.run_analysis(
