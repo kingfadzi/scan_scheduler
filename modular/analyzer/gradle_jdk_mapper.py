@@ -12,7 +12,6 @@ from modular.shared.base_logger import BaseLogger
 from modular.shared.utils import Utils
 
 class GradlejdkAnalyzer(BaseLogger):
-    # Path configuration
     SCRIPT_DIR = Path(__file__).parent.resolve()
     PROJECT_ROOT = SCRIPT_DIR.parent
     CONFIG_DIR = PROJECT_ROOT / 'gradle'
@@ -33,7 +32,7 @@ class GradlejdkAnalyzer(BaseLogger):
         self.jdk_mapping: Dict = {}
 
     def load_config(self) -> None:
-        """Load and validate configuration files from package"""
+        """Load configuration files from package"""
         config_errors = []
         if not self.GRADLE_RULES_FILE.exists():
             config_errors.append(f"Missing rules file at {self.GRADLE_RULES_FILE}")
@@ -48,7 +47,7 @@ class GradlejdkAnalyzer(BaseLogger):
             with open(self.JDK_MAPPING_FILE, 'r') as f:
                 self.jdk_mapping = yaml.safe_load(f)
         except Exception as e:
-            raise RuntimeError(f"Failed to load configuration: {str(e)}")
+            raise RuntimeError(f"Config load failed: {str(e)}")
 
     def find_gradle_files(self, root: Path) -> List[Path]:
         """Locate Gradle configuration files with exclusion patterns"""
@@ -56,12 +55,10 @@ class GradlejdkAnalyzer(BaseLogger):
         
         for path in root.rglob('*'):
             if any(part in self.EXCLUDE_DIRS for part in path.parts):
-                self.logger.debug(f"Skipping excluded path: {path}")
                 continue
-                
             if path.is_file() and self._is_gradle_file(path):
                 gradle_files.append(path)
-                self.logger.debug(f"Found Gradle file: {path}")
+                self.logger.debug(f"Found Gradle file: {path.relative_to(root)}")
 
         return sorted(gradle_files, key=lambda p: 0 if 'wrapper' in p.parts else 1)
 
@@ -77,7 +74,6 @@ class GradlejdkAnalyzer(BaseLogger):
     def extract_version(self, content: str, pattern: str) -> Optional[str]:
         """Extract version using regex pattern"""
         try:
-            self.logger.debug(f"Applying regex: {pattern}")
             if match := re.search(pattern, content, re.MULTILINE):
                 version = match.group(1).split('-')[0]
                 self.logger.debug(f"Matched version: {version}")
@@ -116,36 +112,35 @@ class GradlejdkAnalyzer(BaseLogger):
             self.logger.info(f"Persisted results for {repo.repo_slug}")
         except Exception as e:
             self.logger.exception(f"Persistence failed: {e}")
-            raise RuntimeError("Database operation failed") from e
+            raise
 
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         """Main analysis workflow with execution tracking"""
         repo_path = Path(repo_dir).resolve()
-        if not repo_path.exists():
+        if not repo_path.exists() or not repo_path.is_dir():
             raise ValueError(f"Invalid repository path: {repo_path}")
-        if not repo_path.is_dir():
-            raise ValueError(f"Path is not a directory: {repo_path}")
 
         self.load_config()
         found_files = self.find_gradle_files(repo_path)
         
         if not found_files:
-            raise RuntimeError("No Gradle configuration files found")
+            self.logger.info("No Gradle configuration files found - not a Gradle project")
+            return json.dumps({
+                "gradle_project": False,
+                "repo_id": repo.repo_id,
+                "status": "success"
+            }, ensure_ascii=False)
 
         gradle_version = None
         for file in found_files:
             try:
                 content = file.read_text(encoding='utf-8')
                 self.logger.debug(f"Processing: {file.relative_to(repo_path)}")
-                
-                sample_content = content[:200].replace('\n', ' ')
-                self.logger.debug(f"Content sample: {sample_content}...")
 
                 for rule in self.rules:
                     if file.match(rule['file']):
                         if version := self.extract_version(content, rule['regex']):
-                            self.logger.info(f"Detected Gradle {version}")
                             gradle_version = version
                             break
                 if gradle_version:
@@ -155,7 +150,7 @@ class GradlejdkAnalyzer(BaseLogger):
 
         if not gradle_version:
             error_msg = [
-                "Gradle version detection failed. Scanned files:",
+                "Gradle version detection failed in:",
                 *[f"  - {f.relative_to(repo_path)}" for f in found_files]
             ]
             raise RuntimeError("\n".join(error_msg))
@@ -164,6 +159,7 @@ class GradlejdkAnalyzer(BaseLogger):
         self._persist_results(session, repo, gradle_version, jdk_version)
         
         return json.dumps({
+            "gradle_project": True,
             "gradle_version": gradle_version,
             "jdk_version": jdk_version,
             "repo_id": repo.repo_id,
@@ -171,7 +167,6 @@ class GradlejdkAnalyzer(BaseLogger):
         }, ensure_ascii=False)
 
 if __name__ == "__main__":
-    # Standalone execution configuration
     repo_dir = "/tmp/gradle-example"
     repo_id = "example-org/gradle-example"
     repo_slug = "gradle-example"
@@ -182,7 +177,6 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
 
-    # Initialize components
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradlejdkAnalyzer()
@@ -196,7 +190,14 @@ if __name__ == "__main__":
             run_id="STANDALONE_RUN"
         )
         result = json.loads(result_json)
-        analyzer.logger.info(f"Analysis succeeded: {result}")
+        
+        if result['gradle_project']:
+            analyzer.logger.info(f"Gradle analysis successful:\n"
+                               f"• Version: {result['gradle_version']}\n"
+                               f"• JDK: {result['jdk_version']}")
+        else:
+            analyzer.logger.info("No Gradle project detected")
+            
     except Exception as e:
         analyzer.logger.error(f"Analysis failed: {str(e)}")
         session.rollback()
