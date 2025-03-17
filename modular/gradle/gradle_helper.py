@@ -5,6 +5,7 @@ import json
 import logging
 from typing import List, Dict
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import SQLAlchemyError
 from modular.shared.models import Session, Dependency
 from modular.shared.base_logger import BaseLogger
 
@@ -19,71 +20,104 @@ class GradleHelper(BaseLogger):
         super().__init__()
         self.logger = logger if logger else self.get_logger("GradleHelper")
         self.logger.setLevel(logging.DEBUG)
-        self.logger.debug("Initialized GradleHelper instance")
+        self.session_factory = Session
 
-    def process_repo(self, repo_dir, repo, session):
-        self.logger.debug(f"Starting repository processing: {repo.repo_id}")
+    def detect_java_build_tool(self, repo_dir):
+        build_files = {"pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"}
+        found_files = set()
+        
+        repo_path = Path(repo_dir).resolve()
+        self.logger.debug(f"Scanning for build files in {repo_path}")
+
+        for path in repo_path.rglob('*'):
+            if any(part in self.EXCLUDE_DIRS for part in path.parts):
+                continue
+            if path.is_file() and path.name in build_files:
+                found_files.add(path.name)
+                self.logger.debug(f"Found build file: {path.relative_to(repo_path)}")
+
+        maven = "pom.xml" in found_files
+        gradle = bool(found_files - {"pom.xml"})
+        
+        if maven and gradle:
+            self.logger.warning("Both Maven and Gradle files detected")
+            return "Maven"
+        elif maven:
+            return "Maven"
+        elif gradle:
+            return "Gradle"
+        return None
+
+    def process_repo(self, repo_dir, repo, session=None):
+        own_session = False
+        if not session:
+            session = self.session_factory()
+            own_session = True
+            self.logger.debug("Created new database session")
+
         try:
             repo_path = Path(repo_dir).resolve()
-            self.logger.debug(f"Resolved repository path: {repo_path}")
-            
+            self.logger.info(f"Processing repository: {repo_path.name}")
+
             if not repo_path.exists():
-                raise ValueError(f"Path does not exist: {repo_path}")
+                raise ValueError(f"Invalid path: {repo_path}")
             if not repo_path.is_dir():
                 raise ValueError(f"Not a directory: {repo_path}")
 
             dependencies = self._analyze_dependencies(repo_path)
-            self.logger.debug(f"Found {len(dependencies)} raw dependencies")
             self._persist_dependencies(session, repo, dependencies)
             
-            return {"repo_id": repo.repo_id, "dependency_count": len(dependencies), "status": "success"}
+            return {
+                "repo_id": repo.repo_id,
+                "dependency_count": len(dependencies),
+                "status": "success"
+            }
         except Exception as e:
-            self.logger.error(f"Repository processing failed: {str(e)}", exc_info=True)
+            self.logger.error(f"Processing failed: {str(e)}", exc_info=True)
             session.rollback()
-            return {"repo_id": repo.repo_id, "error": str(e), "status": "failed"}
+            return {
+                "repo_id": repo.repo_id,
+                "error": str(e),
+                "status": "failed"
+            }
+        finally:
+            if own_session and session:
+                session.close()
+                self.logger.debug("Closed database session")
 
     def _analyze_dependencies(self, repo_path: Path):
-        self.logger.debug(f"Starting dependency analysis in {repo_path}")
+        self.logger.debug("Starting dependency analysis")
         build_files = self._find_gradle_files(repo_path)
-        self.logger.debug(f"Found {len(build_files)} build files to analyze")
-
         dependencies = []
-        for idx, build_file in enumerate(build_files, 1):
+        
+        for build_file in build_files:
             try:
-                self.logger.debug(f"Processing file {idx}/{len(build_files)}: {build_file}")
                 content = build_file.read_text(encoding='utf-8')
-                file_deps = self._extract_dependencies(content)
-                dependencies.extend(file_deps)
-                self.logger.debug(f"Found {len(file_deps)} dependencies in {build_file.name}")
+                deps = self._extract_dependencies(content)
+                dependencies.extend(deps)
+                self.logger.debug(f"Found {len(deps)} dependencies in {build_file.name}")
             except Exception as e:
-                self.logger.warning(f"File processing error: {build_file} - {str(e)}")
+                self.logger.warning(f"Error reading {build_file}: {str(e)}")
         return dependencies
 
     def _find_gradle_files(self, root: Path):
-        self.logger.debug(f"Searching for Gradle files in {root}")
-        found_files = []
-        for path in root.rglob('*'):
-            if any(part in self.EXCLUDE_DIRS for part in path.parts):
-                self.logger.debug(f"Skipping excluded path: {path}")
-                continue
-            if path.is_file() and path.name in {'build.gradle', 'build.gradle.kts'}:
-                found_files.append(path)
-                self.logger.debug(f"Found build file: {path}")
-        self.logger.debug(f"Total build files found: {len(found_files)}")
-        return found_files
+        return [
+            path for path in root.rglob('*')
+            if path.is_file() 
+            and path.name in {'build.gradle', 'build.gradle.kts'}
+            and not any(part in self.EXCLUDE_DIRS for part in path.parts)
+        ]
 
     def _extract_dependencies(self, content: str):
-        self.logger.debug("Extracting dependencies from content")
         dependencies = []
-        for pattern_idx, pattern in enumerate(self.DEPENDENCY_PATTERNS, 1):
-            self.logger.debug(f"Using pattern {pattern_idx}: {pattern}")
-            matches = list(re.finditer(pattern, content))
-            self.logger.debug(f"Found {len(matches)} matches with pattern {pattern_idx}")
-            
-            for match_idx, match in enumerate(matches, 1):
+        for pattern in self.DEPENDENCY_PATTERNS:
+            for match in re.finditer(pattern, content):
                 try:
-                    self.logger.debug(f"Processing match {match_idx}/{len(matches)}: {match.group(0)}")
-                    dep = self._parse_map_style(match) if match.groupdict() else self._parse_string_style(match)
+                    if match.groupdict():
+                        dep = self._parse_map_style(match)
+                    else:
+                        dep = self._parse_string_style(match)
+                    
                     dependencies.append({
                         'name': dep['name'],
                         'version': dep['version'],
@@ -91,42 +125,35 @@ class GradleHelper(BaseLogger):
                         'category': None,
                         'sub_category': None
                     })
-                    self.logger.debug(f"Parsed dependency: {dep['name']}:{dep['version']}")
                 except Exception as e:
-                    self.logger.warning(f"Failed parsing match {match_idx}: {str(e)}")
+                    self.logger.warning(f"Skipping invalid dependency: {str(e)}")
         return dependencies
 
     def _persist_dependencies(self, session, repo, dependencies):
         if not dependencies:
-            self.logger.debug("Skipping persistence - no dependencies")
+            self.logger.info("No dependencies to persist")
             return
 
-        self.logger.debug(f"Preparing to persist {len(dependencies)} dependencies")
-        values = [{
-            'repo_id': repo.repo_id,
-            'name': dep['name'],
-            'version': dep['version'],
-            'package_type': dep['package_type'],
-            'category': dep['category'],
-            'sub_category': dep['sub_category']
-        } for dep in dependencies]
-
-        self.logger.debug("Sample dependency values:")
-        for dep in values[:3]:
-            self.logger.debug(f"  {dep['name']}@{dep['version']}")
-
-        stmt = insert(Dependency).values(values).on_conflict_do_update(
-            constraint='uq_repo_name_version',
-            set_={'package_type': insert(Dependency).excluded.package_type}
-        )
-
-        self.logger.debug("Executing database statement")
-        session.execute(stmt)
-        session.commit()
-        self.logger.info(f"Persisted {len(dependencies)} dependencies")
+        try:
+            stmt = insert(Dependency).values([{
+                'repo_id': repo.repo_id,
+                'name': dep['name'],
+                'version': dep['version'],
+                'package_type': dep['package_type'],
+                'category': dep['category'],
+                'sub_category': dep['sub_category']
+            } for dep in dependencies]).on_conflict_do_update(
+                constraint='uq_repo_name_version',
+                set_={'package_type': insert(Dependency).excluded.package_type}
+            )
+            session.execute(stmt)
+            session.commit()
+            self.logger.info(f"Persisted {len(dependencies)} dependencies")
+        except SQLAlchemyError as e:
+            self.logger.error("Database error: {str(e)}")
+            raise
 
     def _parse_map_style(self, match):
-        self.logger.debug("Parsing map-style dependency")
         return {
             'group': match.group(1),
             'name': match.group(2),
@@ -135,10 +162,9 @@ class GradleHelper(BaseLogger):
         }
 
     def _parse_string_style(self, match):
-        self.logger.debug("Parsing string-style dependency")
         parts = match.group(1).split(':')
         if len(parts) < 3:
-            raise ValueError(f"Invalid dependency format: {match.group(1)}")
+            raise ValueError(f"Invalid dependency: {match.group(1)}")
         return {
             'group': parts[0],
             'name': parts[1],
@@ -147,7 +173,7 @@ class GradleHelper(BaseLogger):
         }
 
 if __name__ == "__main__":
-    repo_dir = "/tmp/gradle-example"
+    repo_dir = "/tmp/gradle-project"
     repo_id = "example-org/sample-project"
     repo_slug = "sample-project"
 
@@ -157,23 +183,11 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
 
-    session = Session()
-    analyzer = GradleHelper()
-    analyzer.logger.setLevel(logging.DEBUG)
+    helper = GradleHelper()
+    helper.logger.setLevel(logging.INFO)
     
-    try:
-        analyzer.logger.debug("Starting standalone execution")
-        repo = MockRepo(repo_id, repo_slug)
-        result = analyzer.process_repo(repo_dir, repo, session)
-        analyzer.logger.debug(f"Raw result: {json.dumps(result, indent=2)}")
-        
-        if result['status'] == "success":
-            analyzer.logger.info(f"Found {result['dependency_count']} dependencies")
-        else:
-            analyzer.logger.error(f"Failed with error: {result['error']}")
-            
-    except Exception as e:
-        analyzer.logger.error(f"Fatal execution error: {str(e)}", exc_info=True)
-    finally:
-        session.close()
-        analyzer.logger.debug("Database session closed")
+    repo = MockRepo(repo_id, repo_slug)
+    result = helper.process_repo(repo_dir, repo)
+    
+    print(json.dumps(result, indent=2))
+    helper.logger.info("Analysis completed" if result['status'] == "success" else "Analysis failed")
