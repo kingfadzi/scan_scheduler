@@ -196,27 +196,56 @@ class Utils(BaseLogger):
         self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return []
 
-
     def detect_java_build_tool(self, repo_dir):
-
-        maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
-
-        gradle_files = ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
-        gradle_found = any(os.path.isfile(os.path.join(repo_dir, f)) for f in gradle_files)
-
-        if maven_pom and gradle_found:
-            self.logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
+        EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings'}
+        gradle_files = {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"}
+        
+        maven_pom = False
+        found_gradle_files = set()
+        
+        repo_path = Path(repo_dir).resolve()
+        
+        for path in repo_path.rglob('*'):
+            if any(part in EXCLUDE_DIRS for part in path.parts):
+                continue
+                
+            if path.is_file():
+                if path.name == "pom.xml":
+                    maven_pom = True
+                    self.logger.debug(f"Found Maven POM at: {path.relative_to(repo_path)}")
+                    
+                if path.name in gradle_files:
+                    found_gradle_files.add(path.name)
+                    self.logger.debug(f"Found Gradle file at: {path.relative_to(repo_path)}")
+    
+        gradle_found = len(found_gradle_files) > 0
+        conflict = maven_pom and gradle_found
+        
+        if conflict:
+            self.logger.warning(
+                f"Build tool conflict detected in {repo_path.name}\n"
+                f"Maven POMs: {maven_pom}\n"
+                f"Gradle files: {', '.join(found_gradle_files)}"
+            )
             return "Maven"
         elif maven_pom:
-            self.logger.debug("Maven pom.xml detected.")
+            self.logger.info(f"Detected Maven project in {repo_path.name}")
             return "Maven"
         elif gradle_found:
-            self.logger.debug("Gradle build files detected: " + ", ".join(f for f in gradle_files if os.path.isfile(os.path.join(repo_dir, f))))
+            self.logger.info(
+                f"Detected Gradle project in {repo_path.name}\n"
+                f"Found files: {', '.join(found_gradle_files)}"
+            )
             return "Gradle"
-        else:
-            self.logger.warning("No Java build system detected. Checked for pom.xml and Gradle files: " + ", ".join(gradle_files))
-            return None
+        
+        self.logger.debug(
+            f"No Java build system detected in {repo_path.name}\n"
+            f"Searched paths: {repo_path}\n"
+            f"Excluded directories: {', '.join(EXCLUDE_DIRS)}"
+        )
+        return None
 
+    
 def main():
 
     example_payload = {
