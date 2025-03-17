@@ -65,7 +65,7 @@ class DependencyAnalyzer(BaseLogger):
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
                 elif build_tool == "Gradle":
                     self.logger.info(f"Processing Gradle project in {repo_dir}")
-                    dependencies.extend(self.gradle_helper.process_repo(repo_dir, repo))
+                    dependencies.extend(self.gradle_helper.process_repo(repo_dir=repo_dir, repo=repo))
                 else:
                     self.logger.warning("No supported Java build system detected.")
 
