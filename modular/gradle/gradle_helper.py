@@ -139,9 +139,9 @@ class GradleHelper(BaseLogger):
 
 if __name__ == "__main__":
     # Standalone execution configuration
-    repo_dir = "/tmp/gradle-project"
-    repo_id = "example-org/sample-project"
-    repo_slug = "sample-project"
+    repo_dir = "/tmp/gradle-example"
+    repo_id = "example-org/gradle-example"
+    repo_slug = "gradle-example"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
