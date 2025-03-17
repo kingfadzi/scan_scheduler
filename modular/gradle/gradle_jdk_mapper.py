@@ -2,11 +2,10 @@
 from pathlib import Path
 import re
 import yaml
-import argparse
-import sys
 import logging
 from typing import Optional, List, Dict, Tuple
-from modular.shared.models import Session
+from sqlalchemy.dialects.postgresql import insert
+from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
 
 class GradleJDKAnalyzer:
@@ -94,22 +93,40 @@ class GradleJDKAnalyzer:
             parts.pop()
         return "JDK version unknown"
 
+    def _persist_results(self, session, repo, gradle_version: str, java_version: str) -> None:
+        """Persist analysis results to the database with conflict handling"""
+        try:
+            stmt = insert(BuildTool).values(
+                repo_id=repo.repo_id,
+                tool="Gradle",
+                tool_version=gradle_version,
+                runtime_version=java_version,
+            ).on_conflict_do_update(
+                index_elements=["repo_id", "tool"],
+                set_={
+                    "tool_version": gradle_version,
+                    "runtime_version": java_version,
+                }
+            )
+            session.execute(stmt)
+            session.commit()
+            self.logger.info(f"Results committed for repo: {repo.repo_slug}")
+        except Exception as e:
+            self.logger.exception(f"Persistence failed for {repo.repo_id}: {e}")
+            raise RuntimeError("Database operation failed") from e
+
     @analyze_execution(session_factory=Session, stage="Gradle jdk Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         """Decorated analysis workflow with execution tracking"""
-        # Validate repository path
         repo_path = Path(repo_dir).resolve()
         if not repo_path.exists():
-            raise ValueError(f"Path does not exist - {repo_path}")
+            raise ValueError(f"Invalid repository path: {repo_path}")
         if not repo_path.is_dir():
-            raise ValueError(f"Path is not a directory - {repo_path}")
+            raise ValueError(f"Path is not a directory: {repo_path}")
 
-        # Load configuration
         self.load_config()
-
-        # Find and process files
         found_files = self.find_gradle_files(repo_path)
-        self.logger.debug(f"Found {len(found_files)} potential Gradle files")
+        
         if not found_files:
             raise RuntimeError("No Gradle configuration files found")
 
@@ -117,21 +134,17 @@ class GradleJDKAnalyzer:
         for file in found_files:
             try:
                 content = file.read_text(encoding='utf-8')
-                self.logger.debug(f"Checking file: {file.relative_to(repo_path)}")
+                self.logger.debug(f"Processing: {file.relative_to(repo_path)}")
+                
                 sample_content = content[:200].replace('\n', ' ')
                 self.logger.debug(f"Content sample: {sample_content}...")
+
                 for rule in self.rules:
-                    try:
-                        if file.match(rule['file']):
-                            self.logger.debug(f"Applying rule: {rule['regex']}")
-                            if version := self.extract_version(content, rule['regex']):
-                                self.logger.info(f"Found Gradle {version} in {file.relative_to(repo_path)}")
-                                gradle_version = version
-                                break
-                    except Exception as e:
-                        self.logger.error(f"Rule processing error: {str(e)}")
-                        continue
-                
+                    if file.match(rule['file']):
+                        if version := self.extract_version(content, rule['regex']):
+                            self.logger.info(f"Detected Gradle {version} in {file.name}")
+                            gradle_version = version
+                            break
                 if gradle_version:
                     break
             except Exception as e:
@@ -139,40 +152,28 @@ class GradleJDKAnalyzer:
 
         if not gradle_version:
             error_msg = [
-                "No Gradle version detected. Possible reasons:",
-                "- Version not declared in standard locations",
-                "- Version format doesn't match regex patterns",
-                "- Missing gradle-wrapper.properties file",
-                "\nChecked files:"
+                "Gradle version detection failed. Potential causes:",
+                "- Version not in standard files",
+                "- Unconventional version format",
+                "- Missing wrapper properties",
+                "Scanned files:"
             ] + [f"  - {f.relative_to(repo_path)}" for f in found_files]
             raise RuntimeError("\n".join(error_msg))
         
         jdk_version = self.find_jdk_version(gradle_version)
-        return gradle_version, jdk_version
-
-def parse_args():
-    """Parse command-line arguments"""
-    parser = argparse.ArgumentParser(
-        description='Detect Gradle version and required JDK for a project',
-        epilog='Configuration files must be in same directory as script'
-    )
-    parser.add_argument(
-        'path',
-        nargs='?',
-        default='.',
-        help='Path to repository root (default: current directory)'
-    )
-    parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Enable debug output'
-    )
-    return parser.parse_args()
+        self._persist_results(session, repo, gradle_version, jdk_version)
+        
+        return {
+            "gradle_version": gradle_version,
+            "jdk_version": jdk_version,
+            "repo_id": repo.repo_id
+        }
 
 if __name__ == "__main__":
-    repo_dir = "/tmp/gradle-example"
-    repo_id = "gradle-example"
-    repo_slug = "gradle-example"
+    # Configuration for standalone execution
+    repo_dir = "/tmp/VulnerableApp"
+    repo_id = "vulnerable-apps/VulnerableApp"
+    repo_slug = "VulnerableApp"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
@@ -180,9 +181,11 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
 
+    # Initialize components
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradleJDKAnalyzer()
+    analyzer.logger.setLevel(logging.INFO)
 
     try:
         result = analyzer.run_analysis(
@@ -191,8 +194,9 @@ if __name__ == "__main__":
             session=session,
             run_id="STANDALONE_RUN"
         )
-        analyzer.logger.info(f"Standalone Gradle build analysis result: {result}")
+        analyzer.logger.info(f"Analysis completed: {result}")
     except Exception as e:
-        analyzer.logger.error(f"Error during standalone Gradle build analysis: {e}")
+        analyzer.logger.error(f"Analysis failed: {str(e)}")
+        session.rollback()
     finally:
         session.close()
