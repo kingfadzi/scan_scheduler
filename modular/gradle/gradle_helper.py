@@ -153,7 +153,7 @@ if __name__ == "__main__":
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradleHelper()
-    analyzer.logger.setLevel(logging.INFO)
+    analyzer.logger.setLevel(logging.DEBUG)
 
     try:
         result = analyzer.process_repo(repo_dir, repo, session)
