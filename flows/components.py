@@ -7,7 +7,7 @@ from modular.analyzer.grype_analysis import GrypeAnalyzer
 from modular.analyzer.xeol_analysis import XeolAnalyzer
 from modular.analyzer.syft_analysis import SyftAnalyzer
 from modular.analyzer.maven_analysis import MavenAnalyzer
-from modular.analyzer.gradle_analysis import GradleAnalyzer
+from modular.analyzer.gradle_jdk_mapper import GradlejdkAnalyzer
 from modular.analyzer.category_analysis import CategoryAnalyzer
 from config.config import Config
 from modular.shared.utils import Utils
@@ -138,7 +138,7 @@ def run_maven_analysis_task(repo_dir, repo, session, run_id):
 def run_gradle_analysis_task(repo_dir, repo, session, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Gradle analysis for repository: {repo.repo_id}")
-    analyzer = GradleAnalyzer(logger=logger)
+    analyzer = GradlejdkAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
