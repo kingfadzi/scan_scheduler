@@ -118,8 +118,8 @@ class GradleJDKAnalyzer:
             try:
                 content = file.read_text(encoding='utf-8')
                 self.logger.debug(f"Checking file: {file.relative_to(repo_path)}")
-                self.logger.debug(f"Content sample: {content[:200].replace('\n', ' ')}...")
-
+                sample_content = content[:200].replace('\n', ' ')
+                self.logger.debug(f"Content sample: {sample_content}...")
                 for rule in self.rules:
                     try:
                         if file.match(rule['file']):
