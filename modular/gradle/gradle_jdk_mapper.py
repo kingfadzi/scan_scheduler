@@ -7,24 +7,23 @@ from typing import Optional, List, Dict, Tuple
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
+from modular.shared.base_logger import BaseLogger
+from modular.shared.utils import Utils
 
-class GradleJDKAnalyzer:
+class GradlejdkAnalyzer(BaseLogger):
     SCRIPT_DIR = Path(__file__).parent.resolve()
     GRADLE_RULES_FILE = SCRIPT_DIR / 'gradle_rules.yaml'
     JDK_MAPPING_FILE = SCRIPT_DIR / 'jdk_mapping.yaml'
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea'}
 
     def __init__(self, logger=None):
+        super().__init__()
         if logger is None:
-            self.logger = logging.getLogger("GradleJDKAnalyzer")
-            if not self.logger.handlers:
-                handler = logging.StreamHandler()
-                formatter = logging.Formatter('%(levelname)s - %(message)s')
-                handler.setFormatter(formatter)
-                self.logger.addHandler(handler)
+            self.logger = self.get_logger("GradlejdkAnalyzer")
         else:
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
+        self.utils = Utils(logger=logger)
         self.rules: List[Dict] = []
         self.jdk_mapping: Dict = {}
 
@@ -115,7 +114,7 @@ class GradleJDKAnalyzer:
             self.logger.exception(f"Persistence failed for {repo.repo_id}: {e}")
             raise RuntimeError("Database operation failed") from e
 
-    @analyze_execution(session_factory=Session, stage="Gradle jdk Analysis")
+    @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
         """Decorated analysis workflow with execution tracking"""
         repo_path = Path(repo_dir).resolve()
@@ -171,9 +170,9 @@ class GradleJDKAnalyzer:
 
 if __name__ == "__main__":
     # Configuration for standalone execution
-    repo_dir = "/tmp/VulnerableApp"
-    repo_id = "vulnerable-apps/VulnerableApp"
-    repo_slug = "VulnerableApp"
+    repo_dir = "/tmp/gradle-example"
+    repo_id = "example-org/gradle-example"
+    repo_slug = "gradle-example"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
@@ -184,7 +183,7 @@ if __name__ == "__main__":
     # Initialize components
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
-    analyzer = GradleJDKAnalyzer()
+    analyzer = GradlejdkAnalyzer()
     analyzer.logger.setLevel(logging.INFO)
 
     try:
