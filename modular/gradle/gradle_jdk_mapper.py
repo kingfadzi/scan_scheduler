@@ -4,6 +4,8 @@ import re
 import yaml
 import argparse
 import sys
+from typing import Optional
+
 
 # Configuration
 SCRIPT_DIR = Path(__file__).parent.resolve()
