@@ -169,28 +169,30 @@ def parse_args():
     )
     return parser.parse_args()
 
-def main():
-    args = parse_args()
-    
-    analyzer = GradleJDKAnalyzer()
-    if not args.verbose:
-        analyzer.logger.setLevel(logging.INFO)
-    
-    try:
-        repo_root = Path(args.path).resolve()
-        gradle_version, jdk_version = analyzer.run_analysis(
-            repo_dir=repo_root,
-            repo=None,  # Should be replaced with actual repo object if needed
-            session=Session(),
-            run_id=None
-        )
-    except Exception as e:
-        analyzer.logger.error(e)
-        sys.exit(1)
-    
-    print(f"\nAnalysis results for {repo_root}:")
-    print(f"• Detected Gradle version: {gradle_version}")
-    print(f"• Required JDK version:   {jdk_version}")
-
 if __name__ == "__main__":
-    main()
+    repo_dir = "/tmp/gradle-example"
+    repo_id = "gradle-example"
+    repo_slug = "gradle-example"
+
+    class MockRepo:
+        def __init__(self, repo_id, repo_slug):
+            self.repo_id = repo_id
+            self.repo_slug = repo_slug
+            self.repo_name = repo_slug
+
+    repo = MockRepo(repo_id, repo_slug)
+    session = Session()
+    analyzer = GradleJDKAnalyzer()
+
+    try:
+        result = analyzer.run_analysis(
+            repo_dir=repo_dir,
+            repo=repo,
+            session=session,
+            run_id="STANDALONE_RUN"
+        )
+        analyzer.logger.info(f"Standalone Gradle build analysis result: {result}")
+    except Exception as e:
+        analyzer.logger.error(f"Error during standalone Gradle build analysis: {e}")
+    finally:
+        session.close()
