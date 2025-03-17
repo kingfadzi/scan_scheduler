@@ -1,18 +1,21 @@
+#!/usr/bin/env python3
 from pathlib import Path
 import re
 import yaml
 import argparse
-from typing import Optional
+import sys
 
-# Configuration files
-GRADLE_RULES_FILE = 'gradle_rules.yaml'
-JDK_MAPPING_FILE = 'jdk_mapping.yaml'
+# Configuration
+SCRIPT_DIR = Path(__file__).parent.resolve()
+GRADLE_RULES_FILE = SCRIPT_DIR / 'gradle_rules.yaml'
+JDK_MAPPING_FILE = SCRIPT_DIR / 'jdk_mapping.yaml'
 EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea'}
 
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description='Detect Gradle version and required JDK for a project'
+        description='Detect Gradle version and required JDK for a project',
+        epilog='Configuration files must be in same directory as script'
     )
     parser.add_argument(
         'path',
@@ -57,14 +60,14 @@ def find_jdk_version(gradle_version: str, mapping: dict) -> str:
 
 def main():
     args = parse_args()
-    repo_root = Path(args.path).resolve()
-
-    if not repo_root.exists():
-        print(f"Error: Path does not exist - {repo_root}")
-        return
-    if not repo_root.is_dir():
-        print(f"Error: Path is not a directory - {repo_root}")
-        return
+    
+    # Validate configuration files
+    if not GRADLE_RULES_FILE.exists():
+        print(f"Error: Missing rules file at {GRADLE_RULES_FILE}")
+        sys.exit(1)
+    if not JDK_MAPPING_FILE.exists():
+        print(f"Error: Missing JDK mapping at {JDK_MAPPING_FILE}")
+        sys.exit(1)
 
     # Load configuration
     try:
@@ -72,11 +75,20 @@ def main():
             rules = yaml.safe_load(f)['extraction_rules']
         with open(JDK_MAPPING_FILE) as f:
             jdk_mapping = yaml.safe_load(f)
-    except FileNotFoundError as e:
-        print(f"Error: Missing configuration file - {e.filename}")
-        return
+    except Exception as e:
+        print(f"Configuration error: {str(e)}")
+        sys.exit(1)
 
-    # Find and process files
+    # Validate repository path
+    repo_root = Path(args.path).resolve()
+    if not repo_root.exists():
+        print(f"Error: Path does not exist - {repo_root}")
+        sys.exit(1)
+    if not repo_root.is_dir():
+        print(f"Error: Path is not a directory - {repo_root}")
+        sys.exit(1)
+
+    # Process files
     found_files = find_gradle_files(repo_root)
     gradle_version = None
     
@@ -96,12 +108,12 @@ def main():
     
     if not gradle_version:
         print("No Gradle version detected in project files")
-        return
+        sys.exit(1)
     
     jdk_version = find_jdk_version(gradle_version, jdk_mapping)
-    print(f"\nResult for {repo_root}:")
-    print(f"• Gradle version: {gradle_version}")
-    print(f"• Required JDK: {jdk_version}")
+    print(f"\nAnalysis results for {repo_root}:")
+    print(f"• Detected Gradle version: {gradle_version}")
+    print(f"• Required JDK version:   {jdk_version}")
 
 if __name__ == "__main__":
     main()
