@@ -162,11 +162,13 @@ class GradlejdkAnalyzer(BaseLogger):
         jdk_version = self.find_jdk_version(gradle_version)
         self._persist_results(session, repo, gradle_version, jdk_version)
         
-    return json.dumps({
-        "gradle_version": gradle_version,
-        "jdk_version": jdk_version,
-        "repo_id": repo.repo_id
-    }, ensure_ascii=False)
+        
+        return json.dumps({
+              "gradle_version": gradle_version,
+              "jdk_version": jdk_version,
+              "repo_id": repo.repo_id
+          }, ensure_ascii=False)
+        
 
 if __name__ == "__main__":
     # Configuration for standalone execution
