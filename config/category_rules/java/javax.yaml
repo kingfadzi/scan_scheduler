@@ -72,9 +72,8 @@ categories:
       - name: "JSON/XML"
         patterns:
           - "^javax\\.json(\\..*)?:.+$"
-          - "^javax\\.xml\\.bind(\\..*)?:.+$"
-          - "^javax\\.xml\\.(namespace|datatype|parsers|stream|transform|validation|xpath)(\\..*)?:.+$"
-          - "^javax\\.xml\\.crypto(\\..*)?:.+$"
+          - "^javax\\.xml(?:\\..*)?:.+$"
+
       - name: "Protocol Buffers & Binary Formats"
         patterns: []
 
@@ -82,7 +81,7 @@ categories:
     subcategories:
       - name: "Authentication"
         patterns:
-          - "^javax\\.security\\.(auth\\.message|jacc)(\\..*)?:.+$"
+          - "^javax\\.security(\\..*)?:.+$"
       - name: "Security Layers"
         patterns:
           - "^javax\\.crypto(\\..*)?:.+$"

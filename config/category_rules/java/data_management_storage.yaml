@@ -5,7 +5,7 @@ categories:
         patterns:
           - "^com\\.h2database:.*"
           - "^com\\.ibm\\.db2:.*"
-          - "^com\\.microsoft\\.sqlserver:.*"
+          - "^com\\.microsoft\\.sqlserver.jdbc:.*"
           - "^com\\.mysql:.*"
           - "^com\\.oracle\\.(jdbc|ojdbc|database):.*"
           - "^commons-dbcp:.*"
@@ -16,8 +16,9 @@ categories:
           - "^mysql:.*"
           - "^org\\.flywaydb:.*"
           - "^org\\.firebirdsql\\.jdbc:.*"
-          - "^org\\.hibernate:.*"
+          - "^org\\.hibernate(?:\\..*)?:.+$"
           - "^org\\.hsqldb:.*"
+          - "^org\\.oracle:odbc.*$"
           - "^org\\.jooq:.*"
           - "^org\\.liquibase:.*"
           - "^org\\.mariadb:.*"
@@ -28,6 +29,7 @@ categories:
           - "^com\\.querydsl:.*"
           - "^org\\.flywaydb:.*"
           - "^org\\.eclipse\\.persistence:.*"
+          - "^org\\.mybatis(?:\\..*)?:.+$"
 
       - name: "NoSQL & Big Data"
         patterns:
@@ -40,7 +42,12 @@ categories:
           - "^org\\.mongodb:.*"
           - "^org\\.neo4j:.*"
           - "^redis\\.clients:.*"
-          - "^org\\.elasticsearch:.*"
+          - "^org\\.elasticsearch(?:\\..*)?:.+$"
+          - "^coherence:.*"
+          - "^com.amazon.redshift:.*"
+          - "^com\\.cloudera(?:\\.[^:]+)*:.*"
+          - "^org\\.gridgain(?:\\..*)?:.+$"
+
 
       - name: "Caching"
         patterns:
@@ -48,5 +55,5 @@ categories:
           - "^net\\.sf\\.encache:.*"
           - "^org\\.cache2k:.*"
           - "^org\\.ehcache:.*"
-          - "^org\\.infinispan:.*"
+          - "^org\\.infinispan(?:\\..*)?:.+$"
           - "^com\\.github\\.ben-manes:.*"

@@ -22,11 +22,11 @@ categories:
       - name: "Relational Databases"
         patterns:
           - "^(org\\.springframework\\.data):spring-data-(jpa|jdbc|r2dbc|relational):.*"
-          - "^(org\\.springframework):spring-(jdbc|orm|tx|r2dbc|ibatis):.*"  # Added ibatis
+          - "^(org\\.springframework):spring-(jdbc|orm|tx|r2dbc|ibatis):.*"
 
       - name: "NoSQL & Big Data"
         patterns:
-          - "^(org\\.springframework\\.data):spring-data-(cassandra|couchbase|elasticsearch|envers|gemfire|geode|keyvalue|ldap|mongodb|neo4j|redis|solr):.*"
+          - "^(org\\.springframework\\.data):spring-data-(cassandra|couchbase|elasticsearch|envers|gemfire|geode|keyvalue|ldap|mongodb|neo4j|redis|solr).*"
 
       - name: "Caching"
         patterns:
@@ -65,7 +65,7 @@ categories:
       - name: "Web Frameworks"
         patterns:
           - "^(org\\.springframework):spring-(web|webmvc|webflux|websocket):.*"
-          - "^(org\\.springframework\\.webflow):.*"  # Added webflow
+          - "^(org\\.springframework\\.webflow):.*"
 
       - name: "Spring: Boot"
         patterns:
@@ -74,6 +74,7 @@ categories:
       - name: "Spring: Framework"
         patterns:
           - "^(org\\.springframework):spring-(core|beans|context|aop|expression|instrument|jcl|aspects|asm):.*"
+          - "^(org\\.springframework):org\\.springframework.(core|beans|context|aop|expression|instrument|jcl|aspects|asm):.*"
 
       - name: "Reactive Libraries"
         patterns:
@@ -104,34 +105,35 @@ categories:
     subcategories:
       - name: "Authentication"
         patterns:
-          - "^(org\\.springframework\\.security):spring-security-(oauth2|oauth|kerberos|saml2|openid|cas|ldap|remoting|rsocket):.*"
+          - "^(org\\.springframework\\.security):spring-security-(oauth2|saml2|openid|cas|ldap|remoting|rsocket).*"
           - "^(org\\.springframework\\.security\\.oauth):.*"
+          - "^(org\\.springframework\\.security\\.kerberos):.*"
 
       - name: "Security Layers"
         patterns:
-          - "^(org\\.springframework\\.security):spring-security-(acl|config|core|crypto|data|messaging|taglibs|test|web):.*"
-          - "^(org\\.springframework\\.credhub):spring-credhub-core:.*"
-          - "^(org\\.springframework\\.security):spring-security-aspects:.*"
+          - "^(org\\.springframework\\.security):spring-security-(acl|config|core|crypto|data|messaging|taglibs|test|web).*"
+          - "^(org\\.springframework\\.credhub):spring-credhub-core.*"
+          - "^(org\\.springframework\\.security):spring-security-aspects.*"
 
       - name: "Transport & Data Security"
         patterns:
-          - "^(org\\.springframework\\.security):(ssl|headers):.*"
-          - "^(org\\.springframework\\.vault):spring-vault-core:.*"
-          - "^(org\\.springframework\\.security):spring-security-rsa:.*"
+          - "^(org\\.springframework\\.security):(ssl|headers).*"
+          - "^(org\\.springframework\\.vault):spring-vault-core.*"
+          - "^(org\\.springframework\\.security):spring-security-rsa.*"
 
       - name: "Identity Management"
         patterns:
-          - "^(org\\.springframework\\.security):(ldap|saml):.*"
+          - "^(org\\.springframework\\.security):(ldap|saml).*"
 
   - name: "Observability & Reliability"
     subcategories:
       - name: "Logging & Monitoring"
         patterns:
-          - "^(org\\.springframework\\.boot\\.actuate):.*"
+          - "^(org\\.springframework\\.boot\\.actuate).*"
       - name: "Metrics & Distributed Tracing"
         patterns:
           - "^(io\\.micrometer\\.spring):.*"
-          - "^(org\\.springframework\\.cloud\\.sleuth):.*"
+          - "^(org\\.springframework\\.cloud\\.sleuth).*"
       - name: "Circuit Breakers & Rate Limiting"
         patterns:
           - "^(org\\.springframework\\.cloud\\.(circuitbreaker|resilience4j)):[^:]*.*"

@@ -4,7 +4,7 @@ categories:
     subcategories:
       - name: "JSON/XML"
         patterns:
-          - "com\\.fasterxml\\.jackson.*"
+          - "^com\\.fasterxml(?:\\.[^:]+)*:.*$"
           - "org\\.glassfish\\.jaxb.*"
           - "com\\.jayway\\.jsonpath.*" #
           - "com\\.googlecode\\.json-simple.*"
@@ -21,6 +21,8 @@ categories:
           - "org\\.yaml.*"
           - "wsdl4j.*"
           - "com\\.github\\.fge.*"
+          - "^com\\.github\\.java-json(?:-[^:]+)*:.*$"
+
 
       - name: "Protocol Buffers & Binary Formats"
         patterns:

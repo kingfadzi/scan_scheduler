@@ -1,137 +1,66 @@
 categories:
-  - name: "Infrastructure & Deployment"
-    subcategories:
-      - name: "Containerization & Orchestration"
-        patterns: []
-      - name: "Cloud Platforms"
-        patterns:
-          - "org\\.apache\\.jclouds.*"
-      - name: "Application Servers"
-        patterns:
-          - "org\\.apache\\.(felix|openejb|tomcat|aries|james|geronimo).*"
-
   - name: "Data Management & Storage"
     subcategories:
-      - name: "Relational Databases"
-        patterns:
-          - "org\\.apache\\.ibatis.*"
       - name: "NoSQL & Big Data"
         patterns:
-          - "org\\.apache\\.(hbase|hive|flume|accumulo|omid|oozie|nifi|solr|lucene|derby).*"
-          - "org\\.apache\\.cassandra.*"
-          - "org\\.apache\\.solr.*"
-          - "org\\.apache\\.hadoop.*"
+          - "^org\\.apache\\.(hbase|hive|flume|accumulo|omid|oozie|nifi|solr|lucene|derby|parquet|phoenix|pig|spark|sqoop|tez):.*"
+          - "^org\\.apache\\.cassandra:.*"
+          - "^org\\.apache\\.hadoop:.*"
 
-      - name: "Caching"
-        patterns: []
-      - name: "Data Lakes & Analytics"
+      - name: "Relational Databases"
         patterns:
-          - "org\\.apache\\.atlas.*"
-          - "org\\.apache\\.ignite.*"
-
-  - name: "Messaging & Data Integration"
-    subcategories:
-      - name: "Message Brokers & ETL Tools"
-        patterns:
-          - "org\\.apache\\.activemq.*"
-          - "org\\.apache\\.camel.*"
-
-      - name: "API Gateways & REST/GraphQL"
-        patterns:
-          - "org\\.apache\\.(axis|axis2|cxf).*"
-          - "org\\.apache\\.olingo.*"
-          - "org\\.apache\\.httpcomponents.*"
-          - "org\\.apache\\.ws.*"
-
-      - name: "Event Streaming"
-        patterns:
-          - "org\\.apache\\.kafka.*"
-          - "org\\.apache\\.pulsar.*"
-
-      - name: "Networking"
-        patterns:
-          - "org\\.apache\\.(mina|ftpserver).*"
-
-  - name: "Application Development"
-    subcategories:
-      - name: "Web Frameworks"
-        patterns:
-          - "org\\.apache\\.(click|cocoon|myfaces|wicket).*"
-          - "org\\.apache\\.causeway.*"
-      - name: "Spring: Boot"
-        patterns: []
-      - name: "Spring: Framework"
-        patterns: []
-      - name: "Reactive Libraries"
-        patterns: []
-      - name: "Dependency Injection"
-        patterns: []
-      - name: "Template Engines"
-        patterns:
-          - "org\\.apache\\.velocity.*"
-
-  - name: "Serialization"
-    subcategories:
-      - name: "JSON/XML"
-        patterns:
-          - "org\\.apache\\.(axiom|xmlbeans|abdera).*"
-          - "org\\.apache\\.johnzon.*"
-          - "org\\.apache\\.xmlgraphics.*"
-
-      - name: "Protocol Buffers & Binary Formats"
-        patterns: []
+          - "^org\\.apache\\.(ibatis|openjpa|sqoop):.*"
 
   - name: "Security & Identity"
     subcategories:
       - name: "Authentication"
         patterns:
-          - "org\\.apache\\.kerby.*"
+          - "^org\\.apache\\.(kerby|shiro):.*"
+      - name: "Authorization & Access Control"
+        patterns:
+          - "^org\\.apache\\.(ranger|sentry):.*"
       - name: "Security Layers"
         patterns:
-          - "org\\.apache\\.bcel.*"
-      - name: "Transport & Data Security "
-        patterns: []
+          - "^org\\.apache\\.bcel:.*"
       - name: "Identity Management"
         patterns:
-          - "org\\.apache\\.directory.*"
-          - "org\\.apache\\.openipa.*"
-          - "org\\.apache\\.oltu.*"
+          - "^org\\.apache\\.(directory|oltu):.*"
 
-  - name: "Observability & Reliability"
+  - name: "Application Development"
     subcategories:
-      - name: "Logging & Monitoring"
+      - name: "Web Frameworks"
         patterns:
-          - "org\\.apache\\.log4j.*"
-          - "org\\.apache\\.logging.*"
-
-      - name: "Metrics & Distributed Tracing"
+          - "^org\\.apache\\.(click|cocoon|myfaces|wicket|causeway|sling|struts|taglibs|tuscany):.*"
+      - name: "Template Engines"
         patterns:
-          - "org\\.apache\\.htrace.*"
-      - name: "Circuit Breakers & Rate Limiting"
-        patterns: []
+          - "^org\\.apache\\.(velocity|tiles):.*"
+      - name: "Dependency Injection"
+        patterns:
+          - "^org\\.apache\\.xbean:.*"
 
-  - name: "Development & Testing Tools"
+  - name: "Serialization"
     subcategories:
-      - name: "Build Tools & Dependency Management"
+      - name: "JSON/XML"
         patterns:
-          - "org\\.apache\\.(ant|maven|ivy).*"
-      - name: "Testing"
+          - "^org\\.apache\\.(axiom|xmlbeans|abdera|johnzon|xmlgraphics|xalan|xerces|XML|xmlrpc):.*"
+      - name: "Protocol Buffers & Binary Formats"
         patterns:
-          - "org\\.apache\\.jmeter.*"
-      - name: "Code Quality & Profiling"
-        patterns: []
+          - "^org\\.apache\\.thrift:.*"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "^org\\.apache\\.(activemq|camel):.*"
+      - name: "Networking"
+        patterns:
+          - "^org\\.apache\\.(mina|ftpserver|ssh):.*"
 
   - name: "Utilities & Libraries"
     subcategories:
       - name: "General-Purpose"
         patterns:
-          - "^(org\\.apache\\.)?commons.*"
-          - "org\\.apache\\.(lang3|codec).*"
-          - "org\\.apache\\.jackrabbit.*"
-          - "org\\.apache\\.any23.*"
-          - "org\\.apache\\.curator.*"
-          - "org\\.apache\\.methi.*"
-          - "com\\.google\\.guava.*"
-          - "com\\.google\\.code.*"
-          - "org\\.apache\\.groovy.*"
-          - "org\\.apache\\.poi.*"
+          - "^(org\\.apache\\.)?commons:.*"
+          - "^org\\.apache\\.(lang3|codec|jackrabbit|any23|curator|methi|poi|opennlp|pdfbox|tika|wooden|sls|zookeeper):.*"
+          - "^com\\.google\\.(guava|code\\..*):.*"
+          - "^org\\.codehaus\\.groovy:.*"
