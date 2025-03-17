@@ -4,13 +4,12 @@ import re
 import yaml
 import json
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional, Tuple
 from sqlalchemy.dialects.postgresql import insert
 from modular.shared.models import Session, BuildTool
 from modular.shared.execution_decorator import analyze_execution
 from modular.shared.base_logger import BaseLogger
 from modular.shared.utils import Utils
-import Optional 
 
 class GradlejdkAnalyzer(BaseLogger):
     # Path configuration
