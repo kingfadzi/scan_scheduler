@@ -1,102 +1,101 @@
 categories:
-
   - name: "Infrastructure & Deployment"
     subcategories:
 
       - name: "Containerization & Orchestration"
         patterns:
-          - "org\\.springframework\\.cloud\\.kubernetes.*"
-          - "org\\.springframework\\.boot\\.docker.*"
+          - "^(org\\.springframework\\.cloud\\.kubernetes):.*"
+          - "^(org\\.springframework\\.boot\\.docker):.*"
 
       - name: "Cloud Platforms"
         patterns:
-          - "org\\.springframework\\.cloud\\.(aws|azure|gcp).*"
-          - "org\\.springframework\\.cloud\\.config.*"
+          - "^(org\\.springframework\\.cloud\\.(aws|azure|gcp)):[^:]*.*"
+          - "^(org\\.springframework\\.cloud\\.config):.*"
 
       - name: "Application Servers"
         patterns:
-          - "org\\.springframework\\.boot\\.(tomcat|jetty|undertow).*"
+          - "^(org\\.springframework\\.boot\\.(tomcat|jetty|undertow)):[^:]*.*"
 
   - name: "Data Management & Storage"
     subcategories:
 
       - name: "Relational Databases"
         patterns:
-          - "org\\.springframework\\.data:spring-data-(jpa|jdbc|r2dbc|relational).*"
-          - "org\\.springframework:spring-(jdbc|orm|tx|r2dbc).*"
+          - "^(org\\.springframework\\.data):spring-data-(jpa|jdbc|r2dbc|relational):.*"
+          - "^(org\\.springframework):spring-(jdbc|orm|tx|r2dbc|ibatis):.*"  # Added ibatis
 
       - name: "NoSQL & Big Data"
         patterns:
-          - "org\\.springframework\\.data:spring-data-(cassandra|couchbase|elasticsearch|envers|gemfire|geode|keyvalue|ldap|mongodb|neo4j|redis|solr).*"
+          - "^(org\\.springframework\\.data):spring-data-(cassandra|couchbase|elasticsearch|envers|gemfire|geode|keyvalue|ldap|mongodb|neo4j|redis|solr):.*"
 
       - name: "Caching"
         patterns:
-          - "org\\.springframework\\.cache.*"
+          - "^(org\\.springframework\\.cache):.*"
 
   - name: "Messaging & Data Integration"
     subcategories:
 
       - name: "Message Brokers & ETL Tools"
         patterns:
-          - "org\\.springframework\\.(amqp|jms|kafka|integration|batch):.*"
-          - "org\\.springframework\\.(ldap|pulsar):.*"
-          - "org\\.springframework:spring-(jms|messaging).*"
+          - "^(org\\.springframework\\.(amqp|jms|kafka|integration|batch)):[^:]*.*"
+          - "^(org\\.springframework\\.(ldap|pulsar)):[^:]*.*"
+          - "^(org\\.springframework):spring-(jms|messaging):.*"
 
       - name: "API Gateways & REST/GraphQL"
         patterns:
-          - "org\\.springframework\\.web\\.(rest|servlet|mvc).*"
-          - "org\\.springframework\\.graphql.*"
-          - "org\\.springframework\\.data:spring-data-rest-.*"
-          - "org\\.springframework\\.hateoas:spring-hateoas.*"
-          - "org\\.springframework\\.restdocs:spring-restdocs-.*"
-          - "org\\.springframework\\.ws:spring-ws-.*"
+          - "^(org\\.springframework\\.web\\.(rest|servlet|mvc)):[^:]*.*"
+          - "^(org\\.springframework\\.graphql):.*"
+          - "^(org\\.springframework\\.data):spring-data-rest-.*"
+          - "^(org\\.springframework\\.hateoas):spring-hateoas:.*"
+          - "^(org\\.springframework\\.restdocs):spring-restdocs-.*"
+          - "^(org\\.springframework\\.ws):spring-ws-.*"
 
       - name: "Event Streaming"
         patterns:
-          - "org\\.springframework\\.cloud\\.stream.*"
+          - "^(org\\.springframework\\.cloud\\.stream):.*"
 
       - name: "Networking"
         patterns:
-          - "org\\.springframework\\.web\\.(client|socket).*"
-          - "org\\.springframework\\.web\\.socket.*"
+          - "^(org\\.springframework\\.web\\.(client|socket)):[^:]*.*"
+          - "^(org\\.springframework\\.web\\.socket):.*"
 
   - name: "Application Development"
     subcategories:
 
       - name: "Web Frameworks"
         patterns:
-          - "org\\.springframework:spring-(web|webmvc|webflux|websocket).*"
+          - "^(org\\.springframework):spring-(web|webmvc|webflux|websocket):.*"
+          - "^(org\\.springframework\\.webflow):.*"  # Added webflow
 
       - name: "Spring: Boot"
         patterns:
-          - "org\\.springframework\\.boot.*"
+          - "^(org\\.springframework\\.boot):.*"
 
       - name: "Spring: Framework"
         patterns:
-          - "org\\.springframework:spring-(core|beans|context|aop|expression|instrument|jcl|aspects).*"
+          - "^(org\\.springframework):spring-(core|beans|context|aop|expression|instrument|jcl|aspects|asm):.*"
 
       - name: "Reactive Libraries"
         patterns:
-          - "org\\.springframework\\.web\\.reactive.*"
-          - "io\\.projectreactor.*"
+          - "^(org\\.springframework\\.web\\.reactive):.*"
+          - "^(io\\.projectreactor):.*"
 
       - name: "Dependency Injection"
         patterns:
-          - "org\\.springframework\\.(beans|context).*"
+          - "^(org\\.springframework):(beans|context):.*"
 
       - name: "Template Engines"
         patterns:
-          - "org\\.springframework\\.web\\.servlet\\.view.*"
-          - "org\\.thymeleaf.*"
-
+          - "^(org\\.springframework\\.web\\.servlet\\.view):.*"
+          - "^(org\\.thymeleaf):.*"
 
   - name: "Serialization"
     subcategories:
       - name: "JSON/XML"
         patterns:
-          - "org\\.springframework\\.http\\.converter\\.(json|xml).*"
-          - "org\\.springframework:spring-(oxm).*"
-          - "org\\.springframework\\.ws:spring-xml.*"
+          - "^(org\\.springframework\\.http\\.converter)\\.(json|xml):.*"
+          - "^(org\\.springframework):spring-(oxm):.*"
+          - "^(org\\.springframework\\.ws):spring-xml:.*"
 
       - name: "Protocol Buffers & Binary Formats"
         patterns: []
@@ -105,48 +104,49 @@ categories:
     subcategories:
       - name: "Authentication"
         patterns:
-          - "org\\.springframework\\.security:spring-security-(oauth2|saml2|openid|cas|ldap|remoting|rsocket).*"
+          - "^(org\\.springframework\\.security):spring-security-(oauth2|oauth|kerberos|saml2|openid|cas|ldap|remoting|rsocket):.*"
+          - "^(org\\.springframework\\.security\\.oauth):.*"
 
       - name: "Security Layers"
         patterns:
-          - "org\\.springframework\\.security:spring-security-(acl|config|core|crypto|data|messaging|taglibs|test|web).*"
-          - "org\\.springframework\\.credhub:spring-credhub-core.*"
-          - "org\\.springframework\\.security:spring-security-aspects.*"
+          - "^(org\\.springframework\\.security):spring-security-(acl|config|core|crypto|data|messaging|taglibs|test|web):.*"
+          - "^(org\\.springframework\\.credhub):spring-credhub-core:.*"
+          - "^(org\\.springframework\\.security):spring-security-aspects:.*"
 
       - name: "Transport & Data Security"
         patterns:
-          - "org\\.springframework\\.security\\.(ssl|headers).*"
-          - "org\\.springframework\\.vault:spring-vault-core.*"
-          - "org\\.springframework\\.security:spring-security-rsa.*"
+          - "^(org\\.springframework\\.security):(ssl|headers):.*"
+          - "^(org\\.springframework\\.vault):spring-vault-core:.*"
+          - "^(org\\.springframework\\.security):spring-security-rsa:.*"
+
       - name: "Identity Management"
         patterns:
-          - "org\\.springframework\\.security\\.(ldap|saml).*"
+          - "^(org\\.springframework\\.security):(ldap|saml):.*"
 
   - name: "Observability & Reliability"
     subcategories:
       - name: "Logging & Monitoring"
         patterns:
-          - "org\\.springframework\\.boot\\.actuate.*"
+          - "^(org\\.springframework\\.boot\\.actuate):.*"
       - name: "Metrics & Distributed Tracing"
         patterns:
-          - "io\\.micrometer\\.spring.*"
-          - "org\\.springframework\\.cloud\\.sleuth.*"
+          - "^(io\\.micrometer\\.spring):.*"
+          - "^(org\\.springframework\\.cloud\\.sleuth):.*"
       - name: "Circuit Breakers & Rate Limiting"
         patterns:
-          - "org\\.springframework\\.cloud\\.(circuitbreaker|resilience4j).*"
-          - "org\\.springframework\\.retry.*"
+          - "^(org\\.springframework\\.cloud\\.(circuitbreaker|resilience4j)):[^:]*.*"
+          - "^(org\\.springframework\\.retry):.*"
 
   - name: "Development & Testing Tools"
     subcategories:
 
       - name: "Build Tools & Dependency Management"
         patterns:
-          - "org\\.springframework\\.boot\\.(gradle|maven).*"
+          - "^(org\\.springframework\\.boot\\.(gradle|maven)):[^:]*.*"
 
       - name: "Testing"
         patterns:
-          - "org\\.springframework:spring-test.*"
-          - "org\\.springframework:spring-mock.*"
+          - "^(org\\.springframework):spring-(test|mock):.*"
 
       - name: "Code Quality & Profiling"
         patterns: []
@@ -158,8 +158,6 @@ categories:
 
       - name: "General Purpose"
         patterns:
-          - "org\\.springframework\\.util.*"
-          - "org\\.springframework\\.session.*"
-          - "org\\.springframework\\.plugin:spring-plugin-.*"
-          - "org\\.springframework\\.data:spring-data-commons.*"
-
+          - "^(org\\.springframework\\.(util|session|shell|special)):.*"
+          - "^(org\\.springframework\\.plugin):spring-plugin-.*"
+          - "^(org\\.springframework\\.data):spring-data-commons:.*"

@@ -5,27 +5,30 @@ categories:
 
       - name: "Web Frameworks"
         patterns:
-          - "io\\.ktor.*"
-          - "gg\\.jte.*"
-          - "io\\.searchbox.*"
-          - "io\\.specto.*"
-          - "org\\.grails.*"
+          - "^io\\.ktor:.*"
+          - "^gg\\.jte:.*"
+          - "^io\\.searchbox:.*"
+          - "^io\\.specto:.*"
+          - "^org\\.grails:.*"
+          - "^(com\\.vaadin|org\\.vaadin):.*"
+          - "^io\\.dropwizard:dropwizard-.*"
 
       - name: "Reactive Libraries"
         patterns:
-          - "io\\.projectreactor.*"
-          - "io\\.projectreactor\\.(spring|kafka|netty|addons).*"
-          - "io\\.reactivex\\.(rxjava2|rxjava3).*"
-          - "io\\.vertx.*"
-          - "org\\.reactivesteams.*"
+          - "^io\\.projectreactor:.*"
+          - "^io\\.projectreactor\\.(spring|kafka|netty|addons):.*"
+          - "^org\\.projectreactor\\.[^:]+:.*"
+          - "^io\\.reactivex\\.(rxjava2|rxjava3):.*"
+          - "^io\\.vertx:.*"
+          - "^org\\.reactivesteams:.*"
 
       - name: "Dependency Injection"
         patterns:
-          - "io\\.micronaut:micronaut-spring"
+          - "^io\\.micronaut:micronaut-spring$"
 
       - name: "Template Engines"
         patterns:
-          - "com\\.querydsl.*"
-          - "org\\.freemarker.*"
-          - "org\\.thymeleaf\\.extras.*"
-          - "org\\.springdoc.*"
+          - "^com\\.querydsl:.*"
+          - "^org\\.freemarker:.*"
+          - "^org\\.thymeleaf\\.extras:.*"
+          - "^org\\.springdoc:.*"

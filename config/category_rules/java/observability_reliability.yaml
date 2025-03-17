@@ -20,7 +20,7 @@ categories:
           - "io\\.opentelemetry.*"
           - "io\\.opentracing\\.brave.*"
           - "io\\.prometheus.*"
-          - "io\\.zipkin\\.(brave|proto3|reporter2|zipkin2).*"
+          - "^io\\.zipkin.*"
           - "org\\.eclipse\\.jgit.*"
 
       - name: "Circuit Breakers & Rate Limiting"

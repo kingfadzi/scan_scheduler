@@ -38,3 +38,5 @@ categories:
           - "^(org\\.codehaus\\.)?groovy.*"
           - "^(org\\.codehaus\\.)?plexus.*"
           - "^org\\.codehaus(\\..+)?$"
+          - "org\\.eclipse\\.angus:.*"
+

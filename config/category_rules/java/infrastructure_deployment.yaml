@@ -4,26 +4,27 @@ categories:
 
       - name: "Containerization & Orchestration"
         patterns:
-          - "com\\.google\\.cloud.*"
-          - "io\\.dekorate.*"
-          - "io\\.fabric8\\.kubernetes.*"
-          - "io\\.kubernetes.*"
-          - "org\\.arquillian\\.cube.*"
+          - "^com\\.google\\.cloud:.*"
+          - "^io\\.dekorate:.*"
+          - "^io\\.fabric8\\.kubernetes:.*"
+          - "^io\\.kubernetes:.*"
+          - "^org\\.arquillian\\.cube:.*"
 
       - name: "Cloud Platforms"
         patterns:
-          - "com\\.(amazonaws|azure).*"
-          - "com\\.oracle\\.oci.*"
-          - "software\\.amazon\\.awssdk.*"
-          - "io\\.fabric8.*"
-          - "org\\.springframework\\.cloud.*"
+          - "^com\\.(amazonaws|azure):.*"
+          - "^com\\.oracle\\.oci:.*"
+          - "^software\\.amazon\\.awssdk:.*"
+          - "^io\\.fabric8:.*"
+          - "^org\\.springframework\\.cloud:.*"
+          - "^software\\.amazon\\.lambda:.*"
 
       - name: "Application Servers"
         patterns:
-          - "io\\.undertow.*"
-          - "org\\.eclipse\\.jetty.*"
-          - "org\\.glassfish\\.*"
-          - "^(org\\.codehaus\\.)?fabric3.*"
+          - "^io\\.undertow:.*"
+          - "^org\\.eclipse\\.jetty:.*"
+          - "^org\\.glassfish:.*"
+          - "^(org\\.codehaus\\.)?fabric3:.*"
+          - "^(com\\.oracle\\.)?(weblogic|weblogc):.*"
 
-      - name: "Virtualization & Hypervisors"
-        patterns: []
+

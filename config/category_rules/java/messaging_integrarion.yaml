@@ -21,6 +21,7 @@ categories:
           - "com\\.github\\.tomakehurst.*"
           - "com\\.netflix\\.eureka.*"
           - "com\\.netflix\\.ribbon.*"
+          - "com\\.netflix\\.graphql.*"
           - "com\\.squareup\\.okhttp3.*"
           - "com\\.sun\\.jersey.*"
           - "io\\.grpc.*"
@@ -28,11 +29,13 @@ categories:
           - "io\\.rsocket.*"
           - "io\\.rest-assured.*"
           - "io\\.springfox.*"
-          - "io\\.swagger\\.core.*"
+          - "^io\\.swagger\\.[^:]+:.*"
+          - "^org\\.jboss\\.resteasy:.*"
 
       - name: "Event Streaming"
         patterns:
           - "io\\.projectreactor\\.kafka.*"
+          - "^io\\.confluent:kafka-.*"
 
       - name: "Networking"
         patterns:

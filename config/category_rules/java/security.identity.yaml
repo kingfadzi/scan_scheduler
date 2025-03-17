@@ -8,6 +8,7 @@ categories:
           - "com\\.nimbusds.*"
           - "com\\.unboundid.*"
           - "org\\.crac.*"
+          - "^org\\.opensaml:.*"
 
       - name: "Security Layers"
         patterns:
