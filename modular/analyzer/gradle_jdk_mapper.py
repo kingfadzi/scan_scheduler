@@ -32,12 +32,15 @@ class GradlejdkAnalyzer(BaseLogger):
         self.jdk_mapping: Dict = {}
 
     def load_config(self) -> None:
-        """Load configuration files from package"""
+        """Load configuration files with validation"""
+        self.logger.debug("Loading configuration files")
         config_errors = []
+        
         if not self.GRADLE_RULES_FILE.exists():
-            config_errors.append(f"Missing rules file at {self.GRADLE_RULES_FILE}")
+            config_errors.append(f"Missing rules file: {self.GRADLE_RULES_FILE}")
         if not self.JDK_MAPPING_FILE.exists():
-            config_errors.append(f"Missing JDK mapping at {self.JDK_MAPPING_FILE}")
+            config_errors.append(f"Missing JDK mapping: {self.JDK_MAPPING_FILE}")
+            
         if config_errors:
             raise FileNotFoundError("\n".join(config_errors))
         
@@ -46,24 +49,30 @@ class GradlejdkAnalyzer(BaseLogger):
                 self.rules = yaml.safe_load(f)['extraction_rules']
             with open(self.JDK_MAPPING_FILE, 'r') as f:
                 self.jdk_mapping = yaml.safe_load(f)
+            self.logger.info("Configuration files loaded successfully")
         except Exception as e:
-            raise RuntimeError(f"Config load failed: {str(e)}")
+            self.logger.error("Config load failed", exc_info=True)
+            raise RuntimeError(f"Configuration error: {str(e)}")
 
     def find_gradle_files(self, root: Path) -> List[Path]:
-        """Locate Gradle configuration files with exclusion patterns"""
+        """Locate Gradle configuration files with detailed logging"""
+        self.logger.debug(f"Scanning for Gradle files in: {root}")
         gradle_files = []
         
         for path in root.rglob('*'):
             if any(part in self.EXCLUDE_DIRS for part in path.parts):
+                self.logger.debug(f"Skipping excluded path: {path}")
                 continue
+                
             if path.is_file() and self._is_gradle_file(path):
                 gradle_files.append(path)
-                self.logger.debug(f"Found Gradle file: {path.relative_to(root)}")
+                self.logger.info(f"Found Gradle file: {path.relative_to(root)}")
 
+        self.logger.info(f"Found {len(gradle_files)} Gradle configuration files")
         return sorted(gradle_files, key=lambda p: 0 if 'wrapper' in p.parts else 1)
 
     def _is_gradle_file(self, path: Path) -> bool:
-        """Check if file is a Gradle configuration file"""
+        """Identify Gradle configuration files"""
         return (
             path.parts[-3:] == ('gradle', 'wrapper', 'gradle-wrapper.properties') or
             path.name in {'build.gradle', 'build.gradle.kts',
@@ -72,28 +81,41 @@ class GradlejdkAnalyzer(BaseLogger):
         )
 
     def extract_version(self, content: str, pattern: str) -> Optional[str]:
-        """Extract version using regex pattern"""
+        """Extract Gradle version with regex"""
+        self.logger.debug(f"Applying version pattern: {pattern}")
         try:
             if match := re.search(pattern, content, re.MULTILINE):
                 version = match.group(1).split('-')[0]
-                self.logger.debug(f"Matched version: {version}")
+                self.logger.info(f"Version match found: {version}")
                 return version
+            self.logger.debug("No version match in content")
         except Exception as e:
-            self.logger.error(f"Regex error: {str(e)}")
+            self.logger.error(f"Regex error: {str(e)}", exc_info=True)
         return None
 
     def find_jdk_version(self, gradle_version: str) -> str:
-        """Determine compatible JDK version using hierarchical lookup"""
+        """JDK version lookup with detailed tracing"""
+        self.logger.info(f"Starting JDK lookup for Gradle {gradle_version}")
         parts = gradle_version.split('.')
+        lookup_path = []
+        
         while parts:
-            lookup = '.'.join(parts)
-            if jdk := self.jdk_mapping.get(lookup):
+            lookup_version = '.'.join(parts)
+            lookup_path.append(lookup_version)
+            self.logger.debug(f"Checking JDK mapping for: {lookup_version}")
+            
+            if jdk := self.jdk_mapping.get(lookup_version):
+                self.logger.info(f"JDK match found: {jdk} for {lookup_version}")
                 return jdk
             parts.pop()
+        
+        self.logger.warning(f"No JDK mapping found for Gradle {gradle_version}")
+        self.logger.debug(f"Checked versions: {', '.join(lookup_path)}")
         return "JDK version unknown"
 
     def _persist_results(self, session, repo, gradle_version: str, java_version: str) -> None:
-        """Persist results to database with UPSERT operation"""
+        """Database persistence with transaction logging"""
+        self.logger.info(f"Persisting Gradle {gradle_version} with JDK {java_version}")
         try:
             stmt = insert(BuildTool).values(
                 repo_id=repo.repo_id,
@@ -109,64 +131,77 @@ class GradlejdkAnalyzer(BaseLogger):
             )
             session.execute(stmt)
             session.commit()
-            self.logger.info(f"Persisted results for {repo.repo_slug}")
+            self.logger.info("Successfully persisted results to database")
         except Exception as e:
-            self.logger.exception(f"Persistence failed: {e}")
-            raise
+            self.logger.error("Database operation failed", exc_info=True)
+            session.rollback()
+            raise RuntimeError(f"Persistence error: {str(e)}") from e
 
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        """Main analysis workflow with execution tracking"""
+        """Main analysis workflow with comprehensive logging"""
+        self.logger.info(f"Starting analysis for repository: {repo_dir}")
         repo_path = Path(repo_dir).resolve()
-        if not repo_path.exists() or not repo_path.is_dir():
-            raise ValueError(f"Invalid repository path: {repo_path}")
-
-        self.load_config()
-        found_files = self.find_gradle_files(repo_path)
         
-        if not found_files:
-            self.logger.info("No Gradle configuration files found - not a Gradle project")
+        try:
+            if not repo_path.exists():
+                raise ValueError(f"Path does not exist: {repo_path}")
+            if not repo_path.is_dir():
+                raise ValueError(f"Not a directory: {repo_path}")
+                
+            self.load_config()
+            found_files = self.find_gradle_files(repo_path)
+            
+            if not found_files:
+                self.logger.warning("No Gradle configuration files found")
+                return json.dumps({
+                    "gradle_project": False,
+                    "repo_id": repo.repo_id,
+                    "status": "success"
+                }, ensure_ascii=False)
+
+            gradle_version = None
+            for file in found_files:
+                try:
+                    content = file.read_text(encoding='utf-8')
+                    self.logger.debug(f"Analyzing file: {file.relative_to(repo_path)}")
+                    
+                    for rule in self.rules:
+                        if file.match(rule['file']):
+                            if version := self.extract_version(content, rule['regex']):
+                                gradle_version = version
+                                self.logger.info(f"Final Gradle version: {gradle_version}")
+                                break
+                    if gradle_version:
+                        break
+                except Exception as e:
+                    self.logger.error(f"File analysis failed: {file}", exc_info=True)
+                    continue
+
+            if not gradle_version:
+                error_msg = [
+                    "Gradle version detection failed in:",
+                    *[f"  - {f.relative_to(repo_path)}" for f in found_files]
+                raise RuntimeError("\n".join(error_msg))
+            
+            jdk_version = self.find_jdk_version(gradle_version)
+            self.logger.info(f"Final JDK determination: {jdk_version}")
+            self._persist_results(session, repo, gradle_version, jdk_version)
+            
             return json.dumps({
-                "gradle_project": False,
+                "gradle_project": True,
+                "gradle_version": gradle_version,
+                "jdk_version": jdk_version,
                 "repo_id": repo.repo_id,
                 "status": "success"
             }, ensure_ascii=False)
-
-        gradle_version = None
-        for file in found_files:
-            try:
-                content = file.read_text(encoding='utf-8')
-                self.logger.debug(f"Processing: {file.relative_to(repo_path)}")
-
-                for rule in self.rules:
-                    if file.match(rule['file']):
-                        if version := self.extract_version(content, rule['regex']):
-                            gradle_version = version
-                            break
-                if gradle_version:
-                    break
-            except Exception as e:
-                self.logger.error(f"File error: {str(e)}")
-
-        if not gradle_version:
-            error_msg = [
-                "Gradle version detection failed in:",
-                *[f"  - {f.relative_to(repo_path)}" for f in found_files]
-            ]
-            raise RuntimeError("\n".join(error_msg))
-        
-        jdk_version = self.find_jdk_version(gradle_version)
-        self._persist_results(session, repo, gradle_version, jdk_version)
-        
-        return json.dumps({
-            "gradle_project": True,
-            "gradle_version": gradle_version,
-            "jdk_version": jdk_version,
-            "repo_id": repo.repo_id,
-            "status": "success"
-        }, ensure_ascii=False)
+            
+        except Exception as e:
+            self.logger.error("Analysis failed", exc_info=True)
+            raise
 
 if __name__ == "__main__":
+    # Standalone execution configuration
     repo_dir = "/tmp/gradle-example"
     repo_id = "example-org/gradle-example"
     repo_slug = "gradle-example"
@@ -177,6 +212,7 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
 
+    # Initialize components
     repo = MockRepo(repo_id, repo_slug)
     session = Session()
     analyzer = GradlejdkAnalyzer()
@@ -192,14 +228,16 @@ if __name__ == "__main__":
         result = json.loads(result_json)
         
         if result['gradle_project']:
-            analyzer.logger.info(f"Gradle analysis successful:\n"
-                               f"• Version: {result['gradle_version']}\n"
-                               f"• JDK: {result['jdk_version']}")
+            analyzer.logger.info("\nGradle Analysis Results:\n"
+                               f"│ Gradle Version: {result['gradle_version']}\n"
+                               f"│ Required JDK:   {result['jdk_version']}\n"
+                               f"└ Repository ID:  {result['repo_id']}")
         else:
-            analyzer.logger.info("No Gradle project detected")
+            analyzer.logger.info("No Gradle project detected in repository")
             
     except Exception as e:
-        analyzer.logger.error(f"Analysis failed: {str(e)}")
+        analyzer.logger.error(f"Analysis terminated with error: {str(e)}")
         session.rollback()
     finally:
         session.close()
+        analyzer.logger.info("Analysis session closed")
