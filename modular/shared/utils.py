@@ -200,28 +200,28 @@ class Utils(BaseLogger):
     def detect_java_build_tool(self, repo_dir):
         EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings'}
         gradle_files = {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"}
-        
+
         maven_pom = False
         found_gradle_files = set()
-        
+
         repo_path = Path(repo_dir).resolve()
-        
+
         for path in repo_path.rglob('*'):
             if any(part in EXCLUDE_DIRS for part in path.parts):
                 continue
-                
+
             if path.is_file():
                 if path.name == "pom.xml":
                     maven_pom = True
                     self.logger.debug(f"Found Maven POM at: {path.relative_to(repo_path)}")
-                    
+
                 if path.name in gradle_files:
                     found_gradle_files.add(path.name)
                     self.logger.debug(f"Found Gradle file at: {path.relative_to(repo_path)}")
-    
+
         gradle_found = len(found_gradle_files) > 0
         conflict = maven_pom and gradle_found
-        
+
         if conflict:
             self.logger.warning(
                 f"Build tool conflict detected in {repo_path.name}\n"
@@ -238,7 +238,7 @@ class Utils(BaseLogger):
                 f"Found files: {', '.join(found_gradle_files)}"
             )
             return "Gradle"
-        
+
         self.logger.debug(
             f"No Java build system detected in {repo_path.name}\n"
             f"Searched paths: {repo_path}\n"
@@ -246,7 +246,7 @@ class Utils(BaseLogger):
         )
         return None
 
-    
+
 def main():
 
     example_payload = {
@@ -266,7 +266,7 @@ def main():
 
     for idx, partition in enumerate(partitions):
         utils.logger.info(f"Processing partition {idx + 1}/{len(partitions)} with {len(partition)} repos")
-        for repo in partition[:3]:  # Print first 3 repos of each partition as a sample
+        for repo in partition[:3]:
             utils.logger.info(f"Sample repo slug: {repo.repo_slug}")
 
 if __name__ == "__main__":

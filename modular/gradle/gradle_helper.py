@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pathlib import Path
 import re
 import logging
@@ -10,8 +9,8 @@ class GradleHelper(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
     DEPENDENCY_PATTERNS = [
         r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s+['\"](.*?:.*?:.*?)['\"]",
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s*group:\s*['\"](.*?)['\"],\s*name:\s*['\"](.*?)['\"],\s*version:\s*['\"](.*?)['\"]",
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation)[\s\n]*\"(.*?)\"[\s\n]*"
+        r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s*group:\s*['\"](.*?)['\"],\s*name:\s*['\"](.*?)['\"],\s*version:\s*['\"](.*?)['\"]",
+        r"(?:implementation|api|compile|runtimeOnly|testImplementation)[\s\n]*\"(.*?)\""
     ]
 
     def __init__(self, logger=None):
@@ -38,7 +37,7 @@ class GradleHelper(BaseLogger):
         build_files = []
         settings_files = list(root.glob("settings.gradle*"))
         module_paths = self._parse_settings_files(settings_files, root)
-        
+
         search_paths = [root] + module_paths
         for path in search_paths:
             for build_file in path.glob("build.gradle*"):
@@ -51,9 +50,9 @@ class GradleHelper(BaseLogger):
         for sf in settings_files:
             try:
                 content = sf.read_text(encoding='utf-8')
-                includes = re.findall(r"include['\"](.*?)['\"]", content)
+                includes = re.findall(r"include\s*['\"](.*?)['\"]", content, re.IGNORECASE)
                 includes += re.findall(r"include\s+['\"](.*?)['\"]", content)
-                
+
                 for module_path in includes:
                     fs_path = module_path.replace(':', '/').replace('.', '/')
                     full_path = root / fs_path
@@ -130,11 +129,11 @@ if __name__ == "__main__":
 
     helper = GradleHelper()
     helper.logger.setLevel(logging.INFO)
-    
+
     # Test with a sample repository
     repo = MockRepo("test-org/example")
     dependencies = helper.process_repo("/tmp/gradle-example", repo)
-    
+
     print(f"Found {len(dependencies)} Gradle dependencies:")
     for dep in dependencies[:3]:
         print(f"{dep.name}@{dep.version}")
