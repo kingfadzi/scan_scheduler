@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = "/tmp/VulnerableApp"
+    repo_dir = "/tmp/gradle-example"
     session = Session()
 
     try:
