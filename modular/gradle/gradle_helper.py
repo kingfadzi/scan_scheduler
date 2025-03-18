@@ -133,7 +133,7 @@ if __name__ == "__main__":
     
     # Test with a sample repository
     repo = MockRepo("test-org/example")
-    dependencies = helper.process_repo("/path/to/gradle/project", repo)
+    dependencies = helper.process_repo("/tmp/gradle-example", repo)
     
     print(f"Found {len(dependencies)} Gradle dependencies:")
     for dep in dependencies[:3]:
