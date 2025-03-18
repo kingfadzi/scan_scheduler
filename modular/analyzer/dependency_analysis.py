@@ -37,54 +37,41 @@ class DependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
-        if not repo_languages:
-            self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
-            return f"skipped: No detected languages for repo {repo.repo_id}."
+        main_language = self.utils.get_repo_main_language(repo.repo_id, session)
+        if not main_language:
+            self.logger.warning(f"No main language detected for repo_id: {repo.repo_id}. Skipping dependency analysis.")
+            return f"skipped: No main language detected for repo {repo.repo_id}."
 
         dependencies = []
 
         try:
-            if "Python" in repo_languages:
-                self.logger.info(f"Detected Python in repo_id: {repo.repo_id}. Running Python dependency analysis.")
+            if main_language == "Python":
+                self.logger.info(f"Main language is Python for repo_id: {repo.repo_id}. Running dependency analysis.")
                 dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
 
-            if "JavaScript" in repo_languages or "TypeScript" in repo_languages:
-                self.logger.info(f"Detected JavaScript/TypeScript in repo_id: {repo.repo_id}. Running JavaScript dependency analysis.")
+            elif main_language in ["JavaScript", "TypeScript"]:
+                self.logger.info(f"Main language is {main_language} for repo_id: {repo.repo_id}. Running analysis.")
                 dependencies.extend(self.js_helper.process_repo(repo_dir, repo))
 
-            if "Go" in repo_languages:
-                self.logger.info(f"Detected Go in repo_id: {repo.repo_id}. Running Go dependency analysis.")
+            elif main_language == "Go":
+                self.logger.info(f"Main language is Go for repo_id: {repo.repo_id}. Running analysis.")
                 dependencies.extend(self.go_helper.process_repo(repo_dir, repo))
 
-            if "Java" in repo_languages:
-                self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
+            elif main_language == "Java":
+                self.logger.info(f"Main language is Java for repo_id: {repo.repo_id}. Identifying build system.")
                 build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
-                    self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
                 elif build_tool == "Gradle":
-                    self.logger.info(f"Processing Gradle project in {repo_dir}")
                     dependencies.extend(self.gradle_helper.process_repo(repo_dir=repo_dir, repo=repo))
-                else:
-                    self.logger.warning("No supported Java build system detected.")
 
             self.persist_dependencies(dependencies, session)
-
-            #return f"Dependencies: {dependencies}"
             return f"Dependencies: {len(dependencies)}"
 
-
         except Exception as e:
-            self.logger.error(f"Error during dependency analysis: {e}")
-            raise
+            self.logger.error(f"Error processing {main_language} dependencies: {str(e)}")
+            return f"error: {str(e)}"
 
-        except FileNotFoundError as e:
-            self.logger.error(str(e))
-            return f"error: {str(e)}"
-        except Exception as e:
-            self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
-            return f"error: {str(e)}"
 
 
     def persist_dependencies(self, dependencies, session):

@@ -5,7 +5,7 @@ import os
 from prefect.context import get_run_context
 from sqlalchemy import text
 from config.config import Config
-from modular.shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis
+from modular.shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics
 from modular.shared.query_builder import build_query
 import logging
 import numpy as np
@@ -196,6 +196,20 @@ class Utils(BaseLogger):
 
         self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return []
+
+    def get_repo_main_language(self, repo_id: str, session) -> str | None:
+
+        try:
+            return (
+                session.query(CombinedRepoMetrics.main_language)
+                .filter(CombinedRepoMetrics.repo_id == repo_id)
+                .scalar()
+            )
+        except Exception as e:
+            self.logger.error(f"Error getting main language for repo: {e}")
+        finally:
+            session.close()
+        return None
 
     def detect_java_build_tool(self, repo_dir):
         EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings'}
