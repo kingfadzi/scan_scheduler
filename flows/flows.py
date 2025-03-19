@@ -1,4 +1,5 @@
-from prefect import flow, get_run_logger, get_run_context, unmapped
+from prefect import flow, get_run_logger, unmapped
+from prefect.context import get_run_context
 from modular.shared.models import Session
 from datetime import datetime
 from flows.tasks import (
