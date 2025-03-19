@@ -2,8 +2,8 @@ import asyncio
 import argparse
 import logging
 from datetime import datetime
-from prefect.client.orchestration import get_client
-from prefect.filters import FlowRunFilter, TaskRunFilter
+from prefect.client import get_client
+from prefect.orion.schemas.filters import FlowRunFilter, TaskRunFilter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
