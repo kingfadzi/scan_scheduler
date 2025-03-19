@@ -14,6 +14,7 @@ async def get_parent_run_id(flow_run_name):
         try:
             flow_runs = await client.read_flow_runs(
                 filter=FlowRunFilter(name={"any_": [flow_run_name]})
+            )
             
             if not flow_runs:
                 logging.error(f"No flow runs found with name: {flow_run_name}")
@@ -39,7 +40,8 @@ async def get_subflow_count(parent_run_id):
         try:
             # Fetch tasks from the parent flow run
             task_runs = await client.read_task_runs(
-                filter=TaskRunFilter(flow_run_id={"any_": [parent_run_id]}))
+                filter=TaskRunFilter(flow_run_id={"any_": [parent_run_id]})
+            )
             
             parent_task_ids = {task.id for task in task_runs}
             logging.info(f"Parent tasks: {len(parent_task_ids)}")
