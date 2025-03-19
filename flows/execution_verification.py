@@ -22,13 +22,16 @@ async def get_parent_run_id(flow_run_name):
         return parent_run_id
 
 async def get_subflow_count(parent_run_id):
-    """Count the total number of subflows linked to the parent flow run, regardless of state."""
+    """Count subflows triggered by tasks in the parent flow run."""
     async with get_client() as client:
-        flow_runs = await client.read_flow_runs()
-        logging.debug(f"Total flow runs retrieved (again): {len(flow_runs)}")
+        # Fetch all task runs for the parent flow
+        task_runs = await client.read_task_runs()
+        parent_task_ids = {task.id for task in task_runs if task.flow_run_id == parent_run_id}
+        logging.info(f"Identified {len(parent_task_ids)} tasks in parent flow run.")
 
-        # Filter flow runs where parent_id matches
-        subflows = [run for run in flow_runs if run.parent_id == parent_run_id]
+        # Fetch all flow runs and check which were triggered by tasks from the parent
+        flow_runs = await client.read_flow_runs()
+        subflows = [run for run in flow_runs if run.triggering_task_run_id in parent_task_ids]
 
         logging.info(f"Detected {len(subflows)} subflows for parent flow run ID {parent_run_id}")
 
