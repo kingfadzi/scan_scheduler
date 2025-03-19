@@ -9,15 +9,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 async def get_parent_run_id(flow_run_name):
     """Fetch the flow run ID for the given flow run name."""
     async with get_client() as client:
-        # Retrieve all flow runs
         flow_runs = await client.read_flow_runs()
-        
-        # Log available flow runs
         logging.debug(f"Total flow runs retrieved: {len(flow_runs)}")
-        
-        # Filter flow runs by name
-        matching_runs = [run for run in flow_runs if run.name == flow_run_name]
 
+        matching_runs = [run for run in flow_runs if run.name == flow_run_name]
         if not matching_runs:
             logging.error(f"No flow runs found with name: {flow_run_name}")
             return None
@@ -27,27 +22,18 @@ async def get_parent_run_id(flow_run_name):
         return parent_run_id
 
 async def get_subflow_count(parent_run_id):
-    """Count the total number of subflows based on parent task runs."""
+    """Count the total number of subflows linked to the parent flow run, regardless of state."""
     async with get_client() as client:
-        # Fetch all task runs
-        task_runs = await client.read_task_runs()
-        logging.debug(f"Total task runs retrieved: {len(task_runs)}")
-
-        # Filter task runs belonging to the parent flow run
-        parent_task_run_ids = {task.id for task in task_runs if task.flow_run_id == parent_run_id}
-        logging.info(f"Task runs found for parent flow run ID {parent_run_id}: {parent_task_run_ids}")
-
-        # Fetch all flow runs
         flow_runs = await client.read_flow_runs()
         logging.debug(f"Total flow runs retrieved (again): {len(flow_runs)}")
 
-        # Filter for subflows
-        subflows = [run for run in flow_runs if run.parent_task_run_id in parent_task_run_ids]
+        # Filter flow runs where parent_id matches
+        subflows = [run for run in flow_runs if run.parent_id == parent_run_id]
+
         logging.info(f"Detected {len(subflows)} subflows for parent flow run ID {parent_run_id}")
 
-        # Log details of detected subflows
         for subflow in subflows:
-            logging.debug(f"Subflow detected - ID: {subflow.id}, Name: {subflow.name}")
+            logging.debug(f"Subflow detected - ID: {subflow.id}, Name: {subflow.name}, State: {subflow.state}")
 
         return len(subflows)
 
