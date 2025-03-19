@@ -12,8 +12,7 @@ async def get_parent_run_id(flow_run_name):
     """Fetch the most recent flow run ID for the given name."""
     async with get_client() as client:
         try:
-            flow_runs = await client.read_flow_runs(  # FIXED HERE
-                filter=FlowRunFilter(name={"any_": [flow_run_name]})
+            flow_runs = await client.read_flow_runs(filter=FlowRunFilter(name={"any_": [flow_run_name]})
             
             if not flow_runs:
                 logging.error(f"No flow runs found with name: {flow_run_name}")
