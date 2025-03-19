@@ -1,7 +1,6 @@
 import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-
 from flows.flows import main_flow, single_repo_processing_flow
 from modular.analyzer.dependency_analysis import DependencyAnalyzer
 from modular.analyzer.kantra_analysis import KantraAnalyzer
