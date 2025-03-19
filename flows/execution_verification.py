@@ -18,8 +18,10 @@ async def get_parent_run_id(flow_run_name):
 async def count_subflows(parent_run_id):
     """Count the total number of subflows for the given parent flow run ID."""
     async with get_client() as client:
-        flow_runs = await client.read_flow_runs(parent_flow_run_id=parent_run_id)
-        return len(flow_runs)
+        # Retrieve all flow runs and filter those that have the given parent_flow_run_id
+        flow_runs = await client.read_flow_runs()
+        subflows = [run for run in flow_runs if run.parent_flow_run_id == parent_run_id]
+        return len(subflows)
 
 async def main(flow_run_name):
     parent_run_id = await get_parent_run_id(flow_run_name)
