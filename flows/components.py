@@ -1,7 +1,6 @@
 import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-from flows.flows import main_flow, single_repo_processing_flow
 from modular.analyzer.dependency_analysis import DependencyAnalyzer
 from modular.analyzer.kantra_analysis import KantraAnalyzer
 from modular.analyzer.grype_analysis import GrypeAnalyzer
@@ -12,6 +11,10 @@ from modular.analyzer.gradle_jdk_mapper import GradlejdkAnalyzer
 from modular.analyzer.category_analysis import CategoryAnalyzer
 from config.config import Config
 from modular.shared.utils import Utils
+from coomon_flows import (
+    main_flow,
+    single_repo_processing_flow
+)
 
 
 @flow(flow_run_name=Utils.generate_main_flow_run_name)

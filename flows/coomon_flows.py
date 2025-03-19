@@ -2,7 +2,7 @@ from prefect import flow, get_run_logger, unmapped
 from prefect.context import get_run_context
 from modular.shared.models import Session
 from datetime import datetime
-from tasks import (
+from common_tasks import (
     clone_repository_task,
     cleanup_repo_task,
     update_status_task,

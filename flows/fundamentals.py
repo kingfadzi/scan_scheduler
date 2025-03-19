@@ -8,7 +8,7 @@ from modular.analyzer.go_enry_analysis import GoEnryAnalyzer
 from modular.analyzer.lizard_analysis import LizardAnalyzer
 from modular.analyzer.cloc_analysis import ClocAnalyzer
 from modular.shared.utils import Utils
-from flows.tasks import (
+from flows.common_tasks import (
     generic_main_flow,
     generic_single_repo_processing_flow
 )
