@@ -1,4 +1,4 @@
-from prefect import flow, get_run_logger, unmapped
+from prefect import flow, task, get_run_logger, unmapped
 from prefect.context import get_run_context
 from modular.shared.models import Session
 from datetime import datetime
@@ -8,45 +8,8 @@ from common_tasks import (
     update_status_task,
     start_task,
     fetch_repositories_task,
-    refresh_views_task)
-
-
-# Main flow using native mapping with concurrency control
-@flow(name="Main Flow with Mapping")
-def main_flow(payload: dict,
-              batch_size: int,
-              sub_dir: str,
-              concurrency_limit: int,
-              sub_tasks: list,
-              flow_prefix: str):
-    logger = get_run_logger()
-
-    # Step 1: Start the flow.
-    start_task(flow_prefix)
-
-    # Step 2: Fetch unique repositories.
-    repos = fetch_repositories_task(payload, batch_size)
-    logger.info(f"[{flow_prefix}] Processing {len(repos)} repositories.")
-
-    # Step 3: Retrieve run_id from Prefect context.
-    run_ctx = get_run_context()
-    run_id = str(run_ctx.flow_run.id) if run_ctx and run_ctx.flow_run else "default_run_id"
-
-    # Step 4: Map the single repository subflow over each repo.
-    # The max_parallelism parameter limits the number of concurrent subflows.
-    single_repo_processing_flow.map(
-        repo=repos,
-        run_id=unmapped(run_id),
-        sub_dir=unmapped(sub_dir),
-        sub_tasks=unmapped(sub_tasks),
-        flow_prefix=unmapped(flow_prefix),
-        max_parallelism=concurrency_limit
-    )
-
-    # Step 5: Refresh views after processing.
-    refresh_views_task(flow_prefix)
-    logger.info(f"[{flow_prefix}] Finished flow")
-
+    refresh_views_task
+)
 
 # Subflow for processing a single repository
 @flow(name="Single Repo Processing Flow")
@@ -72,3 +35,46 @@ def single_repo_processing_flow(repo, run_id, sub_dir, sub_tasks, flow_prefix):
             if repo_dir:
                 cleanup_repo_task(repo_dir)
         update_status_task(attached_repo, run_id, session)
+
+# Wrapper task to run the subflow (this enables mapping)
+@task(name="Run Single Repo Flow Task")
+def run_single_repo_flow_task(repo, run_id, sub_dir, sub_tasks, flow_prefix):
+    return single_repo_processing_flow(repo, run_id, sub_dir, sub_tasks, flow_prefix)
+
+# Main flow using native mapping
+@flow(name="Main Flow with Mapping")
+def main_flow(payload: dict,
+              batch_size: int,
+              sub_dir: str,
+              concurrency_limit: int,
+              sub_tasks: list,
+              flow_prefix: str):
+    logger = get_run_logger()
+
+    # Step 1: Start the flow.
+    start_task(flow_prefix)
+
+    # Step 2: Fetch unique repositories.
+    repos = fetch_repositories_task(payload, batch_size)
+    logger.info(f"[{flow_prefix}] Processing {len(repos)} repositories.")
+
+    # Step 3: Retrieve run_id from Prefect context.
+    run_ctx = get_run_context()
+    run_id = str(run_ctx.flow_run.id) if run_ctx and run_ctx.flow_run else "default_run_id"
+
+    # Step 4: Map the wrapper task over each repository.
+    # NOTE: The max_parallelism parameter is not supported in Prefect's task mapping.
+    # To enforce a concurrency limit, configure your task runner accordingly.
+    # For example, when running this flow with a DaskTaskRunner, you can set the number of workers:
+    #   @flow(task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": concurrency_limit}))
+    run_single_repo_flow_task.map(
+        repo=repos,
+        run_id=unmapped(run_id),
+        sub_dir=unmapped(sub_dir),
+        sub_tasks=unmapped(sub_tasks),
+        flow_prefix=unmapped(flow_prefix)
+    )
+
+    # Step 5: Refresh views after processing.
+    refresh_views_task(flow_prefix)
+    logger.info(f"[{flow_prefix}] Finished flow")

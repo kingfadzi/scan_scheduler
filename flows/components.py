@@ -12,24 +12,13 @@ from modular.analyzer.category_analysis import CategoryAnalyzer
 from config.config import Config
 from modular.shared.utils import Utils
 from coomon_flows import (
-    main_flow,
     single_repo_processing_flow
 )
 
+from simple_flow import main_flow
 
 @flow(flow_run_name=Utils.generate_main_flow_run_name)
 async def component_patterns_flow(payload: dict):
-    await main_flow(
-        payload=payload,
-        single_repo_processing_flow=component_patterns_repo_processing_flow,
-        flow_prefix="Component Patterns",
-        batch_size=1000,
-        concurrency_limit=10
-    )
-
-
-@flow(flow_run_name=Utils.generate_repo_flow_run_name)
-def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
 
     sub_tasks = [
         run_dependency_analysis_task,
@@ -40,13 +29,15 @@ def component_patterns_repo_processing_flow(repo, repo_slug, run_id):
         run_xeol_analysis_task,
     ]
 
-    single_repo_processing_flow(
-        repo=repo,
-        run_id=run_id,
+    await main_flow(
+        batch_size=1000,
+        sub_dir="components",
         sub_tasks=sub_tasks,
-        sub_dir="analyze_components",
-        flow_prefix="Component Patterns"
+        flow_prefix="Component Patterns",
+        payload=payload
     )
+
+
 
 @task(name="Syft Analysis Task", cache_policy=NO_CACHE)
 def run_syft_analysis_task(repo_dir, repo, session, run_id):
@@ -162,10 +153,9 @@ if __name__ == "__main__":
     example_payload = {
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
-           # "activity_status": ["ACTIVE"],
-           # "main_language": ["Java"]
+            # "activity_status": ["ACTIVE"],
+            # "main_language": ["Java"]
         }
     }
     # Run the asynchronous main flow
     asyncio.run(component_patterns_flow(payload=example_payload))
-

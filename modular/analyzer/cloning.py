@@ -20,21 +20,20 @@ class CloningAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Clone Repository")
-    def clone_repository(self, repo, timeout_seconds=300, run_id=None, sub_dir=None):
-        self.logger.info(f"Starting cloning for repo: {repo.repo_id}")
+    def clone_repository(self, repo: dict, timeout_seconds=300, run_id=None, sub_dir=None):
+        self.logger.info(f"Starting cloning for repo: {repo['repo_id']}")
 
         base_dir = os.path.abspath(Config.CLONED_REPOSITORIES_DIR)
 
-        repo_dir = os.path.join(base_dir, repo.repo_slug)
+        repo_dir = os.path.join(base_dir, repo["repo_slug"])
 
         if sub_dir:
-            repo_dir = os.path.join(base_dir, sub_dir, repo.repo_slug)
+            repo_dir = os.path.join(base_dir, sub_dir, repo["repo_slug"])
 
         os.makedirs(os.path.dirname(repo_dir), exist_ok=True)
 
-
         clone_url = self.ensure_ssh_url(repo)
-        repo.clone_url_ssh = clone_url
+        repo["clone_url_ssh"] = clone_url
 
         with clone_semaphore:
             try:
@@ -56,27 +55,28 @@ class CloningAnalyzer(BaseLogger):
                     text=True,
                 )
                 self.logger.info(
-                    f"Successfully cloned repository '{repo.repo_name}' to {repo_dir}."
+                    f"Successfully cloned repository '{repo['repo_name']}' to {repo_dir}."
                 )
                 return repo_dir
             except subprocess.TimeoutExpired:
                 error_msg = (
-                    f"Cloning repository {repo.repo_name} took too long (>{Config.DEFAULT_PROCESS_TIMEOUT}s)."
+                    f"Cloning repository {repo['repo_name']} took too long (>{Config.DEFAULT_PROCESS_TIMEOUT}s)."
                 )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
             except subprocess.CalledProcessError as e:
                 error_msg = (
-                    f"Error cloning repository {repo.repo_name}. "
+                    f"Error cloning repository {repo['repo_name']}. "
                     f"Return code: {e.returncode}. Stderr: {e.stderr.strip()}"
                 )
                 self.logger.error(error_msg)
                 raise RuntimeError(error_msg)
 
 
-    def ensure_ssh_url(self, repo):
-        clone_url_ssh = repo.clone_url_ssh
-        host_name = repo.host_name
+
+    def ensure_ssh_url(self, repo: dict):
+        clone_url_ssh = repo["clone_url_ssh"]
+        host_name = repo["host_name"]
 
         self.logger.info(f"Processing URL: {clone_url_ssh}")
 
