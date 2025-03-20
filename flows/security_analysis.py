@@ -13,7 +13,7 @@ def security_scan(repo: dict, run_id: str):
 
 
 security_analysis_flow = create_analysis_flow(
-    flow_name="Security Analysis Flow",
+    flow_name="security_analysis_flow",
     default_sub_tasks=[security_scan],
     default_sub_dir="security_scans",
     default_flow_prefix="SEC",
