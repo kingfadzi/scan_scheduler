@@ -17,8 +17,7 @@ DEPLOYMENTS = [
     ("flows/fundamentals.py:fundamental_metrics_flow", "fundamentals", "fundamentals-pool"),
     ("flows/components.py:component_patterns_flow", "component-patterns", "components-pool"),
     ("flows/vulnerabilities.py:vulnerabilities_flow", "vulnerabilities", "vulnerabilities-pool"),
-    ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool"),
-    ("flows/security_analysis.py:security_analysis_flow", "security-analysis", "components-pool")
+    ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool")
 ]
 
 def create_deployments():
