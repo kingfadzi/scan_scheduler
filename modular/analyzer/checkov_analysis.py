@@ -18,22 +18,22 @@ class CheckovAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
         self.logger.info(
-            f"Starting Checkov analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})."
+            f"Starting Checkov analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']})."
         )
         if not os.path.exists(repo_dir):
             raise FileNotFoundError(f"Repository directory does not exist: {repo_dir}")
 
         results_file = self._run_checkov_command(repo_dir, repo)
-        return self._process_checkov_results(repo, session, results_file)
+        return self._process_checkov_results(repo, results_file)
 
     def _run_checkov_command(self, repo_dir, repo):
         output_dir = os.path.join(repo_dir, "checkov_results")
         os.makedirs(output_dir, exist_ok=True)
         error_log_file = os.path.join(output_dir, "checkov_errors.log")
         try:
-            self.logger.info(f"Executing Checkov command for repo_id: {repo.repo_id}")
+            self.logger.info(f"Executing Checkov command for repo_id: {repo['repo_id']}")
             with open(error_log_file, "w") as error_log:
                 run(
                     [
@@ -54,11 +54,11 @@ class CheckovAnalyzer(BaseLogger):
                     timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
         except TimeoutExpired as e:
-            msg = f"Checkov command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            msg = f"Checkov command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(msg)
             raise RuntimeError(msg) from e
         except Exception as e:
-            msg = f"Error executing Checkov command for repo_id: {repo.repo_id}. Error: {str(e)}"
+            msg = f"Error executing Checkov command for repo_id: {repo['repo_id']}. Error: {str(e)}"
             self.logger.error(msg)
             raise RuntimeError(msg) from e
 
@@ -70,27 +70,29 @@ class CheckovAnalyzer(BaseLogger):
         return message
 
 
-    def _process_checkov_results(self, repo, session, results_file):
+    def _process_checkov_results(self, repo, results_file):
         try:
-            self.parse_and_process_checkov_output(repo.repo_id, results_file, session)
+
+            self.parse_and_process_checkov_output(repo['repo_id'], results_file)
             with open(results_file, "r") as file:
                 return file.read()
         except json.JSONDecodeError as e:
-            msg = f"Failed to parse Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
+            msg = f"Failed to parse Checkov output for repo_id: {repo['repo_id']}. Error: {str(e)}"
             self.logger.error(msg)
             raise ValueError(msg) from e
         except Exception as e:
-            msg = f"Error processing Checkov output for repo_id: {repo.repo_id}. Error: {str(e)}"
+            msg = f"Error processing Checkov output for repo_id: {repo['repo_id']}. Error: {str(e)}"
             self.logger.error(msg)
             raise RuntimeError(msg) from e
 
-    def parse_and_process_checkov_output(self, repo_id, checkov_output_path, session):
+    def parse_and_process_checkov_output(self, repo_id, checkov_output_path):
+
+        session = Session()
 
         def process_summary(check_type, summary):
 
             self.save_checkov_results(
-                session,
-                repo_id,
+                 repo_id,
                 check_type=check_type,
                 passed=summary.get("passed", 0),
                 failed=summary.get("failed", 0),
@@ -135,9 +137,11 @@ class CheckovAnalyzer(BaseLogger):
             self.logger.exception(f"Unexpected error processing Checkov output for repo_id {repo_id}: {e}")
             raise RuntimeError(f"Unexpected error processing Checkov output for repo_id {repo_id}.") from e
 
-    def save_checkov_results(self, session, repo_id, check_type, passed, failed, skipped, parsing_errors, resource_count):
+    def save_checkov_results(self, repo_id, check_type, passed, failed, skipped, parsing_errors, resource_count):
 
         try:
+
+            session = Session()
 
             session.execute(
                 insert(CheckovSummary).values(
@@ -166,6 +170,8 @@ class CheckovAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error saving Checkov summary for repo_id {repo_id}, check_type {check_type}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -185,7 +191,7 @@ if __name__ == "__main__":
     analyzer = CheckovAnalyzer()
 
     try:
-        analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
     except Exception as e:

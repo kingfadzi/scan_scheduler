@@ -40,7 +40,7 @@ def cleanup_repo_task(repo_dir):
 @task(name="Update Processing Status Task", cache_policy=NO_CACHE)
 def update_status_task(repo, run_id):
     utils = Utils(logger = get_run_logger())
-    utils.determine_final_status(repo, run_id, session=None)
+    utils.determine_final_status(repo, run_id)
 
 
 @task(name="Refresh Views Task")

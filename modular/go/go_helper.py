@@ -58,7 +58,7 @@ class GoHelper(BaseLogger):
                 version = parts[1] if len(parts) > 1 else "unknown"
                 dependencies.append(
                     Dependency(
-                        repo_id=repo.repo_id,
+                        repo_id=repo['repo_id'],
                         name=module,
                         version=version,
                         package_type="go"

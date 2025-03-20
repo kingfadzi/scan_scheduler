@@ -29,43 +29,43 @@ class DependencyAnalyzer(BaseLogger):
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting dependency analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting dependency analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        main_language = self.utils.get_repo_main_language(repo.repo_id, session)
+        main_language = self.utils.get_repo_main_language(repo['repo_id'])
         if not main_language:
-            self.logger.warning(f"No main language detected for repo_id: {repo.repo_id}. Skipping dependency analysis.")
-            return f"skipped: No main language detected for repo {repo.repo_id}."
+            self.logger.warning(f"No main language detected for repo_id: {repo['repo_id']}. Skipping dependency analysis.")
+            return f"skipped: No main language detected for repo {repo['repo_id']}."
 
         dependencies = []
 
         try:
             if main_language == "Python":
-                self.logger.info(f"Main language is Python for repo_id: {repo.repo_id}. Running dependency analysis.")
+                self.logger.info(f"Main language is Python for repo_id: {repo['repo_id']}. Running dependency analysis.")
                 dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
 
             elif main_language in ["JavaScript", "TypeScript"]:
-                self.logger.info(f"Main language is {main_language} for repo_id: {repo.repo_id}. Running analysis.")
+                self.logger.info(f"Main language is {main_language} for repo_id: {repo['repo_id']}. Running analysis.")
                 dependencies.extend(self.js_helper.process_repo(repo_dir, repo))
 
             elif main_language == "Go":
-                self.logger.info(f"Main language is Go for repo_id: {repo.repo_id}. Running analysis.")
+                self.logger.info(f"Main language is Go for repo_id: {repo['repo_id']}. Running analysis.")
                 dependencies.extend(self.go_helper.process_repo(repo_dir, repo))
 
             elif main_language == "Java":
-                self.logger.info(f"Main language is Java for repo_id: {repo.repo_id}. Identifying build system.")
+                self.logger.info(f"Main language is Java for repo_id: {repo['repo_id']}. Identifying build system.")
                 build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
                 elif build_tool == "Gradle":
                     dependencies.extend(self.gradle_helper.process_repo(repo_dir=repo_dir, repo=repo))
 
-            self.persist_dependencies(dependencies, session)
+            self.persist_dependencies(dependencies)
             return f"Dependencies: {len(dependencies)}"
 
         except Exception as e:
@@ -74,7 +74,7 @@ class DependencyAnalyzer(BaseLogger):
 
 
 
-    def persist_dependencies(self, dependencies, session):
+    def persist_dependencies(self, dependencies):
         if not dependencies:
             self.logger.info("No dependencies to persist.")
             return
@@ -98,6 +98,7 @@ class DependencyAnalyzer(BaseLogger):
                 index_elements=['repo_id', 'name', 'version']
             )
 
+            session = Session()
             session.execute(upsert_stmt, dep_dicts)
             session.commit()
             self.logger.info("Dependency insertion successful.")
@@ -106,6 +107,8 @@ class DependencyAnalyzer(BaseLogger):
             session.rollback()
             self.logger.error(f"Failed to insert dependencies: {e}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -124,7 +127,7 @@ if __name__ == "__main__":
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting analysis for {repo.repo_slug}")
+        analyzer.logger.info(f"Starting analysis for {repo['repo_slug']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Analysis completed successfully")
     except Exception as e:

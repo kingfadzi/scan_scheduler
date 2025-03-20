@@ -1,6 +1,5 @@
 from prefect import flow, task, get_run_logger
 from flows.factory import create_analysis_flow
-
 from prefect import task
 from config.config import Config
 

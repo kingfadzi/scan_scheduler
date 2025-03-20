@@ -18,20 +18,20 @@ class PythonAnalyzer(BaseLogger):
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Python Build Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Python analysis for {repo.repo_id}")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Python analysis for {repo['repo_id']}")
 
         # Language validation
-        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         if 'Python' not in repo_languages:
-            msg = f"Skipping non-Python repo {repo.repo_id}"
+            msg = f"Skipping non-Python repo {repo['repo_id']}"
             self.logger.info(msg)
             return msg
 
         # Detect build tool and versions
         build_tool = self.detect_build_tool(repo_dir)
         if not build_tool:
-            msg = f"No Python build tool detected for {repo.repo_id}"
+            msg = f"No Python build tool detected for {repo['repo_id']}"
             self.logger.info(msg)
             return msg
 
@@ -39,10 +39,13 @@ class PythonAnalyzer(BaseLogger):
         tool_version = self.detect_tool_version(repo_dir, build_tool)
 
         # Database persistence
+
+        session = Session()
+
         try:
             session.execute(
                 insert(BuildTool).values(
-                    repo_id=repo.repo_id,
+                    repo_id=repo['repo_id'],
                     tool=build_tool,
                     tool_version=tool_version,
                     runtime_version=python_version,
@@ -59,9 +62,11 @@ class PythonAnalyzer(BaseLogger):
             self.logger.error(f"Database error: {e}")
             session.rollback()
             raise
+        finally:
+            session.close()
 
         return json.dumps({
-            "repo_id": repo.repo_id,
+            "repo_id": repo['repo_id'],
             "tool": build_tool,
             "tool_version": tool_version,
             "runtime_version": python_version

@@ -18,8 +18,8 @@ class GoEnryAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Go Enry Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting language analysis for repository: {repo.repo_name} (ID: {repo.repo_id})")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting language analysis for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -41,24 +41,24 @@ class GoEnryAnalyzer(BaseLogger):
             self.logger.info(f"Language analysis completed successfully. Output file: {analysis_file}")
 
         except subprocess.TimeoutExpired as e:
-            error_message = f"go-enry command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"go-enry command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
 
         except subprocess.CalledProcessError as e:
-            error_message = f"Error running go-enry for repository {repo.repo_name}: {e.stderr.decode().strip()}"
+            error_message = f"Error running go-enry for repository {repo['repo_name']}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         if not os.path.exists(analysis_file):
-            error_message = f"Language analysis file not found for repository {repo.repo_name}. Expected at: {analysis_file}"
+            error_message = f"Language analysis file not found for repository {repo['repo_name']}. Expected at: {analysis_file}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
         self.logger.info(f"Parsing language analysis results from file: {analysis_file}")
         try:
-            self.parse_and_persist_enry_results(repo.repo_id, analysis_file, session)
+            self.parse_and_persist_enry_results(repo['repo_id'], analysis_file)
         except Exception as e:
-            error_message = f"Error while parsing or saving analysis results for repository {repo.repo_name}: {e}"
+            error_message = f"Error while parsing or saving analysis results for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         return self._read_analysis_file(analysis_file, repo)
@@ -68,12 +68,14 @@ class GoEnryAnalyzer(BaseLogger):
             with open(analysis_file, "r") as infile:
                 file_contents = infile.read()
         except Exception as e:
-            error_message = f"Error reading analysis file {analysis_file} for repository {repo.repo_name}: {e}"
+            error_message = f"Error reading analysis file {analysis_file} for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         return file_contents
 
-    def parse_and_persist_enry_results(self, repo_id, analysis_file_path, session):
+    def parse_and_persist_enry_results(self, repo_id, analysis_file_path):
+
+        session = Session()
 
         try:
             self.logger.info(f"Reading analysis file at: {analysis_file_path}")
@@ -112,6 +114,8 @@ class GoEnryAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving analysis results for repository ID {repo_id}: {e}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -125,13 +129,13 @@ if __name__ == "__main__":
             self.repo_name = repo_slug
 
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo.repo_slug}"
+    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     analyzer = GoEnryAnalyzer()
 
     try:
-        analyzer.logger.info(f"Running language analysis for hardcoded repo_id: {repo.repo_id}, repo_slug: {repo.repo_slug}")
+        analyzer.logger.info(f"Running language analysis for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone language analysis result: {result}")
     except Exception as e:

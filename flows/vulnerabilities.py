@@ -42,7 +42,7 @@ def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
 def run_trivy_analysis_task(repo_dir, repo, session, run_id):
 
     logger = get_run_logger()
-    logger.info(f"[Vulnerabilities] Starting Trivy analysis for repository: {repo.repo_id}")
+    logger.info(f"[Vulnerabilities] Starting Trivy analysis for repository: {repo['repo_id']}")
 
     analyzer = TrivyAnalyzer(logger=logger)
     analyzer.run_analysis(
@@ -52,14 +52,14 @@ def run_trivy_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
 
-    logger.info(f"[Vulnerabilities] Completed Trivy analysis for repository: {repo.repo_id}")
+    logger.info(f"[Vulnerabilities] Completed Trivy analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Syft+Grype Analysis Task", cache_policy=NO_CACHE)
 def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
 
     logger = get_run_logger()
-    logger.info(f"[Vulnerabilities] Starting Syft+Grype analysis for repository: {repo.repo_id}")
+    logger.info(f"[Vulnerabilities] Starting Syft+Grype analysis for repository: {repo['repo_id']}")
 
     analyzer = SyftAndGrypeAnalyzer(logger=logger)
     analyzer.run_analysis(
@@ -69,7 +69,7 @@ def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
 
-    logger.info(f"[Vulnerabilities] Completed Syft+Grype analysis for repository: {repo.repo_id}")
+    logger.info(f"[Vulnerabilities] Completed Syft+Grype analysis for repository: {repo['repo_id']}")
 
 
 if __name__ == "__main__":

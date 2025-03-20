@@ -90,7 +90,7 @@ class Utils(BaseLogger):
 
                 detach_start = time.perf_counter()
                 for repo in batch:
-                    _ = repo.repo_slug  # Force attribute load
+                    _ = repo['repo_slug']  # Force attribute load
                     session.expunge(repo)
                 self.logger.debug(f"Detachment completed in {time.perf_counter() - detach_start:.2f}s")
 
@@ -182,7 +182,7 @@ class Utils(BaseLogger):
         finally:
             session.close()
 
-    def determine_final_status(self, repo: dict, run_id, session):
+    def determine_final_status(self, repo: dict, run_id):
         repo_id = repo["repo_id"]
         self.logger.info(f"Determining status for {repo['repo_name']} ({repo_id}) run_id: {run_id}")
 
@@ -215,6 +215,7 @@ class Utils(BaseLogger):
         repository_record.updated_on = datetime.utcnow()
         session.add(repository_record)
         session.commit()
+        session.close()
 
 
     @staticmethod
@@ -238,8 +239,10 @@ class Utils(BaseLogger):
         idx = params.get("partition_idx", 0)
         return f"{prefix}-partition-{idx}"
 
-    def detect_repo_languages(self, repo_id, session):
+    def detect_repo_languages(self, repo_id):
         self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
+
+        session = Session()
 
         results = session.query(
                 GoEnryAnalysis.language,
@@ -249,6 +252,8 @@ class Utils(BaseLogger):
             ).order_by(
                 GoEnryAnalysis.percent_usage.desc()
             ).all()
+
+        session.close()
 
         if results:
             main_language = [results[0].language]
@@ -261,7 +266,10 @@ class Utils(BaseLogger):
         self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return []
 
-    def get_repo_main_language(self, repo_id: str, session) -> str | None:
+    def get_repo_main_language(self, repo_id: str) -> str | None:
+
+
+        session = Session()
 
         try:
             return (
@@ -345,7 +353,7 @@ def main():
     for idx, partition in enumerate(partitions):
         utils.logger.info(f"Processing partition {idx + 1}/{len(partitions)} with {len(partition)} repos")
         for repo in partition[:3]:
-            utils.logger.info(f"Sample repo slug: {repo.repo_slug}")
+            utils.logger.info(f"Sample repo slug: {repo['repo_slug']}")
 
 if __name__ == "__main__":
     main()

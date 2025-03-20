@@ -79,7 +79,7 @@ class JavaScriptHelper(BaseLogger):
         3. package.json existence (npm default)
         """
         pkg_json_path = os.path.join(repo_dir, "package.json")
-        
+
         # Check for package manager specification in package.json
         if os.path.exists(pkg_json_path):
             try:
@@ -102,7 +102,7 @@ class JavaScriptHelper(BaseLogger):
             "pnpm-lock.yaml": "pnpm",
             "package-lock.json": "npm"
         }
-        
+
         for lock_file, tool in lock_files.items():
             if os.path.exists(os.path.join(repo_dir, lock_file)):
                 return tool
@@ -110,7 +110,7 @@ class JavaScriptHelper(BaseLogger):
         # Final fallback to package.json existence
         if os.path.exists(pkg_json_path):
             return "npm"
-            
+
         return None
 
 
@@ -130,7 +130,7 @@ class JavaScriptHelper(BaseLogger):
                         version = details.get("version", "unknown")
                         dependencies.append(
                             Dependency(
-                                repo_id=repo.repo_id,
+                                repo_id=repo['repo_id'],
                                 name=name,
                                 version=version,
                                 package_type="npm"
@@ -155,7 +155,7 @@ class JavaScriptHelper(BaseLogger):
                             version = line.split(" ")[-1].strip().strip('"')
                             dependencies.append(
                                 Dependency(
-                                    repo_id=repo.repo_id,
+                                    repo_id=repo['repo_id'],
                                     name=name,
                                     version=version,
                                     package_type="yarn"

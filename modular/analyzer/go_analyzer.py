@@ -17,14 +17,14 @@ class GoAnalyzer(BaseLogger):
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
 
     @analyze_execution(session_factory=Session, stage="Go Build Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Go analysis for {repo.repo_id}")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
         # Language validation
         utils = Utils(0)
-        repo_languages = utils.detect_repo_languages(repo.repo_id, session)
+        repo_languages = utils.detect_repo_languages(repo['repo_id'])
         if 'Go' not in repo_languages:
-            msg = f"Skipping non-Go repo {repo.repo_id}"
+            msg = f"Skipping non-Go repo {repo['repo_id']}"
             self.logger.info(msg)
             return msg
 
@@ -33,11 +33,13 @@ class GoAnalyzer(BaseLogger):
         go_version = self.detect_go_version(repo_dir)
         tool_version = self.detect_tool_version(repo_dir, build_tool)
 
+        session = Session()
+
         # Database persistence
         try:
             session.execute(
                 insert(BuildTool).values(
-                    repo_id=repo.repo_id,
+                    repo_id=repo['repo_id'],
                     tool=build_tool,
                     tool_version=tool_version,
                     runtime_version=go_version,
@@ -54,9 +56,11 @@ class GoAnalyzer(BaseLogger):
             self.logger.error(f"Database error: {e}")
             session.rollback()
             raise
+        finally:
+            session.close()
 
         return json.dumps({
-            "repo_id": repo.repo_id,
+            "repo_id": repo['repo_id'],
             "tool": build_tool,
             "tool_version": tool_version,
             "runtime_version": go_version

@@ -18,9 +18,9 @@ class ClocAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="CLOC Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
 
-        self.logger.info(f"Starting CLOC analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
+        self.logger.info(f"Starting CLOC analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -28,7 +28,7 @@ class ClocAnalyzer(BaseLogger):
             raise FileNotFoundError(error_message)
 
         try:
-            self.logger.info(f"Executing CLOC command for repo_id: {repo.repo_id}")
+            self.logger.info(f"Executing CLOC command for repo_id: {repo['repo_id']}")
             result = subprocess.run(
                 ["cloc", "--vcs=git", "--json", str(repo_dir)],
                 capture_output=True,
@@ -39,35 +39,35 @@ class ClocAnalyzer(BaseLogger):
 
             stdout_str = result.stdout.strip()
             if not stdout_str:
-                error_message = f"No output from CLOC command for repo_id: {repo.repo_id}"
+                error_message = f"No output from CLOC command for repo_id: {repo['repo_id']}"
                 self.logger.error(error_message)
                 raise RuntimeError(error_message)
 
-            self.logger.info(f"Parsing CLOC output for repo_id: {repo.repo_id}")
+            self.logger.info(f"Parsing CLOC output for repo_id: {repo['repo_id']}")
             try:
                 cloc_data = json.loads(stdout_str)
 
             except subprocess.TimeoutExpired as e:
-                error_message = f"CLOC command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+                error_message = f"CLOC command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
                 self.logger.error(error_message)
                 raise RuntimeError(error_message)
             except json.JSONDecodeError as e:
-                error_message = f"Error decoding CLOC JSON output for repo_id {repo.repo_id}: {e}"
+                error_message = f"Error decoding CLOC JSON output for repo_id {repo['repo_id']}: {e}"
                 self.logger.error(error_message)
                 raise RuntimeError(error_message)
 
-            self.logger.info(f"Saving CLOC results to the database for repo_id: {repo.repo_id}")
-            processed_languages = self.save_cloc_results(session, repo.repo_id, cloc_data)
+            self.logger.info(f"Saving CLOC results to the database for repo_id: {repo['repo_id']}")
+            processed_languages = self.save_cloc_results(repo['repo_id'], cloc_data)
 
 
         except Exception as e:
-            self.logger.exception(f"Error during CLOC execution for repo_id {repo.repo_id}: {e}")
+            self.logger.exception(f"Error during CLOC execution for repo_id {repo['repo_id']}: {e}")
             raise
 
         return json.dumps(cloc_data)
         #return f"{processed_languages} languages processed."
 
-    def save_cloc_results(self, session, repo_id, results):
+    def save_cloc_results(self, repo_id, results):
 
         self.logger.debug(f"Processing CLOC results for repo_id: {repo_id}")
 
@@ -79,6 +79,10 @@ class ClocAnalyzer(BaseLogger):
                     continue
 
                 self.logger.debug(f"Saving metrics for language: {language} in repo_id: {repo_id}")
+
+
+                session = Session()
+
 
                 session.execute(
                     insert(ClocMetric).values(
@@ -107,6 +111,8 @@ class ClocAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error saving CLOC results for repo_id {repo_id}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -125,11 +131,11 @@ if __name__ == "__main__":
     analyzer = ClocAnalyzer()
 
     try:
-        analyzer.logger.info(f"Starting standalone CLOC analysis for mock repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Starting standalone CLOC analysis for mock repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone CLOC analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone CLOC analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")

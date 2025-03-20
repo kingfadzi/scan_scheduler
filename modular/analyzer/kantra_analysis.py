@@ -24,7 +24,7 @@ class KantraAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Kantra Analysis")
     def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Kantra analysis for repo_id: {repo.repo_id} ({repo.repo_slug}).")
+        self.logger.info(f"Starting Kantra analysis for repo_id: {repo['repo_id']} ({repo['repo_slug']}).")
 
         kantra_rulesets = os.path.abspath(Config.KANTRA_RULESETS)
 
@@ -40,7 +40,7 @@ class KantraAnalyzer(BaseLogger):
             self.logger.warn("Neither a valid Maven POM nor Gradle dependencies were found. Stopping Kantra analysis.")
             return "Neither a valid Maven POM nor Gradle dependencies were found."
 
-        output_dir = os.path.join(Config.KANTRA_OUTPUT_ROOT, f"kantra_output_{repo.repo_slug}")
+        output_dir = os.path.join(Config.KANTRA_OUTPUT_ROOT, f"kantra_output_{repo['repo_slug']}")
         os.makedirs(output_dir, exist_ok=True)
 
         command = self.build_kantra_command(repo_dir, output_dir)
@@ -55,12 +55,12 @@ class KantraAnalyzer(BaseLogger):
                 check=True,
                 timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
-            self.logger.info(f"Kantra analysis completed for repo_id: {repo.repo_id}")
+            self.logger.info(f"Kantra analysis completed for repo_id: {repo['repo_id']}")
 
             output_yaml_path = os.path.join(output_dir, "output.yaml")
             analysis_data = self.parse_output_yaml(output_yaml_path)
-            self.save_kantra_results(session, repo.repo_id, analysis_data)
-            self.logger.info(f"Kantra results persisted for repo_id: {repo.repo_id}")
+            self.save_kantra_results(session, repo['repo_id'], analysis_data)
+            self.logger.info(f"Kantra results persisted for repo_id: {repo['repo_id']}")
 
         except subprocess.CalledProcessError as e:
             handle_subprocess_error(e, self.logger, command)

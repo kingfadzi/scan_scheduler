@@ -72,6 +72,7 @@ class CategoryAnalyzer(BaseLogger):
 
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
+            session.close()
 
         total_duration = time.time() - start_time
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")

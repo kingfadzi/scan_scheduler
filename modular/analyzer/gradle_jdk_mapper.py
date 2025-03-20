@@ -113,12 +113,15 @@ class GradlejdkAnalyzer(BaseLogger):
         self.logger.debug(f"Checked versions: {', '.join(lookup_path)}")
         return "JDK version unknown"
 
-    def _persist_results(self, session, repo, gradle_version: str, java_version: str) -> None:
+    def _persist_results(self, repo, gradle_version: str, java_version: str) -> None:
 
         self.logger.info(f"Persisting Gradle {gradle_version} with JDK {java_version}")
+
+        session = Session()
+
         try:
             stmt = insert(BuildTool).values(
-                repo_id=repo.repo_id,
+                repo_id=repo['repo_id'],
                 tool="Gradle",
                 tool_version=gradle_version,
                 runtime_version=java_version,
@@ -136,9 +139,11 @@ class GradlejdkAnalyzer(BaseLogger):
             self.logger.error("Database operation failed", exc_info=True)
             session.rollback()
             raise RuntimeError(f"Persistence error: {str(e)}") from e
+        finally:
+            session.close()
 
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
 
         self.logger.info(f"Starting analysis for repository: {repo_dir}")
         repo_path = Path(repo_dir).resolve()
@@ -156,7 +161,7 @@ class GradlejdkAnalyzer(BaseLogger):
                 self.logger.warning("No Gradle configuration files found")
                 return json.dumps({
                     "gradle_project": False,
-                    "repo_id": repo.repo_id,
+                    "repo_id": repo['repo_id'],
                     "status": "success"
                 }, ensure_ascii=False)
 
@@ -187,13 +192,13 @@ class GradlejdkAnalyzer(BaseLogger):
 
             jdk_version = self.find_jdk_version(gradle_version)
             self.logger.info(f"Final JDK determination: {jdk_version}")
-            self._persist_results(session, repo, gradle_version, jdk_version)
+            self._persist_results(repo, gradle_version, jdk_version)
 
             return json.dumps({
                 "gradle_project": True,
                 "gradle_version": gradle_version,
                 "jdk_version": jdk_version,
-                "repo_id": repo.repo_id,
+                "repo_id": repo['repo_id'],
                 "status": "success"
             }, ensure_ascii=False)
 

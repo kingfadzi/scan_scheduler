@@ -17,19 +17,19 @@ class GrypeAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Grype analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
 
         # Check if the SBOM file exists
         if not os.path.exists(sbom_file_path):
-            error_message = f"SBOM file not found for repository {repo.repo_name} at path: {sbom_file_path}"
+            error_message = f"SBOM file not found for repository {repo['repo_name']} at path: {sbom_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id} using SBOM at {sbom_file_path}.")
+        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo['repo_id']} using SBOM at {sbom_file_path}.")
 
         try:
             env = os.environ.copy()
@@ -52,24 +52,24 @@ class GrypeAnalyzer(BaseLogger):
             )
             self.logger.debug(f"Grype results written to: {grype_file_path}")
         except subprocess.TimeoutExpired as e:
-            error_message = f"Grype command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"Grype command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
-            error_message = f"Grype command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
+            error_message = f"Grype command failed for repo_id {repo['repo_id']}: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         if not os.path.exists(grype_file_path):
-            error_message = f"Grype results file not found for repository {repo.repo_name}. Expected at: {grype_file_path}"
+            error_message = f"Grype results file not found for repository {repo['repo_name']}. Expected at: {grype_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Reading Grype results from disk for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Reading Grype results from disk for repo_id: {repo['repo_id']}.")
         try:
-            grype_result = self.parse_and_save_grype_results(grype_file_path, repo.repo_id, session)
+            grype_result = self.parse_and_save_grype_results(grype_file_path, repo['repo_id'])
         except Exception as e:
-            error_message = f"Error while parsing or saving Grype results for repository {repo.repo_name}: {e}"
+            error_message = f"Error while parsing or saving Grype results for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
@@ -78,8 +78,9 @@ class GrypeAnalyzer(BaseLogger):
         else:
             return json.dumps(grype_result)
 
-    def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
+    def parse_and_save_grype_results(self, grype_file_path, repo_id):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
+        session = None  # Initialize session variable
         try:
             with open(grype_file_path, "r") as file:
                 grype_data = json.load(file)
@@ -89,6 +90,8 @@ class GrypeAnalyzer(BaseLogger):
                 message = f"No vulnerabilities found for repo_id: {repo_id}"
                 self.logger.info(message)
                 return message
+
+            session = Session()  # Create the session only if needed
 
             self.logger.debug(f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}.")
             processed_vulnerabilities = 0
@@ -141,13 +144,15 @@ class GrypeAnalyzer(BaseLogger):
 
             session.commit()
             self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
-
-            #return grype_data
             return f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}."
 
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
             raise
+        finally:
+            if session is not None:
+                session.close()
+
 
 
 if __name__ == "__main__":
@@ -162,11 +167,11 @@ if __name__ == "__main__":
 
     analyzer = GrypeAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo.repo_slug}"
+    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="GRYPE_STANDALONE_001")
 
         if isinstance(result, str):
@@ -178,4 +183,4 @@ if __name__ == "__main__":
         analyzer.logger.error(f"Error during standalone Grype analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")

@@ -19,7 +19,7 @@ class GradleHelper(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     def process_repo(self, repo_dir: str, repo: object) -> List[Dependency]:
-        self.logger.info(f"Processing Gradle repo: {repo.repo_id}")
+        self.logger.info(f"Processing Gradle repo: {repo['repo_id']}")
         try:
             repo_path = Path(repo_dir).resolve()
             if not repo_path.exists():
@@ -114,7 +114,7 @@ class GradleHelper(BaseLogger):
     def _format_dependencies(self, raw_deps: List[Dict], repo: object) -> List[Dependency]:
         return [
             Dependency(
-                repo_id=repo.repo_id,
+                repo_id=repo['repo_id'],
                 name=f"{dep['group']}:{dep['artifact']}",
                 version=dep.get('version', 'unknown'),
                 package_type="gradle"

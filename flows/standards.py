@@ -44,7 +44,7 @@ def standards_assessment_repo_processing_flow(repo, repo_slug, run_id):
 def run_checkov_analysis_task(repo_dir, repo, session, run_id):
 
     logger = get_run_logger()
-    logger.info(f"[Standards Assessment] Starting Checkov analysis for repository: {repo.repo_id}")
+    logger.info(f"[Standards Assessment] Starting Checkov analysis for repository: {repo['repo_id']}")
 
     analyzer = CheckovAnalyzer(logger=logger)
     analyzer.run_analysis(
@@ -54,14 +54,14 @@ def run_checkov_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
 
-    logger.info(f"[Standards Assessment] Completed Checkov analysis for repository: {repo.repo_id}")
+    logger.info(f"[Standards Assessment] Completed Checkov analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Semgrep Analysis Task", cache_policy=NO_CACHE)
 def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
 
     logger = get_run_logger()
-    logger.info(f"[Standards Assessment] Starting Semgrep analysis for repository: {repo.repo_id}")
+    logger.info(f"[Standards Assessment] Starting Semgrep analysis for repository: {repo['repo_id']}")
 
     analyzer = SemgrepAnalyzer(logger=logger)
     analyzer.run_analysis(
@@ -71,7 +71,7 @@ def run_semgrep_analysis_task(repo_dir, repo, session, run_id):
         run_id=run_id
     )
 
-    logger.info(f"[Standards Assessment] Completed Semgrep analysis for repository: {repo.repo_id}")
+    logger.info(f"[Standards Assessment] Completed Semgrep analysis for repository: {repo['repo_id']}")
 
 
 

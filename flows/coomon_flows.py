@@ -19,13 +19,13 @@ def single_repo_processing_flow(repo, run_id, sub_dir, sub_tasks, flow_prefix):
         attached_repo = session.merge(repo)
         repo_dir = None
         try:
-            logger.info(f"[{flow_prefix}] Processing repository: {attached_repo.repo_id}")
+            logger.info(f"[{flow_prefix}] Processing repository: {attached_repo['repo_id']}")
             repo_dir = clone_repository_task(attached_repo, run_id, sub_dir)
             for task_fn in sub_tasks:
                 # Each task in sub_tasks is expected to accept (repo_dir, attached_repo, session, run_id)
                 task_fn(repo_dir, attached_repo, session, run_id)
         except Exception as e:
-            logger.error(f"[{flow_prefix}] Error processing repository {attached_repo.repo_id}: {e}")
+            logger.error(f"[{flow_prefix}] Error processing repository {attached_repo['repo_id']}: {e}")
             attached_repo.status = "ERROR"
             attached_repo.comment = str(e)
             attached_repo.updated_on = datetime.utcnow()

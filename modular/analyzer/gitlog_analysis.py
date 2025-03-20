@@ -17,9 +17,9 @@ class GitLogAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Git Log Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
 
-        self.logger.info(f"Starting metrics calculation for repository: {repo.repo_name} (ID: {repo.repo_id})")
+        self.logger.info(f"Starting metrics calculation for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -56,7 +56,7 @@ class GitLogAnalyzer(BaseLogger):
 
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
 
-        self.logger.info(f"Metrics for {repo.repo_name} (ID: {repo.repo_id}):")
+        self.logger.info(f"Metrics for {repo['repo_name']} (ID: {repo['repo_id']}):")
         self.logger.info(f"  Total Size: {total_size} bytes")
         self.logger.info(f"  File Count: {file_count}")
         self.logger.info(f"  Total Commits: {total_commits}")
@@ -66,9 +66,11 @@ class GitLogAnalyzer(BaseLogger):
         self.logger.info(f"  Active Branch Count: {active_branch_count}")
         self.logger.info(f"  Activity Status: {activity_status}")
 
+        session = Session()
+
         session.execute(
             insert(RepoMetrics).values(
-                repo_id=repo.repo_id,
+                repo_id=repo['repo_id'],
                 repo_size_bytes=total_size,
                 file_count=file_count,
                 total_commits=total_commits,
@@ -93,10 +95,12 @@ class GitLogAnalyzer(BaseLogger):
             )
         )
         session.commit()
-        self.logger.info(f"Metrics saved for repository: {repo.repo_name} (ID: {repo.repo_id})")
+        session.close()
+
+        self.logger.info(f"Metrics saved for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
         return (
-            f"{repo.repo_name}: "
+            f"{repo['repo_name']}: "
             f"{total_commits} commits, "
             f"{len(contributors)} contributors, "
             f"{file_count} files, "
@@ -139,7 +143,7 @@ if __name__ == "__main__":
     analyzer = GitLogAnalyzer()
 
     try:
-        analyzer.logger.info(f"Running metrics calculation for hardcoded repo_id: {repo.repo_id}, repo_slug: {repo.repo_slug}")
+        analyzer.logger.info(f"Running metrics calculation for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone metrics calculation result: {result}")
     except Exception as e:

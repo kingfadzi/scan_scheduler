@@ -11,14 +11,11 @@ def main_flow(batch_size: int, sub_dir: str, sub_tasks: list, flow_prefix: str, 
     logger = get_run_logger()
     start_task(flow_prefix)
 
-    # Fetch repositories using the provided payload.
     repos = fetch_repositories_task(payload, batch_size)
 
-    # Generate a dummy run id.
     run_ctx = get_run_context()
     run_id = str(run_ctx.flow_run.id) if run_ctx and run_ctx.flow_run else "default_run_id"
 
-    # Map the subflow (wrapped in a task) over the list of repositories.
     mapped_futures = run_repo_subflow_task.map(
         repo=repos,
         run_id=unmapped(run_id),
@@ -27,7 +24,6 @@ def main_flow(batch_size: int, sub_dir: str, sub_tasks: list, flow_prefix: str, 
         flow_prefix=unmapped(flow_prefix)
     )
 
-    # Explicitly wait for all mapped futures to resolve.
     results = [future.result() for future in mapped_futures]
     logger.info(f"Subflow results: {results}")
 

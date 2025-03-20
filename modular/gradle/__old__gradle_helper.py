@@ -102,7 +102,7 @@ class GradleHelper(BaseLogger):
                 group, artifact, version = parts[0], parts[1], parts[2]
                 dependencies.append(
                     Dependency(
-                        repo_id=repo.repo_id,
+                        repo_id=repo['repo_id'],
                         name=f"{group}:{artifact}",
                         version=version,
                         package_type="gradle"

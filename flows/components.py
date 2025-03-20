@@ -1,6 +1,10 @@
 import asyncio
+from datetime import datetime
+
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
+
+from flows.factory import create_analysis_flow
 from modular.analyzer.dependency_analysis import DependencyAnalyzer
 from modular.analyzer.kantra_analysis import KantraAnalyzer
 from modular.analyzer.grype_analysis import GrypeAnalyzer
@@ -11,137 +15,90 @@ from modular.analyzer.gradle_jdk_mapper import GradlejdkAnalyzer
 from modular.analyzer.category_analysis import CategoryAnalyzer
 from config.config import Config
 from modular.shared.utils import Utils
-from coomon_flows import (
-    single_repo_processing_flow
-)
-
-from simple_flow import main_flow
-
-@flow(flow_run_name=Utils.generate_main_flow_run_name)
-async def component_patterns_flow(payload: dict):
-
-    sub_tasks = [
-        run_dependency_analysis_task,
-        run_maven_analysis_task,
-        run_gradle_analysis_task,
-        run_syft_analysis_task,
-        run_grype_analysis_task,
-        run_xeol_analysis_task,
-    ]
-
-    await main_flow(
-        batch_size=1000,
-        sub_dir="components",
-        sub_tasks=sub_tasks,
-        flow_prefix="Component Patterns",
-        payload=payload
-    )
-
 
 
 @task(name="Syft Analysis Task", cache_policy=NO_CACHE)
-def run_syft_analysis_task(repo_dir, repo, session, run_id):
+def run_syft_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Syft analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Syft analysis for repository: {repo['repo_id']}")
     analyzer = SyftAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Syft analysis for repository: {repo.repo_id}")
-
+    logger.info(f"[Component Patterns] Completed Syft analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Dependency Analysis Task", cache_policy=NO_CACHE)
-def run_dependency_analysis_task(repo_dir, repo, session, run_id):
+def run_dependency_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Dependency analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Dependency analysis for repository: {repo['repo_id']}")
     analyzer = DependencyAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Dependency analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Completed Dependency analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Grype Analysis Task", cache_policy=NO_CACHE)
-def run_grype_analysis_task(repo_dir, repo, session, run_id):
+def run_grype_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Grype analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Grype analysis for repository: {repo['repo_id']}")
     analyzer = GrypeAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Grype analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Completed Grype analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Xeol Analysis Task", cache_policy=NO_CACHE)
-def run_xeol_analysis_task(repo_dir, repo, session, run_id):
+def run_xeol_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Xeol analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Xeol analysis for repository: {repo['repo_id']}")
     analyzer = XeolAnalyzer(logger=logger)
     analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Xeol analysis for repository: {repo.repo_id}")
-
-
-@task(name="Run Kantra Analysis Task", cache_policy=NO_CACHE)
-def run_kantra_analysis_task(repo_dir, repo, session, run_id):
-    logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Kantra analysis for repository: {repo.repo_id}")
-    analyzer = KantraAnalyzer(logger=logger)
-    analyzer.run_analysis(
-        repo_dir=repo_dir,
-        repo=repo,
-        session=session,
-        run_id=run_id
-    )
-    logger.info(f"[Component Patterns] Completed Kantra analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Completed Xeol analysis for repository: {repo['repo_id']}")
 
 
 @task(name="Run Maven Analysis Task", cache_policy=NO_CACHE)
-def run_maven_analysis_task(repo_dir, repo, session, run_id):
+def run_maven_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Maven analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Maven analysis for repository: {repo['repo_id']}")
     analyzer = MavenAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Maven analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Completed Maven analysis for repository: {repo['repo_id']}")
     return result
 
 
 @task(name="Run Gradle Analysis Task", cache_policy=NO_CACHE)
-def run_gradle_analysis_task(repo_dir, repo, session, run_id):
+def run_gradle_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
-    logger.info(f"[Component Patterns] Starting Gradle analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Starting Gradle analysis for repository: {repo['repo_id']}")
     analyzer = GradlejdkAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        session=session,
         run_id=run_id
     )
-    logger.info(f"[Component Patterns] Completed Gradle analysis for repository: {repo.repo_id}")
+    logger.info(f"[Component Patterns] Completed Gradle analysis for repository: {repo['repo_id']}")
     return result
 
 
 @task(name="Category Analysis Task", cache_policy=NO_CACHE)
-def run_catgeory_analysis_task(session, run_id):
+def run_catgeory_analysis_task(run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Category analysis")
     analyzer = CategoryAnalyzer(logger=logger)
@@ -149,13 +106,30 @@ def run_catgeory_analysis_task(session, run_id):
     logger.info(f"[Component Patterns] Completed Category analysis.")
 
 
+sub_tasks = [
+    run_dependency_analysis_task,
+    run_maven_analysis_task,
+    run_gradle_analysis_task,
+    run_syft_analysis_task,
+    run_grype_analysis_task,
+    run_xeol_analysis_task,
+]
+
+component_patterns_flow = create_analysis_flow(
+    flow_name="component_patterns_flow",
+    flow_run_name=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    default_sub_tasks=sub_tasks,
+    default_sub_dir="component_patterns",
+    default_flow_prefix="COMPOSITION",
+    default_batch_size=10,
+    default_concurrency=5
+)
+
+
 if __name__ == "__main__":
-    example_payload = {
+    component_patterns_flow({
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
-            # "activity_status": ["ACTIVE"],
-            # "main_language": ["Java"]
+            "main_language": ["Java"]
         }
-    }
-    # Run the asynchronous main flow
-    asyncio.run(component_patterns_flow(payload=example_payload))
+    })

@@ -99,7 +99,7 @@ class MavenHelper(BaseLogger):
 
                 dependencies.append(
                     Dependency(
-                        repo_id=repo.repo_id,
+                        repo_id=repo['repo_id'],
                         name=f"{group_id}:{artifact_id}",
                         version=version,
                         package_type="maven"
