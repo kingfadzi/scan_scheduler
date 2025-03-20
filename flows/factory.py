@@ -7,7 +7,7 @@ from typing import List, Callable, Dict, Any
 
 def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
     """Split list into batches of specified size."""
-    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size]
 
 def create_analysis_flow(
         flow_name: str,
@@ -28,13 +28,13 @@ def create_analysis_flow(
         repo_dir = None
         try:
             logger.info(f"Starting processing for {repo_slug}")
-            repo_dir = clone_repository_task(repo, run_id, sub_dir)
+            repo_dir = clone_repository_task.with_options(retries=1)(repo, run_id, sub_dir)
 
             for task_fn in sub_tasks:
                 try:
                     task_fn(repo_dir, repo, run_id)
                 except Exception as e:
-                    logger.error(f"Task failed: {str(e)}")
+                    logger.error(f"Task {task_fn.__name__} failed: {str(e)}")
                     continue
 
         except Exception as e:
@@ -44,6 +44,7 @@ def create_analysis_flow(
             if repo_dir:
                 try:
                     cleanup_repo_task(repo_dir)
+                    logger.info(f"Cleanup completed for {repo_slug}")
                 except Exception as e:
                     logger.warning(f"Cleanup error: {str(e)}")
 
@@ -69,7 +70,7 @@ def create_analysis_flow(
             )
         except Exception as e:
             logger.error(f"Subflow failed: {str(e)}")
-            return None  # Explicitly return None to continue processing
+            return None
 
     @flow(name=flow_name,
           flow_run_name=flow_run_name,
@@ -82,39 +83,57 @@ def create_analysis_flow(
             batch_size: int = default_batch_size
     ):
         logger = get_run_logger()
+        all_results = []
+        
         try:
             start_task(flow_prefix)
             ctx = get_run_context()
             parent_run_id = str(ctx.flow_run.id) if ctx and hasattr(ctx, 'flow_run') else "default"
-            logger.info(f"Main flow starting (concurrency: {default_concurrency})")
+            logger.info(f"Main flow {parent_run_id} starting with concurrency {default_concurrency}")
 
-            repos = fetch_repositories_task(payload, batch_size)
+            repos = fetch_repositories_task.with_options(retries=1)(payload, batch_size)
             logger.info(f"Total repositories to process: {len(repos)}")
 
             repo_batches = chunk_list(repos, batch_size)
-            all_results = []
 
-            for batch in repo_batches:
+            for batch_idx, batch in enumerate(repo_batches):
+                logger.info(f"Processing batch {batch_idx+1}/{len(repo_batches)} ({len(batch)} repos)")
+
+                # Process batch with state tracking
                 states = trigger_subflow.map(
                     repo=batch,
                     sub_dir=unmapped(sub_dir),
                     sub_tasks=unmapped(sub_tasks),
-                    flow_prefix=unmapped(flow_prefix)
+                    flow_prefix=unmapped(flow_prefix),
+                    return_state=True
                 )
 
-                # Collect successful results
-                batch_results = [s.result() for s in states if s.is_completed()]
-                all_results.extend([r for r in batch_results if r is not None])
+                # Process results
+                successful = []
+                for state in states:
+                    if state.is_completed():
+                        try:
+                            result = state.result()
+                            if result is not None:
+                                successful.append(result)
+                        except Exception as e:
+                            logger.error(f"Failed to retrieve result: {str(e)}")
+                    else:
+                        logger.warning(f"Failed processing: {state.message}")
 
-            logger.info(f"Processing complete. Successfully processed {len(all_results)}/{len(repos)} repos")
+                logger.info(f"Batch {batch_idx+1} completed: {len(successful)}/{len(batch)} successful")
+                all_results.extend(successful)
+
+            logger.info(f"Processing complete. Total successful: {len(all_results)}/{len(repos)}")
             return all_results
 
         except Exception as e:
-            logger.error(f"Critical failure: {str(e)}")
+            logger.error(f"Critical flow failure: {str(e)}")
             raise
         finally:
             try:
                 refresh_views_task(flow_prefix)
+                logger.info("View refresh completed")
             except Exception as e:
                 logger.error(f"View refresh failed: {str(e)}")
 
