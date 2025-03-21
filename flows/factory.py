@@ -86,10 +86,11 @@ def create_analysis_flow(
             parent_run_id = str(ctx.flow_run.id) if ctx and hasattr(ctx, 'flow_run') else "default"
             logger.info(f"Main flow {parent_run_id} starting with concurrency {default_concurrency}")
 
+            # Fetch all repositories at once
             repos = fetch_repositories_task.with_options(retries=1)(payload)
             logger.info(f"Total repositories to process: {len(repos)}")
 
-            # Process all repos at once with concurrency control
+            # Process all repos in single batch
             states: List[State] = trigger_subflow.map(
                 repo=repos,
                 sub_dir=unmapped(sub_dir),
