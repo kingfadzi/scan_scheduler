@@ -3,11 +3,12 @@ from flows.base_tasks import fetch_repositories_task, start_task, clone_reposito
 from prefect import flow, task, get_run_logger, unmapped
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
+from prefect.states import State
 from typing import List, Callable, Dict, Any
 
 def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
     """Split list into batches of specified size."""
-    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size]
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
 
 def create_analysis_flow(
         flow_name: str,
@@ -100,7 +101,7 @@ def create_analysis_flow(
                 logger.info(f"Processing batch {batch_idx+1}/{len(repo_batches)} ({len(batch)} repos)")
 
                 # Process batch with state tracking
-                states = trigger_subflow.map(
+                states: List[State] = trigger_subflow.map(
                     repo=batch,
                     sub_dir=unmapped(sub_dir),
                     sub_tasks=unmapped(sub_tasks),
@@ -119,7 +120,8 @@ def create_analysis_flow(
                         except Exception as e:
                             logger.error(f"Failed to retrieve result: {str(e)}")
                     else:
-                        logger.warning(f"Failed processing: {state.message}")
+                        error_msg = state.message[:200] if state.message else "Unknown error"
+                        logger.warning(f"Failed processing: {error_msg}")
 
                 logger.info(f"Batch {batch_idx+1} completed: {len(successful)}/{len(batch)} successful")
                 all_results.extend(successful)
