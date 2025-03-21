@@ -32,21 +32,26 @@ class CheckovAnalyzer(BaseLogger):
         output_dir = os.path.join(repo_dir, "checkov_results")
         os.makedirs(output_dir, exist_ok=True)
         error_log_file = os.path.join(output_dir, "checkov_errors.log")
+
+        cmd = [
+            "checkov",
+            "--directory", repo_dir,
+            "--output", "json",
+            "--output-file-path", output_dir,
+            "--skip-download",
+            "--framework",
+            "cloudformation", "dockerfile", "gitlab_configuration", "gitlab_ci",
+            "helm", "json", "yaml", "kubernetes",
+            "serverless", "terraform", "terraform_plan"
+        ]
+
+        self.logger.info(f"Checkov command to execute: {' '.join(cmd)}")
+
         try:
             self.logger.info(f"Executing Checkov command for repo_id: {repo['repo_id']}")
             with open(error_log_file, "w") as error_log:
                 run(
-                    [
-                        "checkov",
-                        "--directory", repo_dir,
-                        "--output", "json",
-                        "--output-file-path", output_dir,
-                        "--skip-download",
-                        "--framework",
-                        "cloudformation", "dockerfile", "gitlab_configuration", "gitlab_ci",
-                        "helm", "json", "yaml", "kubernetes",
-                        "serverless", "terraform", "terraform_plan"
-                    ],
+                    cmd,
                     check=False,
                     text=True,
                     stdout=DEVNULL,
@@ -67,7 +72,7 @@ class CheckovAnalyzer(BaseLogger):
             raise FileNotFoundError(f"Checkov did not produce the expected results file in {output_dir}.")
         message = f"Checkov results successfully produced at: {results_file}"
         self.logger.info(message)
-        return message
+        return results_file
 
 
     def _process_checkov_results(self, repo, results_file):
@@ -86,8 +91,6 @@ class CheckovAnalyzer(BaseLogger):
             raise RuntimeError(msg) from e
 
     def parse_and_process_checkov_output(self, repo_id, checkov_output_path):
-
-        session = Session()
 
         def process_summary(check_type, summary):
 
@@ -142,7 +145,6 @@ class CheckovAnalyzer(BaseLogger):
         try:
 
             session = Session()
-
             session.execute(
                 insert(CheckovSummary).values(
                     repo_id=repo_id,
@@ -177,22 +179,20 @@ class CheckovAnalyzer(BaseLogger):
 if __name__ == "__main__":
     repo_slug = "sonar-metrics"
     repo_id = "sonar-metrics"
-    repo_dir = f"/tmp/WebGoat"
+    repo_dir = "/Users/fadzi/tools/gradle_projects/VyAPI"
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-
-    repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug
+    }
 
     session = Session()
-
     analyzer = CheckovAnalyzer()
 
     try:
         analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        result = analyzer.run_analysis(repo_dir, repo=repo, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Checkov analysis: {e}")
+

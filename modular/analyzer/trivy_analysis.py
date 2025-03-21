@@ -19,7 +19,7 @@ class TrivyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
         self.logger.info(f"Starting Trivy analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
 
         if not os.path.exists(repo_dir):
@@ -93,7 +93,7 @@ class TrivyAnalyzer(BaseLogger):
 
         self.logger.info(f"Saving Trivy vulnerabilities to the database for repo_id: {repo['repo_id']}")
         try:
-            total_vulnerabilities = self.save_trivy_results(session, repo['repo_id'], trivy_data)
+            total_vulnerabilities = self.save_trivy_results(repo['repo_id'], trivy_data)
         except Exception as e:
             error_message = f"Error saving Trivy vulnerabilities: {str(e)}"
             self.logger.error(error_message)
