@@ -65,7 +65,6 @@ class ClocAnalyzer(BaseLogger):
             raise
 
         return json.dumps(cloc_data)
-        #return f"{processed_languages} languages processed."
 
     def save_cloc_results(self, repo_id, results):
 

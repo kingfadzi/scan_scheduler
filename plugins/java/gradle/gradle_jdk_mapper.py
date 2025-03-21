@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pathlib import Path
 import re
 import yaml
@@ -32,7 +31,6 @@ class GradlejdkAnalyzer(BaseLogger):
         self.jdk_mapping: Dict = {}
 
     def load_config(self) -> None:
-        """Load configuration files with validation"""
         self.logger.debug("Loading configuration files")
         config_errors = []
 

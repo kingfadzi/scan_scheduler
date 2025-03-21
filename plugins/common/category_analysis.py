@@ -46,11 +46,10 @@ class CategoryAnalyzer(BaseLogger):
         total_rows = 0
 
         with Session() as session:
-            # Refresh materialized view before starting
+
             session.execute(text(f"REFRESH MATERIALIZED VIEW {MATERIALIZED_VIEW};"))
             session.commit()
 
-            # Process data in chunks
             for chunk_idx, chunk in enumerate(pd.read_sql(query, con=session.connection(), chunksize=CHUNK_SIZE)):
                 if chunk.empty:
                     self.logger.warning(f"Chunk {chunk_idx+1} returned no rows.")

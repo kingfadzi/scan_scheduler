@@ -24,27 +24,23 @@ class JavaScriptAnalyzer(BaseLogger):
 
         utils = Utils()
 
-        # Language detection
         repo_languages = utils.detect_repo_languages(repo['repo_id'])
         if not {'JavaScript', 'TypeScript'}.intersection(repo_languages):
             message = f"Repo {repo['repo_id']} is not a JavaScript/TypeScript project. Skipping."
             self.logger.info(message)
             return message
 
-        # Build tool detection
         js_build_tool = utils.detect_js_build_tool(repo_dir)
         if js_build_tool not in ['npm', 'Yarn', 'pnpm']:
             message = f"Repo {repo['repo_id']} is JavaScript but doesn't use npm/Yarn/pnpm. Skipping."
             self.logger.info(message)
             return message
 
-        # Directory validation
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        # Package.json analysis
         package_json_path = os.path.join(repo_dir, "package.json")
         node_version = "Unknown"
         tool_version = "Unknown"
@@ -54,12 +50,10 @@ class JavaScriptAnalyzer(BaseLogger):
                 with open(package_json_path) as f:
                     package_data = json.load(f)
 
-                    # Node version detection
                     engines = package_data.get('engines', {})
                     if 'node' in engines:
                         node_version = engines['node'].strip()
 
-                    # Tool version detection
                     if js_build_tool == 'npm':
                         tool_version = package_data.get('dependencies', {}).get('npm', 'bundled')
                     elif js_build_tool == 'Yarn':
@@ -71,8 +65,6 @@ class JavaScriptAnalyzer(BaseLogger):
                 self.logger.error(f"Error parsing package.json: {e}")
 
         self.logger.info(f"Detected {js_build_tool}. Version: {tool_version}, Node.js version: {node_version}")
-
-        # Database persistence
 
         session = Session()
 

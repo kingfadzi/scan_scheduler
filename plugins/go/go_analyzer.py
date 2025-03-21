@@ -20,7 +20,6 @@ class GoAnalyzer(BaseLogger):
     def run_analysis(self, repo_dir, repo, run_id=None):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
-        # Language validation
         utils = Utils(0)
         repo_languages = utils.detect_repo_languages(repo['repo_id'])
         if 'Go' not in repo_languages:
@@ -28,14 +27,12 @@ class GoAnalyzer(BaseLogger):
             self.logger.info(msg)
             return msg
 
-        # Detect build tool
         build_tool = self.detect_build_tool(repo_dir)
         go_version = self.detect_go_version(repo_dir)
         tool_version = self.detect_tool_version(repo_dir, build_tool)
 
         session = Session()
 
-        # Database persistence
         try:
             session.execute(
                 insert(BuildTool).values(
@@ -67,7 +64,7 @@ class GoAnalyzer(BaseLogger):
         })
 
     def detect_build_tool(self, repo_dir):
-        """Detect Go dependency management tool"""
+
         tool_files = [
             ('go.mod', 'Go Modules'),
             ('Gopkg.toml', 'dep'),
@@ -81,15 +78,14 @@ class GoAnalyzer(BaseLogger):
         return "Go Modules" if self._has_go_files(repo_dir) else None
 
     def _has_go_files(self, repo_dir):
-        """Check for any .go files as fallback"""
+
         for root, _, files in os.walk(repo_dir):
             if any(f.endswith('.go') for f in files):
                 return True
         return False
 
     def detect_go_version(self, repo_dir):
-        """Detect Go version from go.mod or .go-version"""
-        # Check go.mod first
+
         go_mod = Path(repo_dir) / 'go.mod'
         if go_mod.exists():
             try:
@@ -100,7 +96,6 @@ class GoAnalyzer(BaseLogger):
             except Exception as e:
                 self.logger.error(f"Error reading go.mod: {e}")
 
-        # Check .go-version file
         go_version_file = Path(repo_dir) / '.go-version'
         if go_version_file.exists():
             try:
@@ -112,7 +107,7 @@ class GoAnalyzer(BaseLogger):
         return "Unknown"
 
     def detect_tool_version(self, repo_dir, build_tool):
-        """Get version from tool-specific files"""
+
         version_methods = {
             'dep': lambda: self._parse_dep_version(repo_dir),
             'glide': lambda: self._parse_glide_version(repo_dir),
@@ -121,7 +116,7 @@ class GoAnalyzer(BaseLogger):
         return version_methods.get(build_tool, lambda: "Unknown")()
 
     def _parse_dep_version(self, repo_dir):
-        """Get dep version from Gopkg.lock"""
+
         lock_file = Path(repo_dir) / 'Gopkg.lock'
         try:
             with open(lock_file, 'r') as f:
@@ -145,11 +140,11 @@ class GoAnalyzer(BaseLogger):
         return "Unknown"
 
     def _parse_go_mod_version(self, repo_dir):
-        """Get Go version from go.mod (already handled)"""
-        return "Unknown"  # Version already captured in runtime_version
+
+        return "Unknown"
 
 if __name__ == "__main__":
-    # Configure logging and test
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -161,7 +156,7 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
 
     test_repo = MockRepo("go-test-456", "example-go-repo")
-    test_repo_dir = "/path/to/go/project"  # Set this to a valid Go project path
+    test_repo_dir = "/path/to/go/project"
 
     analyzer = GoAnalyzer()
     session = Session()

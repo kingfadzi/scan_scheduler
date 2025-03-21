@@ -75,7 +75,6 @@ class JavaScriptHelper(BaseLogger):
 
         pkg_json_path = os.path.join(repo_dir, "package.json")
 
-        # Check for package manager specification in package.json
         if os.path.exists(pkg_json_path):
             try:
                 with open(pkg_json_path, "r") as f:

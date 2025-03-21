@@ -49,7 +49,7 @@ class GoHelper(BaseLogger):
             )
             dependencies = []
             lines = result.stdout.strip().split("\n")
-            # Skip the first line as it represents the main module.
+
             for line in lines[1:]:
                 parts = line.split()
                 module = parts[0]

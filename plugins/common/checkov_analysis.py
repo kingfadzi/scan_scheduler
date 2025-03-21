@@ -118,11 +118,11 @@ class CheckovAnalyzer(BaseLogger):
                 process_summary("no-checks", checkov_data)
                 return "No IaC components found. Summary saved."
 
-            elif isinstance(checkov_data, dict):  # One check performed
+            elif isinstance(checkov_data, dict):
                 process_summary(checkov_data["check_type"], checkov_data["summary"])
                 return f"Processed single check type: {checkov_data['check_type']}."
 
-            elif isinstance(checkov_data, list):  # Multiple checks performed
+            elif isinstance(checkov_data, list):
                 check_types = []
                 for check in checkov_data:
                     process_summary(check["check_type"], check["summary"])

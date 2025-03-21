@@ -130,7 +130,6 @@ if __name__ == "__main__":
     helper = GradleHelper()
     helper.logger.setLevel(logging.INFO)
 
-    # Test with a sample repository
     repo = MockRepo("test-org/example")
     dependencies = helper.process_repo("/tmp/gradle-example", repo)
 
