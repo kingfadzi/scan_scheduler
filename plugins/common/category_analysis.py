@@ -78,6 +78,7 @@ class CategoryAnalyzer(BaseLogger):
         self.logger.info(f"Processing complete: {total_rows} rows processed in {total_duration:.2f} seconds")
         print("Processing complete. Materialized view updated.")
 
+    # gosh this is ugly...
     def load_rules(self, rule_path_component):
         full_path = os.path.join(RULES_PATH, rule_path_component)
         compiled_list = []
