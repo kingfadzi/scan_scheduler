@@ -2,8 +2,7 @@ import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
-from modular.analyzer.trivy_analysis import TrivyAnalyzer
-from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
+from plugins.common.trivy_analysis import TrivyAnalyzer
 from flows.factory import create_analysis_flow
 from datetime import datetime
 

@@ -1,14 +1,13 @@
-import asyncio
 from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
 from datetime import datetime
-from modular.analyzer.gitlog_analysis import GitLogAnalyzer
-from modular.analyzer.go_enry_analysis import GoEnryAnalyzer
-from modular.analyzer.lizard_analysis import LizardAnalyzer
-from modular.analyzer.cloc_analysis import ClocAnalyzer
-from modular.shared.utils import Utils
+from plugins.common.gitlog_analysis import GitLogAnalyzer
+from plugins.common.go_enry_analysis import GoEnryAnalyzer
+from plugins.common.lizard_analysis import LizardAnalyzer
+from plugins.common.cloc_analysis import ClocAnalyzer
 from flows.factory import create_analysis_flow
+
 
 @task(name="Run Lizard Analysis Task", cache_policy=NO_CACHE)
 def run_lizard_task(repo_dir, repo, run_id):

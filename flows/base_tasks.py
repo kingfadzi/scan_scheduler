@@ -1,7 +1,7 @@
-from prefect import flow, task, get_run_logger, unmapped
+from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-from modular.analyzer.cloning import CloningAnalyzer
-from modular.shared.utils import Utils
+from plugins.common.cloning import CloningAnalyzer
+from shared.utils import Utils
 
 
 @task(name="Fetch Repositories Task")

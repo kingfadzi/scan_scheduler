@@ -1,15 +1,15 @@
 from datetime import datetime
 
-from prefect import flow, task, get_run_logger
+from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from flows.factory import create_analysis_flow
-from modular.analyzer.dependency_analysis import DependencyAnalyzer
-from modular.analyzer.grype_analysis import GrypeAnalyzer
-from modular.analyzer.xeol_analysis import XeolAnalyzer
-from modular.analyzer.syft_analysis import SyftAnalyzer
-from modular.analyzer.maven_analysis import MavenAnalyzer
-from modular.analyzer.gradle_jdk_mapper import GradlejdkAnalyzer
-from modular.analyzer.category_analysis import CategoryAnalyzer
+from plugins.common.dependency_analysis import DependencyAnalyzer
+from plugins.common.grype_analysis import GrypeAnalyzer
+from plugins.common.xeol_analysis import XeolAnalyzer
+from plugins.common.syft_analysis import SyftAnalyzer
+from plugins.java.maven.maven_analysis import MavenAnalyzer
+from plugins.java.gradle.gradle_jdk_mapper import GradlejdkAnalyzer
+from plugins.common.category_analysis import CategoryAnalyzer
 from config.config import Config
 
 

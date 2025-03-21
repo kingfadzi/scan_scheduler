@@ -3,7 +3,7 @@ import aiohttp
 from prefect import flow, get_client
 from prefect.deployments import run_deployment
 from config.config import Config
-from modular.shared.utils import Utils
+from shared.utils import Utils
 
 DEPLOYMENTS = [
     "fundamental-metrics-flow/fundamentals",

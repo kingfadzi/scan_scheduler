@@ -1,10 +1,8 @@
-import asyncio
-from prefect import flow, task, get_run_logger
+from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
-from modular.shared.utils import Utils
-from modular.analyzer.checkov_analysis import CheckovAnalyzer
-from modular.analyzer.semgrep_analysis import SemgrepAnalyzer
+from plugins.common.checkov_analysis import CheckovAnalyzer
+from plugins.common.semgrep_analysis import SemgrepAnalyzer
 from flows.factory import create_analysis_flow
 from datetime import datetime
 
