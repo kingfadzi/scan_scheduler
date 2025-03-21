@@ -12,7 +12,7 @@ def create_analysis_flow(
         default_sub_tasks: List[Callable],
         default_sub_dir: str,
         default_flow_prefix: str,
-        default_batch_size: int = 10,  # Kept for fetch query
+        default_batch_size: int = 10,
         default_concurrency: int = 3
 ):
 
@@ -77,11 +77,11 @@ def create_analysis_flow(
             sub_tasks: List[Callable] = default_sub_tasks,
             sub_dir: str = default_sub_dir,
             flow_prefix: str = default_flow_prefix,
-            batch_size: int = default_batch_size  # Used for fetch only
+            batch_size: int = default_batch_size
     ):
         logger = get_run_logger()
         all_results = []
-        
+
         try:
             start_task(flow_prefix)
             ctx = get_run_context()
@@ -92,7 +92,6 @@ def create_analysis_flow(
             repos = fetch_repositories_task.with_options(retries=1)(payload, batch_size)
             logger.info(f"Total repositories to process: {len(repos)}")
 
-            # Process all repositories in single map (no task batching)
             states: List[State] = trigger_subflow.map(
                 repo=repos,
                 sub_dir=unmapped(sub_dir),

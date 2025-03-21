@@ -32,7 +32,7 @@ def build_query(payload):
         "bitbucket_repositories.updated_on as updated_on"
     ]
 
-    # Add columns from combined_repo_metrics with aliases (except for repo_id)
+    # Add columns from combined_repo_metrics with aliases (except for repo_id and status)
     for key, col in filter_mapping.items():
         if key not in ['repo_id', 'status']:
             select_cols.append(f"{col} as {key}")
@@ -67,22 +67,24 @@ def build_query(payload):
     if not filters:
         raise ValueError("No valid filters provided. Query would select all rows.")
 
+    # Append the filters and add ORDER BY clause to ensure stable pagination
     final_query = base_query + " AND " + " AND ".join(filters)
+    final_query += " ORDER BY bitbucket_repositories.repo_id"
     return final_query
 
 
 if __name__ == "__main__":
     payload_example = {
         "payload": {
-            'repo_id': ['abc'],
+            #'repo_id': ['abc'],
             'host_name': ['github.com'],
             'activity_status': ['ACTIVE'],
-            'status': ['NEW'],
-            'tc': ['some_tc_value'],
+            #'status': ['NEW'],
+            #'tc': ['some_tc_value'],
             'main_language': ['Python'],
-            'classification_label': ['A'],
-            'app_id': ['555'],
-            'number_of_contributors': [5]
+            #'classification_label': ['A'],
+            #'app_id': ['555'],
+            #'number_of_contributors': [5]
         }
     }
 
