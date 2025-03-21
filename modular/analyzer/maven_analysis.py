@@ -32,17 +32,17 @@ class MavenAnalyzer(BaseLogger):
             return None
 
     @analyze_execution(session_factory=Session, stage="Maven Build Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Maven build analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Maven build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
-        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         if "Java" not in repo_languages:
-            message = f"Repo {repo.repo_id} is not a Java project. Skipping."
+            message = f"Repo {repo['repo_id']} is not a Java project. Skipping."
             self.logger.info(message)
             return message
 
         if self.utils.detect_java_build_tool(repo_dir) != "Maven":
-            message = f"Repo {repo.repo_id} is Java but doesn't use Maven. Skipping."
+            message = f"Repo {repo['repo_id']} is Java but doesn't use Maven. Skipping."
             self.logger.info(message)
             return message
 
@@ -109,11 +109,13 @@ class MavenAnalyzer(BaseLogger):
 
         self.logger.info(f"Detected Maven build tool. Maven version: {maven_version}, Java version: {java_version}")
 
+        session = Session()
+
         try:
             session.execute(
                 insert(BuildTool)
                 .values(
-                    repo_id=repo.repo_id,
+                    repo_id=repo['repo_id'],
                     tool="Maven",
                     tool_version=maven_version,
                     runtime_version=java_version,
@@ -124,13 +126,15 @@ class MavenAnalyzer(BaseLogger):
                 )
             )
             session.commit()
-            self.logger.info(f"Maven build analysis results successfully committed for repo_id: {repo.repo_id}.")
+            self.logger.info(f"Maven build analysis results successfully committed for repo_id: {repo['repo_id']}.")
         except Exception as e:
-            self.logger.exception(f"Error persisting Maven build analysis results for repo_id {repo.repo_id}: {e}")
+            self.logger.exception(f"Error persisting Maven build analysis results for repo_id {repo['repo_id']}: {e}")
             raise RuntimeError(e)
+        finally:
+            session.close()
 
         result = {
-            "repo_id": repo.repo_id,
+            "repo_id": repo['repo_id'],
             "tool": "Maven",
             "tool_version": maven_version,
             "runtime_version": java_version,

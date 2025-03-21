@@ -1,0 +1,45 @@
+categories:
+  - name: "Messaging & Data Integration"
+    subcategories:
+
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "com\\.ibm\\.(mq|wmq).*"
+          - "com\\.atomikos.*"
+          - "com\\.rabbitmq.*"
+          - "com\\.solacesystems.*"
+          - "io\\.projectreactor\\.rabbitmq.*"
+          - "org\\.eclipse\\.paho.*"
+          - "org\\.messaginghub.*"
+          - "org\\.synchronoss\\.cloud.*"
+
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "com\\.google\\.api.*"
+          - "com\\.google\\.http-client.*"
+          - "com\\.graphql-java.*"
+          - "com\\.github\\.tomakehurst.*"
+          - "com\\.netflix\\.eureka.*"
+          - "com\\.netflix\\.ribbon.*"
+          - "com\\.netflix\\.graphql.*"
+          - "com\\.squareup\\.okhttp3.*"
+          - "com\\.sun\\.jersey.*"
+          - "io\\.grpc.*"
+          - "io\\.github\\.openfeign.*"
+          - "io\\.rsocket.*"
+          - "io\\.rest-assured.*"
+          - "io\\.springfox.*"
+          - "^io\\.swagger\\.[^:]+:.*"
+          - "^org\\.jboss\\.resteasy:.*"
+
+      - name: "Event Streaming"
+        patterns:
+          - "io\\.projectreactor\\.kafka.*"
+          - "^io\\.confluent:kafka-.*"
+
+      - name: "Networking"
+        patterns:
+          - "io\\.netty.*"
+          - "io\\.projectreactor\\.netty.*"
+          - "com\\.jcraft.*"
+          - "org\\.tmatesoft.*"

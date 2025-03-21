@@ -21,20 +21,20 @@ class SemgrepAnalyzer(BaseLogger):
         self.logger.setLevel(logging.INFO)
 
     @analyze_execution(session_factory=Session, stage="Semgrep Analysis")
-    def run_analysis(self, repo, repo_dir, session, run_id=None):
+    def run_analysis(self, repo, repo_dir, run_id=None):
 
-        self.logger.info(f"Starting Semgrep analysis for repo_id: {repo.repo_id}")
+        self.logger.info(f"Starting Semgrep analysis for repo_id: {repo['repo_id']}")
 
         try:
-            languages = self.get_languages_from_db(repo.repo_id, session)
+            languages = self.get_languages_from_db(repo['repo_id'])
             if not languages:
-                message = f"No languages detected for repo_id: {repo.repo_id}. Skipping Semgrep scan."
+                message = f"No languages detected for repo_id: {repo['repo_id']}. Skipping Semgrep scan."
                 self.logger.warning(message)
                 return message
 
             semgrep_command = self.construct_semgrep_command_specific_languages(repo_dir, languages)
             if not semgrep_command:
-                message = f"No valid Semgrep rulesets found for repo_id: {repo.repo_id}. Skipping Semgrep scan."
+                message = f"No valid Semgrep rulesets found for repo_id: {repo['repo_id']}. Skipping Semgrep scan."
                 self.logger.warning(message)
                 return message
 
@@ -52,9 +52,9 @@ class SemgrepAnalyzer(BaseLogger):
 
             self.logger.debug(semgrep_data)
 
-            findings_count = self.save_semgrep_results(session, repo.repo_id, semgrep_data)
+            findings_count = self.save_semgrep_results(repo['repo_id'], semgrep_data)
 
-            message = f"Semgrep analysis completed for repo_id: {repo.repo_id} with {findings_count} findings."
+            message = f"Semgrep analysis completed for repo_id: {repo['repo_id']} with {findings_count} findings."
             self.logger.info(message)
 
             #return json.dumps(semgrep_data)
@@ -62,29 +62,30 @@ class SemgrepAnalyzer(BaseLogger):
             return message
 
         except subprocess.TimeoutExpired as e:
-            error_message = f"Semgrep command timed out after {e.timeout} seconds for repo {repo.repo_id}."
+            error_message = f"Semgrep command timed out after {e.timeout} seconds for repo {repo['repo_id']}."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         except subprocess.CalledProcessError as e:
-            error_message = f"Semgrep command failed for repo_id: {repo.repo_id}. Error: {e.stderr.strip()}"
+            error_message = f"Semgrep command failed for repo_id: {repo['repo_id']}. Error: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         except json.JSONDecodeError as e:
-            error_message = f"Failed to parse Semgrep output for repo_id: {repo.repo_id}. Error: {str(e)}"
+            error_message = f"Failed to parse Semgrep output for repo_id: {repo['repo_id']}. Error: {str(e)}"
             self.logger.error(error_message)
             raise ValueError(error_message)
 
         except Exception as e:
-            error_message = f"Unexpected error during Semgrep analysis for repo_id: {repo.repo_id}. Error: {str(e)}"
+            error_message = f"Unexpected error during Semgrep analysis for repo_id: {repo['repo_id']}. Error: {str(e)}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
-    def get_languages_from_db(self, repo_id, session):
+    def get_languages_from_db(self, repo_id):
 
         self.logger.info(f"Querying languages for repo_id: {repo_id}")
         stmt = select(GoEnryAnalysis.language).where(GoEnryAnalysis.repo_id == repo_id)
+        session = Session()
         result = session.execute(stmt).fetchall()
         return [row.language for row in result] if result else []
 
@@ -134,10 +135,12 @@ class SemgrepAnalyzer(BaseLogger):
             command.extend(["--config", ruleset])
         return command
 
-    def save_semgrep_results(self, session, repo_id, semgrep_data):
+    def save_semgrep_results(self, repo_id, semgrep_data):
 
         self.logger.info(f"Saving Semgrep findings for repo_id: {repo_id}")
         total_upserts = 0
+
+        session = Session()
 
         for result in semgrep_data.get("results", []):
             metadata = result["extra"].get("metadata", {})
@@ -165,12 +168,14 @@ class SemgrepAnalyzer(BaseLogger):
                     set_={key: stmt.excluded[key] for key in finding.keys()}
                 )
                 session.execute(stmt)
+                session.commit()
                 total_upserts += 1
             except Exception as e:
                 self.logger.error(f"Failed to upsert Semgrep finding: {finding}. Error: {e}")
                 raise RuntimeError(f"Failed to upsert findings: {e}")
+            finally:
+                session.close()
 
-        session.commit()
         self.logger.info(f"Upserted {total_upserts} findings for repo_id: {repo_id}")
         return total_upserts
 
@@ -185,16 +190,16 @@ if __name__ == "__main__":
             self.repo_slug = repo_slug
 
     repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
-    repo_dir = f"/tmp/{repo.repo_slug}"
+    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
     analyzer = SemgrepAnalyzer()
 
     try:
-        analyzer.logger.info(f"Starting Semgrep analysis for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Starting Semgrep analysis for repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo, repo_dir, session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Semgrep analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during Semgrep analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Session closed for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Session closed for repo_id: {repo['repo_id']}")

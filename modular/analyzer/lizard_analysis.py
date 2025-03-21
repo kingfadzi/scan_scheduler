@@ -24,14 +24,14 @@ class LizardAnalyzer(BaseLogger):
             with open(analysis_file, "r") as infile:
                 file_contents = infile.read()
         except Exception as e:
-            error_message = f"Error reading analysis file {analysis_file} for repository {repo.repo_name}: {e}"
+            error_message = f"Error reading analysis file {analysis_file} for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         return file_contents
 
     @analyze_execution(session_factory=Session, stage="Lizard Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting lizard analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug})")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting lizard analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
 
         if not os.path.exists(repo_dir):
@@ -54,32 +54,32 @@ class LizardAnalyzer(BaseLogger):
             self.logger.info(f"Lizard analysis completed successfully. Output file: {analysis_file}")
 
         except subprocess.TimeoutExpired as e:
-            error_message = f"Lizard command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"Lizard command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
 
         except subprocess.CalledProcessError as e:
-            error_message = f"Lizard command failed for repo_id {repo.repo_id}: {e.stderr.decode().strip()}"
+            error_message = f"Lizard command failed for repo_id {repo['repo_id']}: {e.stderr.decode().strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         if not os.path.exists(analysis_file):
-            error_message = f"Language analysis file not found for repository {repo.repo_name}. Expected at: {analysis_file}"
+            error_message = f"Language analysis file not found for repository {repo['repo_name']}. Expected at: {analysis_file}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Parsing lizard output for repo_id: {repo.repo_id}")
+        self.logger.info(f"Parsing lizard output for repo_id: {repo['repo_id']}")
         try:
-            processed_metrics = self.parse_and_persist_lizard_results(repo.repo_id, analysis_file, session)
+            processed_metrics = self.parse_and_persist_lizard_results(repo['repo_id'], analysis_file)
         except Exception as e:
-            error_message = f"Error while parsing or saving analysis results for repository {repo.repo_name}: {e}"
+            error_message = f"Error while parsing or saving analysis results for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         return self._read_analysis_file(analysis_file, repo)
 
-    def parse_and_persist_lizard_results(self, repo_id, analysis_file_path, session):
+    def parse_and_persist_lizard_results(self, repo_id, analysis_file_path):
         summary = {
             "total_nloc": 0,
             "total_ccn": 0,
@@ -141,16 +141,19 @@ class LizardAnalyzer(BaseLogger):
                              f"Total NLOC: {summary['total_nloc']}, Avg CCN: {summary['avg_ccn']}, "
                              f"Total Tokens: {summary['total_token_count']}, Function Count: {summary['function_count']}")
 
-            self.save_lizard_summary(session, repo_id, summary)
+            self.save_lizard_summary(repo_id, summary)
             return summary
 
         except Exception as e:
             self.logger.exception(f"Error parsing lizard results for repository ID {repo_id}: {e}")
             raise
 
-    def save_lizard_summary(self, session, repo_id, summary):
+    def save_lizard_summary(self, repo_id, summary):
 
         self.logger.debug(f"Saving lizard summary metrics for repo_id: {repo_id}")
+
+        session = Session()
+
         try:
             session.execute(
                 insert(LizardSummary).values(
@@ -176,6 +179,8 @@ class LizardAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error saving lizard summary metrics for repo_id {repo_id}: {e}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -194,11 +199,11 @@ if __name__ == "__main__":
     analyzer = LizardAnalyzer()
 
     try:
-        analyzer.logger.info(f"Running lizard analysis for hardcoded repo_id: {repo.repo_id}, repo_slug: {repo.repo_slug}")
+        analyzer.logger.info(f"Running lizard analysis for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone lizard analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone lizard analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}")
+        analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")

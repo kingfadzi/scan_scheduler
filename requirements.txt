@@ -19,3 +19,5 @@ prefect-github
 pipreqs
 pip-tools
 checkov
+lxml
+prefect-dask

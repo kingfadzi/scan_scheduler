@@ -18,10 +18,10 @@ class XeolAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Xeol Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
+    def run_analysis(self, repo_dir, repo, run_id=None):
 
-        self.logger.info(f"Repo slug: {repo.repo_slug}.")
-        self.logger.info(f"Starting Xeol analysis for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Repo slug: {repo['repo_slug']}.")
+        self.logger.info(f"Starting Xeol analysis for repo_id: {repo['repo_id']}.")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -33,10 +33,10 @@ class XeolAnalyzer(BaseLogger):
             error_message = f"SBOM file does not exist: {sbom_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
-        self.logger.info(f"SBOM file found at {sbom_file_path} for repo_id: {repo.repo_id}.")
+        self.logger.info(f"SBOM file found at {sbom_file_path} for repo_id: {repo['repo_id']}.")
 
         xeol_file_path = os.path.join(repo_dir, "xeol-results.json")
-        self.logger.info(f"Analyzing SBOM with Xeol for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Analyzing SBOM with Xeol for repo_id: {repo['repo_id']}.")
 
         try:
             env = os.environ.copy()
@@ -60,30 +60,30 @@ class XeolAnalyzer(BaseLogger):
             )
             self.logger.debug(f"Xeol results written to: {xeol_file_path}")
         except subprocess.CalledProcessError as e:
-            error_message = f"Xeol command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
+            error_message = f"Xeol command failed for repo_id {repo['repo_id']}: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.TimeoutExpired as e:
-            error_message = f"Xeol command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"Xeol command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         if not os.path.exists(xeol_file_path):
-            error_message = f"Xeol results file not found for repository {repo.repo_name}. Expected at: {xeol_file_path}"
+            error_message = f"Xeol results file not found for repository {repo['repo_name']}. Expected at: {xeol_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Reading Xeol results from disk for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Reading Xeol results from disk for repo_id: {repo['repo_id']}.")
         try:
-            xeol_data = self.parse_and_save_xeol_results(xeol_file_path, repo.repo_id, session)
+            xeol_data = self.parse_and_save_xeol_results(xeol_file_path, repo['repo_id'])
         except Exception as e:
-            error_message = f"Error while parsing or saving Xeol results for repository {repo.repo_name}: {e}"
+            error_message = f"Error while parsing or saving Xeol results for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         return json.dumps(xeol_data)
 
-    def parse_and_save_xeol_results(self, xeol_file_path, repo_id, session):
+    def parse_and_save_xeol_results(self, xeol_file_path, repo_id):
         self.logger.info(f"Parsing Xeol results from: {xeol_file_path}")
         try:
             with open(xeol_file_path, "r") as file:
@@ -95,6 +95,8 @@ class XeolAnalyzer(BaseLogger):
             if not matches:
                 self.logger.info(f"No matches found in EOL results for repo_id: {repo_id}")
                 return message
+
+            session = Session()
 
             self.logger.debug(f"Found {len(matches)} matches in EOL results for repo_id: {repo_id}.")
             for match in matches:
@@ -151,6 +153,7 @@ class XeolAnalyzer(BaseLogger):
                     )
                 )
             session.commit()
+            session.close()
             self.logger.debug(f"EOL results successfully committed for repo_id: {repo_id}.")
             return message
 
@@ -171,15 +174,15 @@ if __name__ == "__main__":
 
     analyzer = XeolAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo.repo_slug}"
+    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting standalone Xeol analysis for repo_id: {repo.repo_id}.")
+        analyzer.logger.info(f"Starting standalone Xeol analysis for repo_id: {repo['repo_id']}.")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Xeol analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Xeol analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}.")
+        analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}.")

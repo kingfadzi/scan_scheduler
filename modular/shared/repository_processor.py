@@ -28,7 +28,7 @@ def analyze_fundamentals(batch, run_id, **kwargs):
     for repo in attached_batch:
         repo_dir = None
         try:
-            logger.info(f"[Fundamentals] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            logger.info(f"[Fundamentals] Processing repository: {repo['repo_name']} (ID: {repo['repo_id']})")
             analyze_fundamentals_dir = "analyze_fundamentals"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_fundamentals_dir)
             logger.debug(f"[Fundamentals] Repository cloned to: {repo_dir}")
@@ -39,7 +39,7 @@ def analyze_fundamentals(batch, run_id, **kwargs):
             GitLogAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
-            logger.error(f"[Fundamentals] Error processing repository {repo.repo_name}: {e}")
+            logger.error(f"[Fundamentals] Error processing repository {repo['repo_name']}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
@@ -58,7 +58,7 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
     for repo in attached_batch:
         repo_dir = None
         try:
-            logger.info(f"[Vulnerabilities] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            logger.info(f"[Vulnerabilities] Processing repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
             analyze_vulnerabilities_dir = "analyze_vulnerabilities"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_vulnerabilities_dir)
@@ -68,7 +68,7 @@ def analyze_vulnerabilities(batch, run_id, **kwargs):
             SyftAndGrypeAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
-            logger.error(f"[Vulnerabilities] Error processing repository {repo.repo_name}: {e}")
+            logger.error(f"[Vulnerabilities] Error processing repository {repo['repo_name']}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
@@ -88,7 +88,7 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
     for repo in attached_batch:
         repo_dir = None
         try:
-            logger.info(f"[Standards Assessment] Processing repository: {repo.repo_name} (ID: {repo.repo_id})")
+            logger.info(f"[Standards Assessment] Processing repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
             analyze_standards_dir = "analyze_standards"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_standards_dir)
@@ -99,7 +99,7 @@ def analyze_standards_assessment(batch, run_id, **kwargs):
             SemgrepAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
-            logger.error(f"[Standards Assessment] Error processing repository {repo.repo_name}: {e}")
+            logger.error(f"[Standards Assessment] Error processing repository {repo['repo_name']}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
@@ -119,7 +119,7 @@ def analyze_component_patterns(batch, run_id, **kwargs):
     for repo in attached_batch:
         repo_dir = None
         try:
-            logger.info(f"[Component Patterns] Processing repository: {repo.repo_id} (ID: {repo.repo_id})")
+            logger.info(f"[Component Patterns] Processing repository: {repo['repo_id']} (ID: {repo['repo_id']})")
 
             analyze_components_dir = "analyze_components"
             repo_dir = CloningAnalyzer().clone_repository(repo=repo, run_id=run_id, sub_dir=analyze_components_dir)
@@ -131,7 +131,7 @@ def analyze_component_patterns(batch, run_id, **kwargs):
             KantraAnalyzer().run_analysis(repo_dir=repo_dir, repo=repo, session=session, run_id=run_id)
 
         except Exception as e:
-            logger.error(f"[Component Patterns] Error processing repository {repo.repo_id}: {e}")
+            logger.error(f"[Component Patterns] Error processing repository {repo['repo_id']}: {e}")
             repo.status = "ERROR"
             repo.comment = str(e)
             repo.updated_on = datetime.utcnow()
@@ -145,9 +145,9 @@ def analyze_component_patterns(batch, run_id, **kwargs):
     session.close()
 
 def determine_final_status(repo, run_id, session):
-    logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}) run_id: {run_id}")
+    logger.info(f"Determining status for {repo['repo_name']} ({repo['repo_id']}) run_id: {run_id}")
     statuses = session.query(AnalysisExecutionLog.status) \
-        .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo.repo_id) \
+        .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo['repo_id']) \
         .filter(AnalysisExecutionLog.status != "PROCESSING") \
         .all()
     if not statuses:
@@ -224,8 +224,8 @@ def main():
         for repo in batch:
             attached_repo = session.merge(repo)
             logger.info(
-                f"Repository: repo_id={attached_repo.repo_id}, "
-                f"repo_name={attached_repo.repo_name}, "
+                f"Repository: repo_id={attached_repo['repo_id']}, "
+                f"repo_name={attached_repo['repo_name']}, "
                 f"status={attached_repo.status}, "
                 f"comment={attached_repo.comment}, "
                 f"updated_on={attached_repo.updated_on}"

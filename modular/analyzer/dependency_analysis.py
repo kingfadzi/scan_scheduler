@@ -29,65 +29,52 @@ class DependencyAnalyzer(BaseLogger):
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting dependency analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting dependency analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
-        if not repo_languages:
-            self.logger.warning(f"No detected languages for repo_id: {repo.repo_id}. Skipping dependency analysis.")
-            return f"skipped: No detected languages for repo {repo.repo_id}."
+        main_language = self.utils.get_repo_main_language(repo['repo_id'])
+        if not main_language:
+            self.logger.warning(f"No main language detected for repo_id: {repo['repo_id']}. Skipping dependency analysis.")
+            return f"skipped: No main language detected for repo {repo['repo_id']}."
 
         dependencies = []
 
         try:
-            if "Python" in repo_languages:
-                self.logger.info(f"Detected Python in repo_id: {repo.repo_id}. Running Python dependency analysis.")
+            if main_language == "Python":
+                self.logger.info(f"Main language is Python for repo_id: {repo['repo_id']}. Running dependency analysis.")
                 dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
 
-            if "JavaScript" in repo_languages or "TypeScript" in repo_languages:
-                self.logger.info(f"Detected JavaScript/TypeScript in repo_id: {repo.repo_id}. Running JavaScript dependency analysis.")
+            elif main_language in ["JavaScript", "TypeScript"]:
+                self.logger.info(f"Main language is {main_language} for repo_id: {repo['repo_id']}. Running analysis.")
                 dependencies.extend(self.js_helper.process_repo(repo_dir, repo))
 
-            if "Go" in repo_languages:
-                self.logger.info(f"Detected Go in repo_id: {repo.repo_id}. Running Go dependency analysis.")
+            elif main_language == "Go":
+                self.logger.info(f"Main language is Go for repo_id: {repo['repo_id']}. Running analysis.")
                 dependencies.extend(self.go_helper.process_repo(repo_dir, repo))
 
-            if "Java" in repo_languages:
-                self.logger.info(f"Detected Java in repo_id: {repo.repo_id}. Identifying build system.")
+            elif main_language == "Java":
+                self.logger.info(f"Main language is Java for repo_id: {repo['repo_id']}. Identifying build system.")
                 build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
-                    self.logger.info(f"Processing Maven project in {repo_dir}")
                     dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
                 elif build_tool == "Gradle":
-                    self.logger.info(f"Processing Gradle project in {repo_dir}")
-                    dependencies.extend(self.gradle_helper.process_repo(repo_dir, repo))
-                else:
-                    self.logger.warning("No supported Java build system detected.")
+                    dependencies.extend(self.gradle_helper.process_repo(repo_dir=repo_dir, repo=repo))
 
-            self.persist_dependencies(dependencies, session)
-
-            #return f"Dependencies: {dependencies}"
+            self.persist_dependencies(dependencies)
             return f"Dependencies: {len(dependencies)}"
 
-
         except Exception as e:
-            self.logger.error(f"Error during dependency analysis: {e}")
-            raise
-
-        except FileNotFoundError as e:
-            self.logger.error(str(e))
-            return f"error: {str(e)}"
-        except Exception as e:
-            self.logger.exception(f"Error during dependency analysis for repo_id {repo.repo_id}: {e}")
+            self.logger.error(f"Error processing {main_language} dependencies: {str(e)}")
             return f"error: {str(e)}"
 
 
-    def persist_dependencies(self, dependencies, session):
+
+    def persist_dependencies(self, dependencies):
         if not dependencies:
             self.logger.info("No dependencies to persist.")
             return
@@ -111,6 +98,7 @@ class DependencyAnalyzer(BaseLogger):
                 index_elements=['repo_id', 'name', 'version']
             )
 
+            session = Session()
             session.execute(upsert_stmt, dep_dicts)
             session.commit()
             self.logger.info("Dependency insertion successful.")
@@ -119,6 +107,8 @@ class DependencyAnalyzer(BaseLogger):
             session.rollback()
             self.logger.error(f"Failed to insert dependencies: {e}")
             raise
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
@@ -133,11 +123,11 @@ if __name__ == "__main__":
 
     analyzer = DependencyAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = "/tmp/VulnerableApp"
+    repo_dir = "/tmp/gradle-example"
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting analysis for {repo.repo_slug}")
+        analyzer.logger.info(f"Starting analysis for {repo['repo_slug']}")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Analysis completed successfully")
     except Exception as e:

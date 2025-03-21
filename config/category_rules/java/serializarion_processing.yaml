@@ -1,0 +1,30 @@
+categories:
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "^com\\.fasterxml(?:\\.[^:]+)*:.*$"
+          - "org\\.glassfish\\.jaxb.*"
+          - "com\\.jayway\\.jsonpath.*" #
+          - "com\\.googlecode\\.json-simple.*"
+          - "com\\.thoughtworks\\.xstream.*"
+          - "commons-collections.*"
+          - "dom4j.*"
+          - "jaxen.*"
+          - "net\\.minidev.*"
+          - "org\\.codehaus\\.(jackson|woodstox|castor|jettison).*"
+          - "org\\.jdom.*"
+          - "org\\.json.*"
+          - "org\\.jvnet\\.(staxex|mimepull).*"
+          - "org\\.xmlunit.*"
+          - "org\\.yaml.*"
+          - "wsdl4j.*"
+          - "com\\.github\\.fge.*"
+          - "^com\\.github\\.java-json(?:-[^:]+)*:.*$"
+
+
+      - name: "Protocol Buffers & Binary Formats"
+        patterns:
+          - "com\\.google\\.protobuf.*"
+          - "org\\.apache\\.avro.*"

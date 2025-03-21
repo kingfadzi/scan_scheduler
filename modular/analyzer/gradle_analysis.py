@@ -18,19 +18,19 @@ class GradleAnalyzer(BaseLogger):
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Gradle Build Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Gradle build analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Gradle build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
-        repo_languages = self.utils.detect_repo_languages(repo.repo_id, session)
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         if 'Java' not in repo_languages:
-            message = f"Repo {repo.repo_id} is not a Java project. Skipping."
+            message = f"Repo {repo['repo_id']} is not a Java project. Skipping."
             self.logger.info(message)
             return message
 
         # Check if build tool is Gradle
         java_build_tool = self.utils.detect_java_build_tool(repo_dir)
         if java_build_tool != 'Gradle':
-            message = f"Repo {repo.repo_id} is Java but doesn't use Gradle. Skipping."
+            message = f"Repo {repo['repo_id']} is Java but doesn't use Gradle. Skipping."
             self.logger.info(message)
             return message
 
@@ -38,7 +38,7 @@ class GradleAnalyzer(BaseLogger):
         gradle_versions = env_manager.get_java_and_gradle_versions(repo_dir=repo_dir)
 
         if not gradle_versions:
-            message = f"Failed to determine Java and Gradle versions for repo '{repo.repo_id}'."
+            message = f"Failed to determine Java and Gradle versions for repo '{repo['repo_id']}'."
             self.logger.error(message)
             return message
 
@@ -47,10 +47,12 @@ class GradleAnalyzer(BaseLogger):
 
         self.logger.info(f"Detected Gradle build tool. Gradle version: {gradle_version}, Java version: {java_version}")
 
+        session = Session()
+
         try:
             session.execute(
                 insert(BuildTool).values(
-                    repo_id=repo.repo_id,
+                    repo_id=repo['repo_id'],
                     tool="Gradle",
                     tool_version=gradle_version,
                     runtime_version=java_version,
@@ -63,12 +65,14 @@ class GradleAnalyzer(BaseLogger):
                 )
             )
             session.commit()
-            self.logger.info(f"Gradle build analysis results successfully committed for repo_id: {repo.repo_id}.")
+            self.logger.info(f"Gradle build analysis results successfully committed for repo_id: {repo['repo_id']}.")
         except Exception as e:
-            self.logger.exception(f"Error persisting Gradle build analysis results for repo_id {repo.repo_id}: {e}")
+            self.logger.exception(f"Error persisting Gradle build analysis results for repo_id {repo['repo_id']}: {e}")
             raise RuntimeError(e)
+        finally:
+            session.close()
 
-        result = f"Repo ID: {repo.repo_id}, Tool: Gradle, Gradle Version: {gradle_version}, Java Version: {java_version}"
+        result = f"Repo ID: {repo['repo_id']}, Tool: Gradle, Gradle Version: {gradle_version}, Java Version: {java_version}"
         self.logger.info("Gradle build analysis completed.")
         return result
 

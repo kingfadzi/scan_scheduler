@@ -1,0 +1,58 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+      - name: "Cloud Platforms"
+      - name: "Application Servers"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+      - name: "NoSQL & Big Data"
+      - name: "Caching"
+      - name: "Data Lakes & Analytics"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+      - name: "API Gateways & REST/GraphQL"
+      - name: "Event Streaming"
+      - name: "Networking"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+      - name: "Spring: Boot"
+      - name: "Spring: Framework"
+      - name: "Reactive Libraries"
+      - name: "Dependency Injection"
+      - name: "Template Engines"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+      - name: "Protocol Buffers & Binary Formats"
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+      - name: "Security Layers"
+      - name: "Transport & Data Security "
+      - name: "Identity Management"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+      - name: "Metrics & Distributed Tracing"
+      - name: "Circuit Breakers & Rate Limiting"
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+      - name: "Testing"
+      - name: "Code Quality & Profiling"
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+

@@ -17,6 +17,7 @@ def build_query(payload):
         'repo_id': 'bitbucket_repositories.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
         'activity_status': 'combined_repo_metrics.activity_status',
+        'status': 'bitbucket_repositories.status',
         'tc': 'combined_repo_metrics.tc',
         'main_language': 'combined_repo_metrics.main_language',
         'classification_label': 'combined_repo_metrics.classification_label',
@@ -31,9 +32,9 @@ def build_query(payload):
         "bitbucket_repositories.updated_on as updated_on"
     ]
 
-    # Add columns from combined_repo_metrics with aliases (except for repo_id)
+    # Add columns from combined_repo_metrics with aliases (except for repo_id and status)
     for key, col in filter_mapping.items():
-        if key != 'repo_id':
+        if key not in ['repo_id', 'status']:
             select_cols.append(f"{col} as {key}")
 
     select_clause = "SELECT " + ", ".join(select_cols)
@@ -51,7 +52,6 @@ def build_query(payload):
         if key in inner_payload:
             values = inner_payload[key]
             if not values:
-
                 raise ValueError(f"Filter for '{key}' cannot be empty.")
 
             if key == 'repo_id':
@@ -67,21 +67,24 @@ def build_query(payload):
     if not filters:
         raise ValueError("No valid filters provided. Query would select all rows.")
 
+    # Append the filters and add ORDER BY clause to ensure stable pagination
     final_query = base_query + " AND " + " AND ".join(filters)
+    final_query += " ORDER BY bitbucket_repositories.repo_id"
     return final_query
 
-# Example usage:
+
 if __name__ == "__main__":
     payload_example = {
         "payload": {
-            'repo_id': ['abc'],
+            #'repo_id': ['abc'],
             'host_name': ['github.com'],
             'activity_status': ['ACTIVE'],
-            'tc': ['some_tc_value'],
+            #'status': ['NEW'],
+            #'tc': ['some_tc_value'],
             'main_language': ['Python'],
-            'classification_label': ['A'],
-            'app_id': ['555'],
-            'number_of_contributors': [5]
+            #'classification_label': ['A'],
+            #'app_id': ['555'],
+            #'number_of_contributors': [5]
         }
     }
 

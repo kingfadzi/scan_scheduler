@@ -1,0 +1,129 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Application Servers"
+        patterns:
+          - "^javax\\.ejb(\\..*)?:.+$"
+          - "^javax\\.batch(\\..*)?:.+$"
+          - "^javax\\.enterprise\\.deploy(\\..*)?:.+$"
+          - "^javax\\.resource(\\..*)?:.+$"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        patterns:
+          - "^javax\\.sql(\\..*)?:.+$"
+          - "^javax\\.transaction(\\..*)?:.+$"
+          - "^javax\\.persistence(\\..*)?:.+$"
+      - name: "NoSQL & Big Data"
+        patterns: []
+      - name: "Caching"
+        patterns:
+          - "^javax\\.cache(\\..*)?:.+$"
+
+      - name: "Data Lakes & Analytics"
+        patterns: []
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        patterns:
+          - "^javax\\.mail(\\..*)?:.+$"
+          - "^javax\\.jms(\\..*)?:.+$"
+      - name: "API Gateways & REST/GraphQL"
+        patterns:
+          - "^javax\\.jws(\\..*)?:.+$"
+          - "^javax\\.xml\\.ws(\\..*)?:.+$"
+          - "^javax\\.xml\\.soap(\\..*)?:.+$"
+          - "^javax\\.ws\\.rs(\\..*)?:.+$"
+          - "^javax\\.xml\\.rpc(\\..*)?:.+$"
+      - name: "Event Streaming"
+        patterns: []
+      - name: "Networking"
+        patterns:
+          - "^javax\\.net(\\..*)?:.+$"
+          - "^javax\\.rmi(\\..*)?:.+$"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        patterns:
+          - "^javax\\.servlet(\\..*)?:.+$"
+          - "^javax\\.faces(\\..*)?:.+$"
+          - "^javax\\.websocket(\\..*)?:.+$"
+          - "^javax\\.el(\\..*)?:.+$"
+      - name: "Spring: Boot"
+        patterns: []
+      - name: "Spring: Framework"
+        patterns: []
+      - name: "Reactive Libraries"
+        patterns: []
+      - name: "Dependency Injection"
+        patterns:
+          - "^javax\\.inject(\\..*)?:.+$"
+          - "^javax\\.interceptor(\\..*)?:.+$"
+          - "^javax\\.decorator(\\..*)?:.+$"
+          - "^javax\\.enterprise(?!(\\.deploy))(\\..*)?:.+$"
+      - name: "Template Engines"
+        patterns: []
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        patterns:
+          - "^javax\\.json(\\..*)?:.+$"
+          - "^javax\\.xml(?:\\..*)?:.+$"
+
+      - name: "Protocol Buffers & Binary Formats"
+        patterns: []
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        patterns:
+          - "^javax\\.security(\\..*)?:.+$"
+      - name: "Security Layers"
+        patterns:
+          - "^javax\\.crypto(\\..*)?:.+$"
+      - name: "Transport & Data Security "
+        patterns: []
+      - name: "Identity Management"
+        patterns: []
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        patterns:
+          - "^javax\\.management(\\..*)?:.+$"
+      - name: "Metrics & Distributed Tracing"
+        patterns: []
+      - name: "Circuit Breakers & Rate Limiting"
+        patterns: []
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        patterns:
+          - "^javax\\.annotation(\\..*)?:.+$"
+          - "^javax\\.lang\\.model(\\..*)?:.+$"
+          - "^javax\\.tools(\\..*)?:.+$"
+      - name: "Testing"
+        patterns: []
+      - name: "Code Quality & Profiling"
+        patterns: []
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        patterns:
+          - "^javax\\.accessibility(\\..*)?:.+$"
+          - "^javax\\.activation(\\..*)?:.+$"
+          - "^javax\\.activity(\\..*)?:.+$"
+          - "^javax\\.imageio(\\..*)?:.+$"
+          - "^javax\\.naming(\\..*)?:.+$"
+          - "^javax\\.print(\\..*)?:.+$"
+          - "^javax\\.script(\\..*)?:.+$"
+          - "^javax\\.sound(\\..*)?:.+$"
+          - "^javax\\.validation(\\..*)?:.+$"
+          - "^javax\\.xml\\.registry(\\..*)?:.+$"
+          - "^javax\\.money(\\..*)?:.+$"

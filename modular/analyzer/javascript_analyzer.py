@@ -18,20 +18,20 @@ class JavaScriptAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting JavaScript build analysis for repo_id: {repo.repo_id} (repo slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting JavaScript build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
         # Language detection
-        repo_languages = detect_repo_languages(repo.repo_id, session)
+        repo_languages = detect_repo_languages(repo['repo_id'])
         if not {'JavaScript', 'TypeScript'}.intersection(repo_languages):
-            message = f"Repo {repo.repo_id} is not a JavaScript/TypeScript project. Skipping."
+            message = f"Repo {repo['repo_id']} is not a JavaScript/TypeScript project. Skipping."
             self.logger.info(message)
             return message
 
         # Build tool detection
         js_build_tool = detect_js_build_tool(repo_dir)
         if js_build_tool not in ['npm', 'Yarn', 'pnpm']:
-            message = f"Repo {repo.repo_id} is JavaScript but doesn't use npm/Yarn/pnpm. Skipping."
+            message = f"Repo {repo['repo_id']} is JavaScript but doesn't use npm/Yarn/pnpm. Skipping."
             self.logger.info(message)
             return message
 
@@ -70,10 +70,13 @@ class JavaScriptAnalyzer(BaseLogger):
         self.logger.info(f"Detected {js_build_tool}. Version: {tool_version}, Node.js version: {node_version}")
 
         # Database persistence
+
+        session = Session()
+
         try:
             session.execute(
                 insert(BuildTool).values(
-                    repo_id=repo.repo_id,
+                    repo_id=repo['repo_id'],
                     tool=js_build_tool,
                     tool_version=tool_version,
                     runtime_version=node_version,
@@ -86,13 +89,15 @@ class JavaScriptAnalyzer(BaseLogger):
                 )
             )
             session.commit()
-            self.logger.info(f"JavaScript build analysis results committed for repo_id: {repo.repo_id}.")
+            self.logger.info(f"JavaScript build analysis results committed for repo_id: {repo['repo_id']}.")
         except Exception as e:
-            self.logger.exception(f"Error persisting JavaScript analysis for repo_id {repo.repo_id}: {e}")
+            self.logger.exception(f"Error persisting JavaScript analysis for repo_id {repo['repo_id']}: {e}")
             raise RuntimeError(e)
+        finally:
+            session.close()
 
         result = {
-            "repo_id": repo.repo_id,
+            "repo_id": repo['repo_id'],
             "tool": js_build_tool,
             "tool_version": tool_version,
             "runtime_version": node_version,

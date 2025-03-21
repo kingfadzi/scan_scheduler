@@ -18,8 +18,8 @@ class SyftAndGrypeAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Syft and Grype Analysis")
-    def run_analysis(self, repo_dir, repo, session, run_id=None):
-        self.logger.info(f"Starting Syft and Grype analysis for repo_id: {repo.repo_id} (repo_slug: {repo.repo_slug}).")
+    def run_analysis(self, repo_dir, repo, run_id=None):
+        self.logger.info(f"Starting Syft and Grype analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -27,7 +27,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
             raise FileNotFoundError(error_message)
 
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
-        self.logger.info(f"Generating SBOM for repo_id: {repo.repo_id} using Syft.")
+        self.logger.info(f"Generating SBOM for repo_id: {repo['repo_id']} using Syft.")
 
         try:
             command = [
@@ -47,27 +47,27 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 timeout=Config.DEFAULT_PROCESS_TIMEOUT
             )
             self.logger.debug(f"SBOM successfully generated at: {sbom_file_path}")
-       
+
         except subprocess.TimeoutExpired as e:
-            error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"Syft command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
-       
-       
+
+
         except subprocess.CalledProcessError as e:
             self.logger.error("Command failed: %s", e)
 
         except subprocess.TimeoutExpired as e:
-            error_message = f"Syft command timed out for repo_id {repo.repo_id} after {e.timeout} seconds."
+            error_message = f"Syft command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
-            error_message = f"Syft command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
+            error_message = f"Syft command failed for repo_id {repo['repo_id']}: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
-        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Analyzing SBOM with Grype for repo_id: {repo['repo_id']}.")
 
         try:
             env = os.environ.copy()
@@ -97,31 +97,31 @@ class SyftAndGrypeAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
         except subprocess.TimeoutExpired:
-            error_message = f"Grype command timed out for repo_id {repo.repo_id} after 60 seconds."
+            error_message = f"Grype command timed out for repo_id {repo['repo_id']} after 60 seconds."
             self.logger.error(error_message)
             raise RuntimeError(error_message)
         except subprocess.CalledProcessError as e:
-            error_message = f"Grype command failed for repo_id {repo.repo_id}: {e.stderr.strip()}"
+            error_message = f"Grype command failed for repo_id {repo['repo_id']}: {e.stderr.strip()}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         if not os.path.exists(grype_file_path):
-            error_message = f"Grype results file not found for repository {repo.repo_name}. Expected at: {grype_file_path}"
+            error_message = f"Grype results file not found for repository {repo['repo_name']}. Expected at: {grype_file_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        self.logger.info(f"Reading Grype results from disk for repo_id: {repo.repo_id}.")
+        self.logger.info(f"Reading Grype results from disk for repo_id: {repo['repo_id']}.")
         try:
-            grype_data = self.parse_and_save_grype_results(grype_file_path, repo.repo_id, session)
+            grype_data = self.parse_and_save_grype_results(grype_file_path, repo['repo_id'])
         except Exception as e:
-            error_message = f"Error while parsing or saving Grype results for repository {repo.repo_name}: {e}"
+            error_message = f"Error while parsing or saving Grype results for repository {repo['repo_name']}: {e}"
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
         return json.dumps(grype_data)
 
 
-    def parse_and_save_grype_results(self, grype_file_path, repo_id, session):
+    def parse_and_save_grype_results(self, grype_file_path, repo_id):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
         try:
             with open(grype_file_path, "r") as file:
@@ -134,6 +134,8 @@ class SyftAndGrypeAnalyzer(BaseLogger):
 
             self.logger.debug(f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}.")
             processed_vulnerabilities = 0
+
+            session = Session()
 
             for match in matches:
                 vulnerability = match.get("vulnerability", {})
@@ -182,6 +184,7 @@ class SyftAndGrypeAnalyzer(BaseLogger):
                 processed_vulnerabilities += 1
 
             session.commit()
+            session.close()
             self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
             return grype_data
 
@@ -202,15 +205,15 @@ if __name__ == "__main__":
 
     analyzer = SyftAndGrypeAnalyzer()
     repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo.repo_slug}"
+    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     try:
-        analyzer.logger.info(f"Starting standalone Syft and Grype analysis for repo_id: {repo.repo_id}.")
+        analyzer.logger.info(f"Starting standalone Syft and Grype analysis for repo_id: {repo['repo_id']}.")
         result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
         analyzer.logger.info(f"Standalone Syft and Grype analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Syft and Grype analysis: {e}")
     finally:
         session.close()
-        analyzer.logger.info(f"Database session closed for repo_id: {repo.repo_id}.")
+        analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}.")

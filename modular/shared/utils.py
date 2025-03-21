@@ -5,12 +5,13 @@ import os
 from prefect.context import get_run_context
 from sqlalchemy import text
 from config.config import Config
-from modular.shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis
+from modular.shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics
 from modular.shared.query_builder import build_query
 import logging
 import numpy as np
 from modular.shared.base_logger import BaseLogger
 import math
+from pathlib import Path
 
 
 class Utils(BaseLogger):
@@ -89,11 +90,65 @@ class Utils(BaseLogger):
 
                 detach_start = time.perf_counter()
                 for repo in batch:
-                    _ = repo.repo_slug  # Force attribute load
+                    _ = repo['repo_slug']  # Force attribute load
                     session.expunge(repo)
                 self.logger.debug(f"Detachment completed in {time.perf_counter() - detach_start:.2f}s")
 
                 yield batch
+                offset += batch_size
+
+        finally:
+            session.close()
+            self.logger.info(
+                f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
+                f"over {offset//batch_size} pages"
+            )
+
+    def fetch_repositories_dict(self, payload, batch_size=1000):
+        self.logger.info(
+            f"Initializing repository fetch - Payload: {payload.keys()}, "
+            f"Page size: {batch_size}"
+        )
+
+        session = Session()
+        offset = 0
+        total_fetched = 0
+        base_query = build_query(payload)
+
+        self.logger.debug(f"Base SQL template:\n{base_query}")
+
+        try:
+            while True:
+                final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+                self.logger.info(
+                    f"Executing paginated query - Offset: {offset:,}, "
+                    f"Limit: {batch_size}"
+                )
+
+                start_time = time.perf_counter()
+                batch = session.query(Repository).from_statement(text(final_query)).all()
+                query_time = time.perf_counter() - start_time
+
+                batch_size_actual = len(batch)
+                total_fetched += batch_size_actual
+
+                self.logger.debug(
+                    f"Query completed in {query_time:.2f}s - "
+                    f"Returned {batch_size_actual} results\n"
+                    f"Sample results: {[r.repo_slug[:20] for r in batch[:3]]}..."
+                )
+
+                if not batch:
+                    self.logger.info("Empty result set - Ending pagination")
+                    break
+
+                # Convert ORM objects to dictionaries
+                def serialize_repo(repo):
+                    return {c.name: getattr(repo, c.name) for c in repo.__table__.columns}
+
+                batch_dicts = [serialize_repo(repo) for repo in batch]
+
+                yield batch_dicts
                 offset += batch_size
 
         finally:
@@ -127,30 +182,41 @@ class Utils(BaseLogger):
         finally:
             session.close()
 
-    def determine_final_status(self, repo, run_id, session):
+    def determine_final_status(self, repo: dict, run_id):
+        repo_id = repo["repo_id"]
+        self.logger.info(f"Determining status for {repo['repo_name']} ({repo_id}) run_id: {run_id}")
 
-        self.logger.info(f"Determining status for {repo.repo_name} ({repo.repo_id}) run_id: {run_id}")
+        session = Session()
+
         statuses = (
             session.query(AnalysisExecutionLog.status)
-            .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo.repo_id)
+            .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo_id)
             .filter(AnalysisExecutionLog.status != "PROCESSING")
             .all()
         )
 
-        if not statuses:
-            repo.status = "ERROR"
-            repo.comment = "No analysis records."
-        elif any(s == "FAILURE" for (s,) in statuses):
-            repo.status = "FAILURE"
-        elif all(s == "SUCCESS" for (s,) in statuses):
-            repo.status = "SUCCESS"
-            repo.comment = "All steps completed."
-        else:
-            repo.status = "UNKNOWN"
+        # Fetch the repository record from the database using repo_id.
+        repository_record = session.query(Repository).filter(Repository.repo_id == repo_id).one_or_none()
+        if not repository_record:
+            self.logger.error(f"Repository record with id {repo_id} not found.")
+            return
 
-        repo.updated_on = datetime.utcnow()
-        session.add(repo)
+        if not statuses:
+            repository_record.status = "ERROR"
+            repository_record.comment = "No analysis records."
+        elif any(s == "FAILURE" for (s,) in statuses):
+            repository_record.status = "FAILURE"
+        elif all(s == "SUCCESS" for (s,) in statuses):
+            repository_record.status = "SUCCESS"
+            repository_record.comment = "All steps completed."
+        else:
+            repository_record.status = "UNKNOWN"
+
+        repository_record.updated_on = datetime.utcnow()
+        session.add(repository_record)
         session.commit()
+        session.close()
+
 
     @staticmethod
     def generate_repo_flow_run_name():
@@ -173,8 +239,10 @@ class Utils(BaseLogger):
         idx = params.get("partition_idx", 0)
         return f"{prefix}-partition-{idx}"
 
-    def detect_repo_languages(self, repo_id, session):
+    def detect_repo_languages(self, repo_id):
         self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
+
+        session = Session()
 
         results = session.query(
                 GoEnryAnalysis.language,
@@ -184,6 +252,8 @@ class Utils(BaseLogger):
             ).order_by(
                 GoEnryAnalysis.percent_usage.desc()
             ).all()
+
+        session.close()
 
         if results:
             main_language = [results[0].language]
@@ -196,26 +266,72 @@ class Utils(BaseLogger):
         self.logger.warning(f"No languages found in go_enry_analysis for repo_id: {repo_id}")
         return []
 
+    def get_repo_main_language(self, repo_id: str) -> str | None:
+
+
+        session = Session()
+
+        try:
+            return (
+                session.query(CombinedRepoMetrics.main_language)
+                .filter(CombinedRepoMetrics.repo_id == repo_id)
+                .scalar()
+            )
+        except Exception as e:
+            self.logger.error(f"Error getting main language for repo: {e}")
+        finally:
+            session.close()
+        return None
 
     def detect_java_build_tool(self, repo_dir):
+        EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings'}
+        gradle_files = {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"}
 
-        maven_pom = os.path.isfile(os.path.join(repo_dir, "pom.xml"))
+        maven_pom = False
+        found_gradle_files = set()
 
-        gradle_files = ["build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"]
-        gradle_found = any(os.path.isfile(os.path.join(repo_dir, f)) for f in gradle_files)
+        repo_path = Path(repo_dir).resolve()
 
-        if maven_pom and gradle_found:
-            self.logger.warning("Both Maven and Gradle build files detected. Prioritizing Maven.")
+        for path in repo_path.rglob('*'):
+            if any(part in EXCLUDE_DIRS for part in path.parts):
+                continue
+
+            if path.is_file():
+                if path.name == "pom.xml":
+                    maven_pom = True
+                    self.logger.debug(f"Found Maven POM at: {path.relative_to(repo_path)}")
+
+                if path.name in gradle_files:
+                    found_gradle_files.add(path.name)
+                    self.logger.debug(f"Found Gradle file at: {path.relative_to(repo_path)}")
+
+        gradle_found = len(found_gradle_files) > 0
+        conflict = maven_pom and gradle_found
+
+        if conflict:
+            self.logger.warning(
+                f"Build tool conflict detected in {repo_path.name}\n"
+                f"Maven POMs: {maven_pom}\n"
+                f"Gradle files: {', '.join(found_gradle_files)}"
+            )
             return "Maven"
         elif maven_pom:
-            self.logger.debug("Maven pom.xml detected.")
+            self.logger.info(f"Detected Maven project in {repo_path.name}")
             return "Maven"
         elif gradle_found:
-            self.logger.debug("Gradle build files detected: " + ", ".join(f for f in gradle_files if os.path.isfile(os.path.join(repo_dir, f))))
+            self.logger.info(
+                f"Detected Gradle project in {repo_path.name}\n"
+                f"Found files: {', '.join(found_gradle_files)}"
+            )
             return "Gradle"
-        else:
-            self.logger.warning("No Java build system detected. Checked for pom.xml and Gradle files: " + ", ".join(gradle_files))
-            return None
+
+        self.logger.debug(
+            f"No Java build system detected in {repo_path.name}\n"
+            f"Searched paths: {repo_path}\n"
+            f"Excluded directories: {', '.join(EXCLUDE_DIRS)}"
+        )
+        return None
+
 
 def main():
 
@@ -236,8 +352,8 @@ def main():
 
     for idx, partition in enumerate(partitions):
         utils.logger.info(f"Processing partition {idx + 1}/{len(partitions)} with {len(partition)} repos")
-        for repo in partition[:3]:  # Print first 3 repos of each partition as a sample
-            utils.logger.info(f"Sample repo slug: {repo.repo_slug}")
+        for repo in partition[:3]:
+            utils.logger.info(f"Sample repo slug: {repo['repo_slug']}")
 
 if __name__ == "__main__":
     main()
