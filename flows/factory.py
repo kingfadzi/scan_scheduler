@@ -6,17 +6,12 @@ from prefect.task_runners import ConcurrentTaskRunner
 from prefect.states import State
 from typing import List, Callable, Dict, Any
 
-def chunk_list(lst: List[Any], chunk_size: int) -> List[List[Any]]:
-    """Split list into batches of specified size."""
-    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
-
 def create_analysis_flow(
         flow_name: str,
         flow_run_name: str,
         default_sub_tasks: List[Callable],
         default_sub_dir: str,
         default_flow_prefix: str,
-        default_batch_size: int = 10,
         default_concurrency: int = 3
 ):
 
@@ -80,8 +75,7 @@ def create_analysis_flow(
             payload: Dict,
             sub_tasks: List[Callable] = default_sub_tasks,
             sub_dir: str = default_sub_dir,
-            flow_prefix: str = default_flow_prefix,
-            batch_size: int = default_batch_size
+            flow_prefix: str = default_flow_prefix
     ):
         logger = get_run_logger()
         all_results = []
@@ -92,42 +86,34 @@ def create_analysis_flow(
             parent_run_id = str(ctx.flow_run.id) if ctx and hasattr(ctx, 'flow_run') else "default"
             logger.info(f"Main flow {parent_run_id} starting with concurrency {default_concurrency}")
 
-            repos = fetch_repositories_task.with_options(retries=1)(payload, batch_size)
+            repos = fetch_repositories_task.with_options(retries=1)(payload)
             logger.info(f"Total repositories to process: {len(repos)}")
 
-            repo_batches = chunk_list(repos, batch_size)
+            # Process all repos at once with concurrency control
+            states: List[State] = trigger_subflow.map(
+                repo=repos,
+                sub_dir=unmapped(sub_dir),
+                sub_tasks=unmapped(sub_tasks),
+                flow_prefix=unmapped(flow_prefix),
+                return_state=True
+            )
 
-            for batch_idx, batch in enumerate(repo_batches):
-                logger.info(f"Processing batch {batch_idx+1}/{len(repo_batches)} ({len(batch)} repos)")
+            # Process results
+            successful = []
+            for state in states:
+                if state.is_completed():
+                    try:
+                        result = state.result()
+                        if result is not None:
+                            successful.append(result)
+                    except Exception as e:
+                        logger.error(f"Failed to retrieve result: {str(e)}")
+                else:
+                    error_msg = state.message[:200] if state.message else "Unknown error"
+                    logger.warning(f"Failed processing: {error_msg}")
 
-                # Process batch with state tracking
-                states: List[State] = trigger_subflow.map(
-                    repo=batch,
-                    sub_dir=unmapped(sub_dir),
-                    sub_tasks=unmapped(sub_tasks),
-                    flow_prefix=unmapped(flow_prefix),
-                    return_state=True
-                )
-
-                # Process results
-                successful = []
-                for state in states:
-                    if state.is_completed():
-                        try:
-                            result = state.result()
-                            if result is not None:
-                                successful.append(result)
-                        except Exception as e:
-                            logger.error(f"Failed to retrieve result: {str(e)}")
-                    else:
-                        error_msg = state.message[:200] if state.message else "Unknown error"
-                        logger.warning(f"Failed processing: {error_msg}")
-
-                logger.info(f"Batch {batch_idx+1} completed: {len(successful)}/{len(batch)} successful")
-                all_results.extend(successful)
-
-            logger.info(f"Processing complete. Total successful: {len(all_results)}/{len(repos)}")
-            return all_results
+            logger.info(f"Processing complete. Total successful: {len(successful)}/{len(repos)}")
+            return successful
 
         except Exception as e:
             logger.error(f"Critical flow failure: {str(e)}")
