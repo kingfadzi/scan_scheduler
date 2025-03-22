@@ -23,23 +23,28 @@ class MavenHelper(BaseLogger):
             repo_path = Path(repo_dir).resolve()
             if not repo_path.exists():
                 raise FileNotFoundError(f"Directory not found: {repo_dir}")
+            self.logger.debug(f"Scanning for POMs in {repo_path}")
 
             effective_pom = self._generate_effective_pom(repo_path)
             if effective_pom:
+                self.logger.debug(f"Effective POM generated: {effective_pom}")
                 return self._parse_pom_file(effective_pom, repo, is_effective=True)
 
             root_pom = repo_path / "pom.xml"
             if root_pom.exists():
+                self.logger.debug("Root pom.xml found, checking for modules...")
                 pom_files = self._collect_module_poms(root_pom)
             else:
-                pom_files = list(repo_path.rglob("pom.xml"))
                 self.logger.warning("No root pom.xml found; scanning all poms under directory.")
+                pom_files = list(repo_path.rglob("pom.xml"))
 
             seen_dirs = set()
             unique_poms = [p for p in pom_files if p.parent not in seen_dirs and not seen_dirs.add(p.parent)]
+            self.logger.debug(f"Found {len(unique_poms)} unique POM files to process.")
 
             deps = []
             for pom in unique_poms:
+                self.logger.debug(f"Processing POM: {pom}")
                 deps.extend(self._parse_pom_file(pom, repo))
             return deps
 
@@ -59,6 +64,8 @@ class MavenHelper(BaseLogger):
                 command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
             if Config.TRUSTSTORE_PASSWORD:
                 command_list.append(f"-Djavax.net.ssl.trustStorePassword={Config.TRUSTSTORE_PASSWORD}")
+
+            self.logger.debug(f"Running command: {' '.join(command_list)}")
 
             result = subprocess.run(
                 command_list,
@@ -89,6 +96,7 @@ class MavenHelper(BaseLogger):
         seen.add(root_dir)
 
         pom_files.append(root_pom)
+        self.logger.debug(f"Collecting modules for {root_pom}")
 
         try:
             tree = ET.parse(root_pom)
@@ -98,6 +106,7 @@ class MavenHelper(BaseLogger):
                 for module in modules.findall("m:module", self.NAMESPACE):
                     module_dir = root_dir / module.text.strip()
                     module_pom = module_dir / "pom.xml"
+                    self.logger.debug(f"Found module: {module_pom}")
                     pom_files.extend(self._collect_module_poms(module_pom, seen))
         except Exception as e:
             self.logger.warning(f"Error parsing modules in {root_pom}: {str(e)}")
@@ -106,6 +115,7 @@ class MavenHelper(BaseLogger):
 
     def _resolve_parent(self, pom_path: Path) -> Dict[str, str]:
         try:
+            self.logger.debug(f"Resolving parent for {pom_path}")
             tree = ET.parse(pom_path)
             root = tree.getroot()
             parent = root.find("m:parent", self.NAMESPACE)
@@ -115,6 +125,7 @@ class MavenHelper(BaseLogger):
             rel_path_elem = parent.find("m:relativePath", self.NAMESPACE)
             rel_path = rel_path_elem.text.strip() if rel_path_elem is not None else "../pom.xml"
             parent_pom_path = (pom_path.parent / rel_path).resolve()
+            self.logger.debug(f"Resolved parent path: {parent_pom_path}")
 
             if not parent_pom_path.exists():
                 self.logger.debug(f"Parent POM not found at {parent_pom_path}")
@@ -125,10 +136,12 @@ class MavenHelper(BaseLogger):
             parent_group = parent_root.find("m:groupId", self.NAMESPACE)
             parent_version = parent_root.find("m:version", self.NAMESPACE)
 
-            return {
+            resolved = {
                 "groupId": parent_group.text.strip() if parent_group is not None else "",
                 "version": parent_version.text.strip() if parent_version is not None else ""
             }
+            self.logger.debug(f"Inherited parent metadata: {resolved}")
+            return resolved
 
         except Exception as e:
             self.logger.warning(f"Error resolving parent POM from {pom_path}: {str(e)}")
@@ -143,11 +156,13 @@ class MavenHelper(BaseLogger):
             if group is not None and artifact is not None and version is not None:
                 key = f"{group.text.strip()}:{artifact.text.strip()}"
                 managed_versions[key] = version.text.strip()
+                self.logger.debug(f"DependencyManagement: {key} -> {version.text.strip()}")
         return managed_versions
 
     def _parse_pom_file(self, pom_path: Path, repo: object, is_effective=False) -> List[Dependency]:
         deps = []
         try:
+            self.logger.debug(f"Parsing POM file: {pom_path}")
             tree = ET.parse(pom_path)
             root = tree.getroot()
 
@@ -181,7 +196,10 @@ class MavenHelper(BaseLogger):
                     version_val = version.text.strip()
                 else:
                     version_val = managed_versions.get(key, "unspecified")
+                    if key in managed_versions:
+                        self.logger.debug(f"Resolved version from dependencyManagement for {key}: {version_val}")
 
+                self.logger.debug(f"Extracted dependency: {key}@{version_val}")
                 deps.append(Dependency(
                     repo_id=repo['repo_id'],
                     name=key,
@@ -192,8 +210,6 @@ class MavenHelper(BaseLogger):
             self.logger.warning(f"Error parsing POM {pom_path}: {str(e)}")
         return deps
 
-
-# --- EXACT MAIN METHOD YOU PROVIDED ---
 
 if __name__ == "__main__":
     repo_dir = "/tmp/maven-modular"
@@ -210,7 +226,7 @@ if __name__ == "__main__":
 
     repo = MockRepo(repo_id, repo_slug)
     helper = MavenHelper()
-    helper.logger.setLevel(logging.INFO)
+    helper.logger.setLevel(logging.DEBUG)
 
     try:
         deps = helper.process_repo(repo_dir, repo)
