@@ -1,140 +1,214 @@
-import os
-import logging
+from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
-from config.config import Config
+import logging
+from typing import List, Dict, Set
 from shared.base_logger import BaseLogger
 from shared.models import Dependency
+from config.config import Config
+
 
 class MavenHelper(BaseLogger):
+    EXCLUDE_DIRS = {'.git', 'target', '.idea', '.settings', 'bin'}
+    NAMESPACE = {'m': 'http://maven.apache.org/POM/4.0.0'}
+
     def __init__(self, logger=None):
-        if logger is None:
-            self.logger = self.get_logger("MavenHelper")
-        else:
-            self.logger = logger
+        super().__init__()
+        self.logger = logger if logger else self.get_logger("MavenHelper")
         self.logger.setLevel(logging.DEBUG)
 
-    def process_repo(self, repo_dir, repo):
-
-        self.logger.info(f"Processing repository at: {repo_dir}")
-        if not os.path.isdir(repo_dir):
-            self.logger.error(f"Invalid directory: {repo_dir}")
-            return []
-
-        effective_pom = self.generate_effective_pom(repo_dir)
-        if not effective_pom or not os.path.isfile(effective_pom):
-            return []
-
-        return self.parse_dependencies(effective_pom, repo)
-
-    def generate_effective_pom(self, repo_dir, output_file="pom.xml"):
-
-        self.logger.info(f"Checking for pom.xml in: {repo_dir}")
-        pom_path = os.path.join(repo_dir, "pom.xml")
-
-        if not os.path.isfile(pom_path):
-            self.logger.warning(f"No pom.xml found at {pom_path}. Skipping effective POM generation.")
-            return None
-
-        self.logger.info(f"Found pom.xml at {pom_path}")
-        command_list = ["mvn", "help:effective-pom", f"-Doutput={output_file}"]
-
-        if Config.TRUSTSTORE_PATH:
-            command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
-        if Config.TRUSTSTORE_PASSWORD:
-            command_list.append(f"-Djavax.net.ssl.trustStorePassword={Config.TRUSTSTORE_PASSWORD}")
-
-        self.logger.debug(f"Executing Maven command: {' '.join(command_list)}")
-
+    def process_repo(self, repo_dir: str, repo: object) -> List[Dependency]:
+        self.logger.info(f"Processing Maven repo: {repo['repo_id']}")
         try:
+            repo_path = Path(repo_dir).resolve()
+            if not repo_path.exists():
+                raise FileNotFoundError(f"Directory not found: {repo_dir}")
+
+            effective_pom = self._generate_effective_pom(repo_path)
+            if effective_pom:
+                return self._parse_pom_file(effective_pom, repo, is_effective=True)
+
+            root_pom = repo_path / "pom.xml"
+            pom_files = self._collect_module_poms(root_pom)
+            deps = []
+            for pom in pom_files:
+                deps.extend(self._parse_pom_file(pom, repo))
+            return deps
+
+        except Exception as e:
+            self.logger.error(f"Maven analysis failed: {str(e)}", exc_info=True)
+            return []
+
+    def _generate_effective_pom(self, repo_path: Path) -> Path:
+        try:
+            output_file = repo_path / "effective-pom.xml"
+            command_list = [
+                "mvn", "-B", "-q", "help:effective-pom",
+                f"-Doutput={output_file.name}"
+            ]
+
+            # Optional SSL truststore config
+            if Config.TRUSTSTORE_PATH:
+                command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
+            if Config.TRUSTSTORE_PASSWORD:
+                command_list.append(f"-Djavax.net.ssl.trustStorePassword={Config.TRUSTSTORE_PASSWORD}")
+
             result = subprocess.run(
                 command_list,
-                cwd=repo_dir,
-                capture_output=True,
-                text=True,
-                check=True
+                cwd=repo_path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30
             )
-            self.logger.info("Maven help:effective-pom completed successfully.")
-            return os.path.join(repo_dir, output_file)
-
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to generate effective-pom.xml: {e}")
-            self.logger.debug(f"Stdout:\n{e.stdout}\nStderr:\n{e.stderr}")
-
-            # Fallback to raw pom.xml if available
-            if os.path.isfile(pom_path):
-                self.logger.info("Falling back to raw pom.xml.")
-                return pom_path
-            self.logger.warning(f"Could not fallback to raw pom.xml because it is missing at {pom_path}.")
+            if result.returncode != 0 or not output_file.exists():
+                self.logger.warning("Effective POM generation failed.")
+                self.logger.debug(result.stderr.decode().strip())
+                return None
+            return output_file
+        except Exception as e:
+            self.logger.warning(f"Error generating effective POM: {str(e)}")
             return None
 
-    def parse_dependencies(self, pom_file, repo):
-        dependencies = []
-        if not os.path.isfile(pom_file):
-            return dependencies
+    def _collect_module_poms(self, root_pom: Path, seen: Set[Path] = None) -> List[Path]:
+        seen = seen or set()
+        pom_files = []
 
-        self.logger.info(f"Parsing dependencies from {pom_file}")
+        if not root_pom.exists():
+            return []
+
+        root_dir = root_pom.parent.resolve()
+        if root_dir in seen or any(part in self.EXCLUDE_DIRS for part in root_dir.parts):
+            return []
+        seen.add(root_dir)
+
+        pom_files.append(root_pom)
+
         try:
-            tree = ET.parse(pom_file)
+            tree = ET.parse(root_pom)
+            root = tree.getroot()
+            modules = root.find("m:modules", self.NAMESPACE)
+            if modules is not None:
+                for module in modules.findall("m:module", self.NAMESPACE):
+                    module_dir = root_dir / module.text.strip()
+                    module_pom = module_dir / "pom.xml"
+                    pom_files.extend(self._collect_module_poms(module_pom, seen))
+        except Exception as e:
+            self.logger.warning(f"Error parsing modules in {root_pom}: {str(e)}")
+
+        return pom_files
+
+    def _resolve_parent(self, pom_path: Path) -> Dict[str, str]:
+        try:
+            tree = ET.parse(pom_path)
+            root = tree.getroot()
+            parent = root.find("m:parent", self.NAMESPACE)
+            if parent is None:
+                return {}
+
+            rel_path_elem = parent.find("m:relativePath", self.NAMESPACE)
+            rel_path = rel_path_elem.text.strip() if rel_path_elem is not None else "../pom.xml"
+            parent_pom_path = (pom_path.parent / rel_path).resolve()
+
+            if not parent_pom_path.exists():
+                self.logger.debug(f"Parent POM not found at {parent_pom_path}")
+                return {}
+
+            parent_tree = ET.parse(parent_pom_path)
+            parent_root = parent_tree.getroot()
+            parent_group = parent_root.find("m:groupId", self.NAMESPACE)
+            parent_version = parent_root.find("m:version", self.NAMESPACE)
+
+            return {
+                "groupId": parent_group.text.strip() if parent_group is not None else "",
+                "version": parent_version.text.strip() if parent_version is not None else ""
+            }
+
+        except Exception as e:
+            self.logger.warning(f"Error resolving parent POM from {pom_path}: {str(e)}")
+            return {}
+
+    def _parse_dependency_management(self, root: ET.Element) -> Dict[str, str]:
+        managed_versions = {}
+        for dm_dep in root.findall(".//m:dependencyManagement/m:dependencies/m:dependency", self.NAMESPACE):
+            group = dm_dep.find("m:groupId", self.NAMESPACE)
+            artifact = dm_dep.find("m:artifactId", self.NAMESPACE)
+            version = dm_dep.find("m:version", self.NAMESPACE)
+            if group is not None and artifact is not None and version is not None:
+                key = f"{group.text.strip()}:{artifact.text.strip()}"
+                managed_versions[key] = version.text.strip()
+        return managed_versions
+
+    def _parse_pom_file(self, pom_path: Path, repo: object, is_effective=False) -> List[Dependency]:
+        deps = []
+        try:
+            tree = ET.parse(pom_path)
             root = tree.getroot()
 
-            ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+            inherited = {}
+            managed_versions = {}
 
-            for dep in root.findall(".//m:dependency", ns):
-                group_id = (
-                    dep.find("m:groupId", ns).text
-                    if dep.find("m:groupId", ns) is not None
-                    else "unknown"
-                )
-                artifact_id = (
-                    dep.find("m:artifactId", ns).text
-                    if dep.find("m:artifactId", ns) is not None
-                    else "unknown"
-                )
-                version = (
-                    dep.find("m:version", ns).text
-                    if dep.find("m:version", ns) is not None
-                    else "unknown"
-                )
+            if not is_effective:
+                # resolve parent groupId/version
+                project_group = root.find("m:groupId", self.NAMESPACE)
+                project_version = root.find("m:version", self.NAMESPACE)
+                if project_group is None or project_version is None:
+                    inherited = self._resolve_parent(pom_path)
 
-                dependencies.append(
-                    Dependency(
-                        repo_id=repo['repo_id'],
-                        name=f"{group_id}:{artifact_id}",
-                        version=version,
-                        package_type="maven"
-                    )
-                )
+                # parse dependencyManagement
+                managed_versions = self._parse_dependency_management(root)
 
-            return dependencies
+            for dep_elem in root.findall(".//m:dependency", self.NAMESPACE):
+                scope = dep_elem.find("m:scope", self.NAMESPACE)
+                optional = dep_elem.find("m:optional", self.NAMESPACE)
+                if scope is not None and scope.text == "test":
+                    continue
+                if optional is not None and optional.text.lower() == "true":
+                    continue
 
-        except ET.ParseError as e:
-            self.logger.error(f"Error parsing POM XML: {e}")
+                group = dep_elem.find("m:groupId", self.NAMESPACE)
+                artifact = dep_elem.find("m:artifactId", self.NAMESPACE)
+                version = dep_elem.find("m:version", self.NAMESPACE)
+
+                group_val = group.text.strip() if group is not None else inherited.get("groupId", "unspecified")
+                artifact_val = artifact.text.strip() if artifact is not None else "unspecified"
+
+                key = f"{group_val}:{artifact_val}"
+                if version is not None:
+                    version_val = version.text.strip()
+                else:
+                    version_val = managed_versions.get(key, "unspecified")
+
+                deps.append(Dependency(
+                    repo_id=repo['repo_id'],
+                    name=key,
+                    version=version_val,
+                    package_type="maven"
+                ))
         except Exception as e:
-            self.logger.error(f"Unexpected error parsing POM: {e}")
-
-        return dependencies
-
-
-class Repo:
-    def __init__(self, repo_id):
-        self.repo_id = repo_id
-
+            self.logger.warning(f"Error parsing POM {pom_path}: {str(e)}")
+        return deps
+        
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    repo_dir = "/tmp/log4shell-honeypot"
+    repo_slug = "log4shell-honeypot"
+    repo_id = "vulnerable-apps/log4shell-honeypot"
 
-    repo_directory = "/tmp/sonar-metrics"
-    repo = Repo(repo_id="maven_project")
+    class MockRepo:
+        def __init__(self, repo_id, repo_slug):
+            self.repo_id = repo_id
+            self.repo_slug = repo_slug
+            self.repo_name = repo_slug
+        def __getitem__(self, key):
+            return getattr(self, key)
+
+    repo = MockRepo(repo_id, repo_slug)
     helper = MavenHelper()
+    helper.logger.setLevel(logging.INFO)
 
     try:
-        dependencies = helper.process_repo(repo_directory, repo)
-        print(f"Dependencies found: {len(dependencies)}" if dependencies else "No dependencies found")
-
-        #for dep in dependencies:
-        #    print(f"Dependency found: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+        deps = helper.process_repo(repo_dir, repo)
+        print(f"Found {len(deps)} Maven dependencies:")
+        for dep in deps[:10]:
+            print(f"{dep.name}@{dep.version}")
     except Exception as e:
-        print(f"An error occurred while processing the repository: {e}")
+        helper.logger.error(f"Error processing repo {repo_id}: {str(e)}", exc_info=True)        
