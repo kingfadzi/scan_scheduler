@@ -59,19 +59,19 @@ class MavenAnalyzer(BaseLogger):
 
         return results
 
-    
-   def persist_entry(self, session, repo_id_value, maven_version, java_version):
-      self.logger.debug(f"Persisting versions for {repo_id_value} - Maven: {maven_version}, JDK: {java_version}")
-      stmt = insert(BuildTool).values(
-          repo_id=repo_id_value,
-          tool="Maven",
-          tool_version=maven_version,
-          runtime_version=java_version,
-      ).on_conflict_do_nothing(
-          index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
-      )
-      session.execute(stmt)     
-        
+    def persist_entry(self, session, repo_id_value, maven_version, java_version):
+        self.logger.debug(
+            f"Persisting versions for {repo_id_value} - Maven: {maven_version}, JDK: {java_version}"
+        )
+        stmt = insert(BuildTool).values(
+            repo_id=repo_id_value,
+            tool="Maven",
+            tool_version=maven_version,
+            runtime_version=java_version,
+        ).on_conflict_do_nothing(
+            index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
+        )
+        session.execute(stmt)
 
     def extract_maven_version(self, repo_path: Path) -> str:
         props_file = repo_path / ".mvn" / "wrapper" / "maven-wrapper.properties"
@@ -93,7 +93,7 @@ class MavenAnalyzer(BaseLogger):
             try:
                 tree = ET.parse(pom_file)
                 root = tree.getroot()
-                ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+                ns = {"m": "http://maven.apache.org/POM/4.0.0"}
                 for plugin in root.findall(".//m:plugin", ns):
                     artifact = plugin.find("m:artifactId", ns)
                     if artifact is not None and artifact.text == "maven-compiler-plugin":
@@ -136,6 +136,7 @@ if __name__ == "__main__":
             self.repo_id = repo_id
             self.repo_slug = repo_slug
             self.repo_name = repo_slug
+
         def __getitem__(self, key):
             return getattr(self, key)
 
