@@ -354,10 +354,16 @@ class BuildTool(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     repo_id = Column(String, nullable=False)
-    tool = Column(String, nullable=False)  # e.g., Maven, Gradle, npm, pip, etc.
-    tool_version = Column(String, nullable=True)  # version of the build tool
-    runtime_version = Column(String, nullable=True)  # language/runtime version (e.g., Java, Node, Python)
+    tool = Column(String, nullable=False)
+    tool_version = Column(String, nullable=True)
+    runtime_version = Column(String, nullable=True)
 
     __table_args__ = (
-        UniqueConstraint('repo_id', 'tool', name='_build_tools_uc'),
+        UniqueConstraint(
+            'repo_id', 
+            'tool', 
+            'tool_version', 
+            'runtime_version',
+            name='_build_tools_full_uc'
+        ),
     )
