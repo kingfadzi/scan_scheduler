@@ -4,9 +4,9 @@ import xml.etree.ElementTree as ET
 import logging
 from typing import List, Dict, Set
 from shared.base_logger import BaseLogger
-from shared.models import Dependency
+from shared.models import Dependency, Session
 from config.config import Config
-
+from shared.execution_decorator import analyze_execution
 
 class MavenDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.git', 'target', '.idea', '.settings', 'bin'}
@@ -17,7 +17,8 @@ class MavenDependencyAnalyzer(BaseLogger):
         self.logger = logger if logger else self.get_logger("MavenHelper")
         self.logger.setLevel(logging.DEBUG)
 
-    def process_repo(self, repo_dir: str, repo: object) -> List[Dependency]:
+    @analyze_execution(session_factory=Session, stage="Maven Dependency Analysis")
+    def run_analysis(self, repo_dir: str, repo: object) -> List[Dependency]:
         self.logger.info(f"Processing Maven repo: {repo['repo_id']}")
         try:
             repo_path = Path(repo_dir).resolve()
@@ -229,7 +230,7 @@ if __name__ == "__main__":
     helper.logger.setLevel(logging.DEBUG)
 
     try:
-        deps = helper.process_repo(repo_dir, repo)
+        deps = helper.run_analysis(repo_dir, repo)
         print(f"Found {len(deps)} Maven dependencies:")
         for dep in deps[:10]:
             print(f"{dep.name}@{dep.version}")

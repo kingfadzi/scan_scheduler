@@ -1,9 +1,9 @@
 import subprocess
 import venv
-from shared.models import Dependency
+from shared.models import Dependency, Session
 import os
 from shared.base_logger import BaseLogger
-
+from shared.execution_decorator import analyze_execution
 
 class PythonDependencyAnalyzer(BaseLogger):
 
@@ -14,7 +14,8 @@ class PythonDependencyAnalyzer(BaseLogger):
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-    def process_repo(self, repo_dir, repo):
+    @analyze_execution(session_factory=Session, stage="Python Dependency Analysis")
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Processing repository at: {repo_dir}")
         env_path = self.create_virtual_env(repo_dir)
         req_file_path = os.path.join(repo_dir, "requirements.txt")
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     repo = Repo(repo_id="dashboard")
 
     try:
-        dependencies = helper.process_repo(repo_directory, repo)
+        dependencies = helper.run_analysis(repo_directory, repo)
         for dep in dependencies:
             print(f"Dependency: {dep.name} - {dep.version}")
     except Exception as e:

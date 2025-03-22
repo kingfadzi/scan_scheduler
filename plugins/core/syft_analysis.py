@@ -15,7 +15,7 @@ class SyftAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Syft Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Syft analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     try:
         analyzer.logger.info(f"Starting standalone Syft analysis for repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="SYFT_STANDALONE_001")
+        result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone Syft analysis result: {result[:500]}...")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Syft analysis: {e}")

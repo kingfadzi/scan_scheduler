@@ -3,9 +3,9 @@ import sys
 import json
 import logging
 import subprocess
-from shared.models import Dependency
+from shared.models import Dependency, Session
 from shared.base_logger import BaseLogger
-
+from shared.execution_decorator import analyze_execution
 
 class JavaScriptDependencyAnalyzer(BaseLogger):
 
@@ -17,7 +17,8 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 
-    def process_repo(self, repo_dir, repo):
+    @analyze_execution(session_factory=Session, stage="Javascript Dependency Analysis")
+    def run_analysis(self, repo_dir, repo):
 
         pkg_json_path = os.path.join(repo_dir, "package.json")
         lock_file = None
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     helper = JavaScriptDependencyAnalyzer()
 
     try:
-        dependencies = helper.process_repo(repo_directory, repo)
+        dependencies = helper.run_analysis(repo_directory, repo)
         for dep in dependencies:
             print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
     except Exception as e:

@@ -1,10 +1,11 @@
-from flows.base_tasks import fetch_repositories_task, start_task, clone_repository_task, \
+from tasks.base_tasks import fetch_repositories_task, start_task, clone_repository_task, \
     cleanup_repo_task, update_status_task, refresh_views_task
 from prefect import flow, task, get_run_logger, unmapped
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.states import State
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict
+
 
 def create_analysis_flow(
         flow_name: str,

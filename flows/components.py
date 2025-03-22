@@ -87,8 +87,7 @@ def run_gradle_analysis_task(repo_dir, repo, run_id):
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,
-        run_id=run_id
-    )
+     )
     logger.info(f"[Component Patterns] Completed Gradle analysis for repository: {repo['repo_id']}")
     return result
 

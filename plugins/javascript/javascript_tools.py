@@ -19,7 +19,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting JavaScript build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
         utils = Utils()
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     helper = JavaScriptDependencyAnalyzer()
 
     try:
-        dependencies = helper.process_repo(repo_dir, repo)
+        dependencies = helper.run_analysis(repo_dir, repo)
         helper.logger.info(f"Standalone JavaScript analysis result: {dependencies}")
         for dep in dependencies:
             print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")

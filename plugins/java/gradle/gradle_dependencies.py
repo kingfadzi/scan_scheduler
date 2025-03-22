@@ -3,7 +3,8 @@ import re
 import logging
 from typing import List, Dict
 from shared.base_logger import BaseLogger
-from shared.models import Dependency
+from shared.models import Session, Dependency
+from shared.execution_decorator import analyze_execution
 
 class GradleDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
@@ -18,7 +19,8 @@ class GradleDependencyAnalyzer(BaseLogger):
         self.logger = logger if logger else self.get_logger("GradleHelper")
         self.logger.setLevel(logging.DEBUG)
 
-    def process_repo(self, repo_dir: str, repo: object) -> List[Dependency]:
+    @analyze_execution(session_factory=Session, stage="Gradle Dependency Analysis")
+    def run_analysis(self, repo_dir: str, repo: object) -> List[Dependency]:
         self.logger.info(f"Processing Gradle repo: {repo['repo_id']}")
         try:
             repo_path = Path(repo_dir).resolve()
@@ -131,7 +133,7 @@ if __name__ == "__main__":
     helper.logger.setLevel(logging.INFO)
 
     repo = MockRepo("test-org/example")
-    dependencies = helper.process_repo("/tmp/gradle-example", repo)
+    dependencies = helper.run_analysis("/tmp/gradle-example", repo)
 
     print(f"Found {len(dependencies)} Gradle dependencies:")
     for dep in dependencies[:3]:

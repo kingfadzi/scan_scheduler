@@ -29,7 +29,7 @@ class LizardAnalyzer(BaseLogger):
         return file_contents
 
     @analyze_execution(session_factory=Session, stage="Lizard Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting lizard analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']})")
         analysis_file = os.path.join(repo_dir, "analysis.txt")
 
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     try:
         analyzer.logger.info(f"Running lizard analysis for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone lizard analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone lizard analysis: {e}")

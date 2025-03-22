@@ -1,10 +1,11 @@
 import os
 import logging
 import subprocess
-from shared.models import Dependency
+from shared.models import Dependency,Session
 from shared.base_logger import BaseLogger
+from shared.execution_decorator import analyze_execution
 
-class GoHelper(BaseLogger):
+class GoDependencyAnalyzer(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:
@@ -12,7 +13,8 @@ class GoHelper(BaseLogger):
         else:
             self.logger = logger
 
-    def process_repo(self, repo_dir, repo):
+    @analyze_execution(session_factory=Session, stage="Go Dependency Analysis")
+    def run_analysis(self, repo_dir, repo):
 
         self.logger.info(f"Processing repository at: {repo_dir}")
 
@@ -78,12 +80,12 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    helper = GoHelper()
+    helper = GoDependencyAnalyzer()
     repo_directory = "/Users/fadzi/tools/go_projetcs/ovaa"
     repo = Repo(repo_id="go_project")
 
     try:
-        dependencies = helper.process_repo(repo_directory, repo)
+        dependencies = helper.run_analysis(repo_directory, repo)
         for dep in dependencies:
             print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
     except Exception as e:

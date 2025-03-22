@@ -21,7 +21,7 @@ class SemgrepAnalyzer(BaseLogger):
         self.logger.setLevel(logging.INFO)
 
     @analyze_execution(session_factory=Session, stage="Semgrep Analysis")
-    def run_analysis(self, repo, repo_dir, run_id=None):
+    def run_analysis(self, repo, repo_dir):
 
         self.logger.info(f"Starting Semgrep analysis for repo_id: {repo['repo_id']}")
 
@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     try:
         analyzer.logger.info(f"Starting Semgrep analysis for repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo, repo_dir, session, run_id="STANDALONE_RUN_001")
+        result = analyzer.run_analysis(repo, repo_dir, session)
         analyzer.logger.info(f"Semgrep analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during Semgrep analysis: {e}")

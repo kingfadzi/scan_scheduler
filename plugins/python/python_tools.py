@@ -17,7 +17,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Python Build Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Python analysis for {repo['repo_id']}")
 
         repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
@@ -230,8 +230,7 @@ if __name__ == "__main__":
         result = analyzer.run_analysis(
             repo_dir=test_repo_dir,
             repo=test_repo,
-            session=session,
-            run_id="LOCAL_PYTHON_TEST"
+            session=session
         )
 
 

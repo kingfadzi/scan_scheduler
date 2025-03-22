@@ -141,7 +141,7 @@ class GradlejdkAnalyzer(BaseLogger):
             session.close()
 
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
 
         self.logger.info(f"Starting analysis for repository: {repo_dir}")
         repo_path = Path(repo_dir).resolve()
@@ -225,8 +225,7 @@ if __name__ == "__main__":
         result_json = analyzer.run_analysis(
             repo_dir=repo_dir,
             repo=repo,
-            session=session,
-            run_id="STANDALONE_RUN"
+            session=session
         )
         result = json.loads(result_json)
 

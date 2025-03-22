@@ -17,7 +17,7 @@ class GoBuildToolAnalyzer(BaseLogger):
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
 
     @analyze_execution(session_factory=Session, stage="Go Build Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
         utils = Utils(0)
@@ -165,8 +165,7 @@ if __name__ == "__main__":
         result = analyzer.run_analysis(
             repo_dir=test_repo_dir,
             repo=test_repo,
-            session=session,
-            run_id="LOCAL_GO_TEST"
+            session=session
         )
         print("\nAnalysis Results:")
         print(json.dumps(json.loads(result), indent=2))

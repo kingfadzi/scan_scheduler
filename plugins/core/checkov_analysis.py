@@ -18,7 +18,7 @@ class CheckovAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Checkov Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(
             f"Starting Checkov analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']})."
         )
