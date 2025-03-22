@@ -29,9 +29,17 @@ class MavenHelper(BaseLogger):
                 return self._parse_pom_file(effective_pom, repo, is_effective=True)
 
             root_pom = repo_path / "pom.xml"
-            pom_files = self._collect_module_poms(root_pom)
+            if root_pom.exists():
+                pom_files = self._collect_module_poms(root_pom)
+            else:
+                pom_files = list(repo_path.rglob("pom.xml"))
+                self.logger.warning("No root pom.xml found; scanning all poms under directory.")
+
+            seen_dirs = set()
+            unique_poms = [p for p in pom_files if p.parent not in seen_dirs and not seen_dirs.add(p.parent)]
+
             deps = []
-            for pom in pom_files:
+            for pom in unique_poms:
                 deps.extend(self._parse_pom_file(pom, repo))
             return deps
 
@@ -47,7 +55,6 @@ class MavenHelper(BaseLogger):
                 f"-Doutput={output_file.name}"
             ]
 
-            # Optional SSL truststore config
             if Config.TRUSTSTORE_PATH:
                 command_list.append(f"-Djavax.net.ssl.trustStore={Config.TRUSTSTORE_PATH}")
             if Config.TRUSTSTORE_PASSWORD:
@@ -148,13 +155,10 @@ class MavenHelper(BaseLogger):
             managed_versions = {}
 
             if not is_effective:
-                # resolve parent groupId/version
                 project_group = root.find("m:groupId", self.NAMESPACE)
                 project_version = root.find("m:version", self.NAMESPACE)
                 if project_group is None or project_version is None:
                     inherited = self._resolve_parent(pom_path)
-
-                # parse dependencyManagement
                 managed_versions = self._parse_dependency_management(root)
 
             for dep_elem in root.findall(".//m:dependency", self.NAMESPACE):
@@ -187,7 +191,10 @@ class MavenHelper(BaseLogger):
         except Exception as e:
             self.logger.warning(f"Error parsing POM {pom_path}: {str(e)}")
         return deps
-        
+
+
+# --- EXACT MAIN METHOD YOU PROVIDED ---
+
 if __name__ == "__main__":
     repo_dir = "/tmp/maven-modular"
     repo_slug = "maven-modular"
@@ -211,4 +218,4 @@ if __name__ == "__main__":
         for dep in deps[:10]:
             print(f"{dep.name}@{dep.version}")
     except Exception as e:
-        helper.logger.error(f"Error processing repo {repo_id}: {str(e)}", exc_info=True)        
+        helper.logger.error(f"Error processing repo {repo_id}: {str(e)}", exc_info=True)
