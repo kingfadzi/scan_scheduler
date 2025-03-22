@@ -137,7 +137,7 @@ if __name__ == "__main__":
     }
     analyzer = MavenAnalyzer()
     try:
-        results = analyzer.run_analysis(repo_dir, repo, run_id="STANDALONE_RUN")
+        results = analyzer.run_analysis(repo_dir=repo_dir, repo=repo, run_id="STANDALONE_RUN")
         for repo_id_value, maven_version, java_version in results:
             print(f"{repo_id_value}: Maven={maven_version}, JDK={java_version}")
     except Exception as e:
