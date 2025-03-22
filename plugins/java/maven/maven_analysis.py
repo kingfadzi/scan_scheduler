@@ -34,8 +34,8 @@ class MavenAnalyzer(BaseLogger):
                 self.logger.debug("Detected root pom.xml. Treating as single Maven project.")
                 maven_version = self.extract_maven_version(repo_path)
                 java_version = self.extract_jdk_version(repo_path)
-                self.persist_entry(session, repo['repo_id'], maven_version, java_version)
-                results.append((repo['repo_id'], maven_version, java_version))
+                self.persist_entry(session, repo["repo_id"], maven_version, java_version)
+                results.append((repo["repo_id"], maven_version, java_version))
             else:
                 self.logger.debug("No root pom.xml found. Scanning for all pom.xml files.")
                 seen = set()
@@ -47,7 +47,8 @@ class MavenAnalyzer(BaseLogger):
                     self.logger.debug(f"Processing project at {project_dir}")
                     maven_version = self.extract_maven_version(project_dir)
                     java_version = self.extract_jdk_version(project_dir)
-                    project_repo_id = project_dir.name
+                    # Use the folder name as a qualified repo id for sub-projects.
+                    project_repo_id = f"{repo['repo_id']}/{project_dir.relative_to(repo_path).as_posix()}"
                     self.persist_entry(session, project_repo_id, maven_version, java_version)
                     results.append((project_repo_id, maven_version, java_version))
             session.commit()
@@ -129,19 +130,11 @@ class MavenAnalyzer(BaseLogger):
 
 if __name__ == "__main__":
     repo_dir = "/tmp/maven-modular"
-    repo_slug = "maven-modular"
-    repo_id = "maven-modular"
-
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
-
-        def __getitem__(self, key):
-            return getattr(self, key)
-
-    repo = MockRepo(repo_id, repo_slug)
+    repo = {
+        "repo_id": "maven-modular",
+        "repo_slug": "maven-modular",
+        "repo_name": "maven-modular",
+    }
     analyzer = MavenAnalyzer()
     try:
         results = analyzer.run_analysis(repo_dir, repo, run_id="STANDALONE_RUN")
