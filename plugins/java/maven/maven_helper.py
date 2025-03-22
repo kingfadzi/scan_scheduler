@@ -189,9 +189,9 @@ class MavenHelper(BaseLogger):
         return deps
         
 if __name__ == "__main__":
-    repo_dir = "/tmp/log4shell-honeypot"
-    repo_slug = "log4shell-honeypot"
-    repo_id = "vulnerable-apps/log4shell-honeypot"
+    repo_dir = "/tmp/maven-modular"
+    repo_slug = "maven-modular"
+    repo_id = "maven-modular"
 
     class MockRepo:
         def __init__(self, repo_id, repo_slug):
