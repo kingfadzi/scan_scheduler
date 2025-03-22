@@ -2,10 +2,10 @@ from prefect import flow, task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from config.config import Config
 from datetime import datetime
-from plugins.common.gitlog_analysis import GitLogAnalyzer
-from plugins.common.go_enry_analysis import GoEnryAnalyzer
-from plugins.common.lizard_analysis import LizardAnalyzer
-from plugins.common.cloc_analysis import ClocAnalyzer
+from plugins.core.gitlog_analysis import GitLogAnalyzer
+from plugins.core.go_enry_analysis import GoEnryAnalyzer
+from plugins.core.lizard_analysis import LizardAnalyzer
+from plugins.core.cloc_analysis import ClocAnalyzer
 from flows.factory import create_analysis_flow
 
 

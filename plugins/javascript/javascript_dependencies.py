@@ -6,7 +6,8 @@ import subprocess
 from shared.models import Dependency
 from shared.base_logger import BaseLogger
 
-class JavaScriptHelper(BaseLogger):
+
+class JavaScriptDependencyAnalyzer(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:
@@ -178,7 +179,7 @@ if __name__ == "__main__":
 
     repo_directory = sys.argv[1]
     repo = Repo(repo_id="node_project")  # Replace with actual repo_id logic
-    helper = JavaScriptHelper()
+    helper = JavaScriptDependencyAnalyzer()
 
     try:
         dependencies = helper.process_repo(repo_directory, repo)

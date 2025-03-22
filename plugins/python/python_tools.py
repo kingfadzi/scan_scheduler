@@ -8,7 +8,7 @@ from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger
 
-class PythonAnalyzer(BaseLogger):
+class PythonBuildToolAnalyzer(BaseLogger):
     def __init__(self, logger=None):
         super().__init__()
         self.logger = logger or self.get_logger("PythonAnalyzer")
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     test_repo = MockRepo("python-test-123", "example-python-repo")
     test_repo_dir = "/path/to/your/python/project"  # Replace with actual path
 
-    analyzer = PythonAnalyzer()
+    analyzer = PythonBuildToolAnalyzer()
     session = Session()
 
     try:

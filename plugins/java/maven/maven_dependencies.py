@@ -8,7 +8,7 @@ from shared.models import Dependency
 from config.config import Config
 
 
-class MavenHelper(BaseLogger):
+class MavenDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.git', 'target', '.idea', '.settings', 'bin'}
     NAMESPACE = {'m': 'http://maven.apache.org/POM/4.0.0'}
 
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             return getattr(self, key)
 
     repo = MockRepo(repo_id, repo_slug)
-    helper = MavenHelper()
+    helper = MavenDependencyAnalyzer()
     helper.logger.setLevel(logging.DEBUG)
 
     try:

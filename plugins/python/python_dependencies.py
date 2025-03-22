@@ -5,7 +5,7 @@ import os
 from shared.base_logger import BaseLogger
 
 
-class PythonHelper(BaseLogger):
+class PythonDependencyAnalyzer(BaseLogger):
 
     def __init__(self, logger=None):
         if logger is None:
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    helper = PythonHelper()
+    helper = PythonDependencyAnalyzer()
     repo_directory = "/Users/fadzi/python_repos/Tiredful-API-py3-beta"
     repo = Repo(repo_id="dashboard")
 

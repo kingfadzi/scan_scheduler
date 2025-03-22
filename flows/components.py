@@ -3,13 +3,13 @@ from datetime import datetime
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from flows.factory import create_analysis_flow
-from plugins.common.dependency_analysis import DependencyAnalyzer
-from plugins.common.grype_analysis import GrypeAnalyzer
-from plugins.common.xeol_analysis import XeolAnalyzer
-from plugins.common.syft_analysis import SyftAnalyzer
-from plugins.java.maven.maven_analysis import MavenAnalyzer
-from plugins.java.gradle.gradle_jdk_mapper import GradlejdkAnalyzer
-from plugins.common.category_analysis import CategoryAnalyzer
+from plugins.core.dependency_analysis import DependencyAnalyzer
+from plugins.core.grype_analysis import GrypeAnalyzer
+from plugins.core.xeol_analysis import XeolAnalyzer
+from plugins.core.syft_analysis import SyftAnalyzer
+from plugins.java.maven.maven_jdk import MavenJdkAnalyzer
+from plugins.java.gradle.gradle_jdk import GradlejdkAnalyzer
+from plugins.core.category_analysis import CategoryAnalyzer
 from config.config import Config
 
 
@@ -69,7 +69,7 @@ def run_xeol_analysis_task(repo_dir, repo, run_id):
 def run_maven_analysis_task(repo_dir, repo, run_id):
     logger = get_run_logger()
     logger.info(f"[Component Patterns] Starting Maven analysis for repository: {repo['repo_id']}")
-    analyzer = MavenAnalyzer(logger=logger)
+    analyzer = MavenJdkAnalyzer(logger=logger)
     result = analyzer.run_analysis(
         repo_dir=repo_dir,
         repo=repo,

@@ -5,7 +5,7 @@ from typing import List, Dict
 from shared.base_logger import BaseLogger
 from shared.models import Dependency
 
-class GradleHelper(BaseLogger):
+class GradleDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
     DEPENDENCY_PATTERNS = [
         r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s+['\"](.*?:.*?:.*?)['\"]",
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         def __init__(self, repo_id):
             self.repo_id = repo_id
 
-    helper = GradleHelper()
+    helper = GradleDependencyAnalyzer()
     helper.logger.setLevel(logging.INFO)
 
     repo = MockRepo("test-org/example")

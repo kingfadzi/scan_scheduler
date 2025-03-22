@@ -2,14 +2,14 @@ import os
 import json
 from sqlalchemy.dialects.postgresql import insert
 
-from plugins.javascript.javascript_helper import JavaScriptHelper
+from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger
 
 
-class JavaScriptAnalyzer(BaseLogger):
+class JavaScriptBuildToolAnalyzer(BaseLogger):
     def __init__(self, logger=None):
         super().__init__()
         if logger is None:
@@ -126,7 +126,7 @@ if __name__ == "__main__":
             pass
 
     session = Session()
-    helper = JavaScriptHelper()
+    helper = JavaScriptDependencyAnalyzer()
 
     try:
         dependencies = helper.process_repo(repo_dir, repo)

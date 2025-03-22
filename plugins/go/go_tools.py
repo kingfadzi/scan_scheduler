@@ -9,7 +9,7 @@ from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger
 
-class GoAnalyzer(BaseLogger):
+class GoBuildToolAnalyzer(BaseLogger):
     def __init__(self, logger=None):
         super().__init__()
         self.logger = logger or self.get_logger("GoAnalyzer")
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     test_repo = MockRepo("go-test-456", "example-go-repo")
     test_repo_dir = "/path/to/go/project"
 
-    analyzer = GoAnalyzer()
+    analyzer = GoBuildToolAnalyzer()
     session = Session()
 
     try:

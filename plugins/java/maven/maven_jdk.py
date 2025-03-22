@@ -7,11 +7,10 @@ from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
 from shared.utils import Utils
-
 from sqlalchemy.dialects.postgresql import insert
 
 
-class MavenAnalyzer(BaseLogger):
+class MavenJdkAnalyzer(BaseLogger):
     def __init__(self, logger=None):
         self.logger = logger or self.get_logger("MavenAnalyzer")
         self.logger.setLevel(logging.DEBUG)
@@ -135,7 +134,7 @@ if __name__ == "__main__":
         "repo_slug": "maven-modular",
         "repo_name": "maven-modular",
     }
-    analyzer = MavenAnalyzer()
+    analyzer = MavenJdkAnalyzer()
     try:
         results = analyzer.run_analysis(repo_dir=repo_dir, repo=repo, run_id="STANDALONE_RUN")
         for repo_id_value, maven_version, java_version in results:

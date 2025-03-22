@@ -1,6 +1,6 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-from plugins.common.cloning import CloningAnalyzer
+from plugins.core.cloning import CloningAnalyzer
 from shared.utils import Utils
 
 

@@ -3,11 +3,11 @@ import logging
 from shared.models import Session, Dependency
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
-from plugins.python.python_helper import PythonHelper
-from plugins.javascript.javascript_helper import JavaScriptHelper
-from plugins.go.go_helper import GoHelper
-from plugins.java.maven.maven_helper import MavenHelper
-from plugins.java.gradle.gradle_helper import GradleHelper
+from plugins.python.python_dependencies import PythonDependencyAnalyzer
+from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
+from plugins.go.go_dependencies import GoHelper
+from plugins.java.maven.maven_dependencies import MavenDependencyAnalyzer
+from plugins.java.gradle.gradle_dependencies import GradleDependencyAnalyzer
 from sqlalchemy.dialects.postgresql import insert
 from shared.utils import Utils
 
@@ -20,11 +20,11 @@ class DependencyAnalyzer(BaseLogger):
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-        self.python_helper = PythonHelper(logger=logger)
-        self.js_helper = JavaScriptHelper(logger=logger)
-        self.go_helper = GoHelper(logger=logger)
-        self.maven_helper = MavenHelper(logger=logger)
-        self.gradle_helper = GradleHelper(logger=logger)
+        self.python_da = PythonDependencyAnalyzer(logger=logger)
+        self.js_da = JavaScriptDependencyAnalyzer(logger=logger)
+        self.go_da = GoHelper(logger=logger)
+        self.maven_da = MavenDependencyAnalyzer(logger=logger)
+        self.gradle_da = GradleDependencyAnalyzer(logger=logger)
         self.utils = Utils(logger=logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
@@ -46,23 +46,23 @@ class DependencyAnalyzer(BaseLogger):
         try:
             if main_language == "Python":
                 self.logger.info(f"Main language is Python for repo_id: {repo['repo_id']}. Running dependency analysis.")
-                dependencies.extend(self.python_helper.process_repo(repo_dir, repo))
+                dependencies.extend(self.python_da.process_repo(repo_dir, repo))
 
             elif main_language in ["JavaScript", "TypeScript"]:
                 self.logger.info(f"Main language is {main_language} for repo_id: {repo['repo_id']}. Running analysis.")
-                dependencies.extend(self.js_helper.process_repo(repo_dir, repo))
+                dependencies.extend(self.js_da.process_repo(repo_dir, repo))
 
             elif main_language == "Go":
                 self.logger.info(f"Main language is Go for repo_id: {repo['repo_id']}. Running analysis.")
-                dependencies.extend(self.go_helper.process_repo(repo_dir, repo))
+                dependencies.extend(self.go_da.process_repo(repo_dir, repo))
 
             elif main_language == "Java":
                 self.logger.info(f"Main language is Java for repo_id: {repo['repo_id']}. Identifying build system.")
                 build_tool = self.utils.detect_java_build_tool(repo_dir)
                 if build_tool == "Maven":
-                    dependencies.extend(self.maven_helper.process_repo(repo_dir, repo))
+                    dependencies.extend(self.maven_da.process_repo(repo_dir, repo))
                 elif build_tool == "Gradle":
-                    dependencies.extend(self.gradle_helper.process_repo(repo_dir=repo_dir, repo=repo))
+                    dependencies.extend(self.gradle_da.process_repo(repo_dir=repo_dir, repo=repo))
 
             self.persist_dependencies(dependencies)
             return f"Dependencies: {len(dependencies)}"
