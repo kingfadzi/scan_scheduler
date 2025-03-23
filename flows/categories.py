@@ -181,7 +181,12 @@ def run_analysis_by_package_type():
             logger.warning(f"No chunks to process for package type '{package_type}'")
             continue
 
-        process_chunk_with_rules.map(chunks, unmapped(rules))
+        # Changed section: Store and await results
+        results = process_chunk_with_rules.map(chunks, unmapped(rules))
+        # Ensure all futures resolve before continuing
+        for result in results:
+            result.result()
+
         logger.info(f"Completed processing for '{package_type}'")
 
     refresh_materialized_view()
