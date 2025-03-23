@@ -3,9 +3,13 @@ import sys
 import json
 import logging
 import subprocess
+
+from shared.language_required_decorator import language_required
 from shared.models import Dependency, Session
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
+from shared.utils import Utils
+
 
 class JavaScriptDependencyAnalyzer(BaseLogger):
 
@@ -17,15 +21,16 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 
+    @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="Javascript Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
-
         pkg_json_path = os.path.join(repo_dir, "package.json")
         lock_file = None
+        utils = Utils()  # Create Utils instance once
 
         if not os.path.isfile(pkg_json_path):
             self.logger.warn("No package.json found in the repository.")
-            return []
+            return "0 dependencies found."
 
         pkg_lock = os.path.join(repo_dir, "package-lock.json")
         yarn_lock = os.path.join(repo_dir, "yarn.lock")
@@ -37,16 +42,23 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
 
         if lock_file:
             self.logger.info(f"Lock file {lock_file} exists. Parsing dependencies.")
-            return self.parse_dependencies(lock_file, repo)
+            dependencies = self.parse_dependencies(lock_file, repo)
+            utils.persist_dependencies(dependencies)  # Persist here
+            return f"{len(dependencies)} dependencies found."
 
         self.logger.info("No lock file found. Installing dependencies to generate one.")
         pm = self.detect_package_manager(pkg_json_path)
         lock_file = pkg_lock if pm == "npm" else yarn_lock
 
         if not self.install_dependencies(repo_dir, pm, lock_file):
-            return []
+            return "0 dependencies found."
 
-        return self.parse_dependencies(lock_file, repo) if os.path.isfile(lock_file) else []
+        if os.path.isfile(lock_file):
+            dependencies = self.parse_dependencies(lock_file, repo)
+            utils.persist_dependencies(dependencies)  # Persist here too
+            return f"{len(dependencies)} dependencies found."
+
+        return "0 dependencies found."
 
     def detect_package_manager(self, pkg_json_path):
 

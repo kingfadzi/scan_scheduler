@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
+from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
@@ -16,7 +17,9 @@ class MavenJdkAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
         self.utils = Utils(logger=self.logger)
 
+
     @analyze_execution(session_factory=Session, stage="Maven Build Analysis")
+    @language_required("java")
     def run_analysis(self, repo_dir, repo, run_id=None):
         repo_path = Path(repo_dir).resolve()
         if not repo_path.exists():

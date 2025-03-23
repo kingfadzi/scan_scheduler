@@ -4,6 +4,8 @@ import re
 import logging
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
+
+from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
@@ -16,6 +18,7 @@ class GoBuildToolAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
 
+    @language_required("go")
     @analyze_execution(session_factory=Session, stage="Go Build Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")

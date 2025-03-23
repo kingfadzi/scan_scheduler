@@ -3,6 +3,8 @@ import re
 import logging
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
+
+from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
@@ -16,6 +18,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
+    @language_required("Python")
     @analyze_execution(session_factory=Session, stage="Python Build Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Python analysis for {repo['repo_id']}")

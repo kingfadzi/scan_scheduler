@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import re
 import yaml
@@ -5,12 +6,15 @@ import json
 import logging
 from typing import List, Dict, Optional
 from sqlalchemy.dialects.postgresql import insert
+
+from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
 from shared.utils import Utils
 
 class GradlejdkAnalyzer(BaseLogger):
+
     SCRIPT_DIR = Path(__file__).parent.resolve()
     PROJECT_ROOT = SCRIPT_DIR.parent
     CONFIG_DIR = PROJECT_ROOT / 'gradle'
@@ -118,18 +122,16 @@ class GradlejdkAnalyzer(BaseLogger):
         session = Session()
 
         try:
+
             stmt = insert(BuildTool).values(
                 repo_id=repo['repo_id'],
                 tool="Gradle",
                 tool_version=gradle_version,
                 runtime_version=java_version,
-            ).on_conflict_do_update(
-                index_elements=["repo_id", "tool"],
-                set_={
-                    "tool_version": gradle_version,
-                    "runtime_version": java_version,
-                }
+            ).on_conflict_do_nothing(
+                index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
             )
+
             session.execute(stmt)
             session.commit()
             self.logger.info("Successfully persisted results to database")
@@ -140,17 +142,19 @@ class GradlejdkAnalyzer(BaseLogger):
         finally:
             session.close()
 
+
+    @language_required("java")
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
     def run_analysis(self, repo_dir, repo):
 
         self.logger.info(f"Starting analysis for repository: {repo_dir}")
-        repo_path = Path(repo_dir).resolve()
+
+        repo_dir = os.path.abspath(repo_dir)
+        if not os.path.exists(repo_dir):
+            raise FileNotFoundError(f"Directory not found: {repo_dir}")
+        repo_path = Path(repo_dir)
 
         try:
-            if not repo_path.exists():
-                raise ValueError(f"Path does not exist: {repo_path}")
-            if not repo_path.is_dir():
-                raise ValueError(f"Not a directory: {repo_path}")
 
             self.load_config()
             found_files = self.find_gradle_files(repo_path)
@@ -206,40 +210,26 @@ class GradlejdkAnalyzer(BaseLogger):
 
 if __name__ == "__main__":
 
-    repo_dir = "/tmp/gradle-example"
-    repo_id = "example-org/gradle-example"
+    repo_dir = "/Users/fadzi/tools/gradle_projects/gradle-simple"
+    repo_id = "commjoen/wrongsecrets"
     repo_slug = "gradle-example"
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
-
-    repo = MockRepo(repo_id, repo_slug)
-    session = Session()
     analyzer = GradlejdkAnalyzer()
-    analyzer.logger.setLevel(logging.INFO)
+
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_slug
+    }
+
+    session = Session()
 
     try:
-        result_json = analyzer.run_analysis(
-            repo_dir=repo_dir,
-            repo=repo,
-            session=session
-        )
-        result = json.loads(result_json)
-
-        if result['gradle_project']:
-            analyzer.logger.info("\nGradle Analysis Results:\n"
-                               f"│ Gradle Version: {result['gradle_version']}\n"
-                               f"│ Required JDK:   {result['jdk_version']}\n"
-                               f"└ Repository ID:  {result['repo_id']}")
-        else:
-            analyzer.logger.info("No Gradle project detected in repository")
-
+        analyzer.logger.info(f"Starting analysis for {repo['repo_slug']}")
+        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        analyzer.logger.info(f"Analysis completed successfully")
     except Exception as e:
-        analyzer.logger.error(f"Analysis terminated with error: {str(e)}")
-        session.rollback()
+        analyzer.logger.error(f"Analysis failed: {e}")
     finally:
         session.close()
-        analyzer.logger.info("Analysis session closed")
+        analyzer.logger.info("Database session closed")

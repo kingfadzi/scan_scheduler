@@ -19,8 +19,8 @@ class CloningAnalyzer(BaseLogger):
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-    @analyze_execution(session_factory=Session, stage="Clone Repository")
-    def clone_repository(self, repo: dict, timeout_seconds=300, run_id=None, sub_dir=None):
+    #@analyze_execution(session_factory=Session, stage="Clone Repository")
+    def clone_repository(self, repo: dict, sub_dir=None):
         self.logger.info(f"Starting cloning for repo: {repo['repo_id']}")
 
         base_dir = os.path.abspath(Config.CLONED_REPOSITORIES_DIR)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
         repo_dir = None
         try:
-            repo_dir = analyzer.clone_repository(repo, run_id="STANDALONE_RUN_001")
+            repo_dir = analyzer.clone_repository(repo)
 
         except Exception as e:
             analyzer.logger.error(f"Cloning failed: {e}")

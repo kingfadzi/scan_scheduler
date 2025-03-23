@@ -26,11 +26,11 @@ def create_analysis_flow(
         repo_dir = None
         try:
             logger.info(f"Starting processing for {repo_slug}")
-            repo_dir = clone_repository_task.with_options(retries=1)(repo, run_id, sub_dir)
+            repo_dir = clone_repository_task.with_options(retries=1)(repo, sub_dir)
 
             for task_fn in sub_tasks:
                 try:
-                    task_fn(repo_dir, repo, run_id)
+                    task_fn(repo_dir, repo)
                 except Exception as e:
                     logger.error(f"Task {task_fn.__name__} failed: {str(e)}")
                     continue

@@ -3,14 +3,14 @@ import time
 from prefect.context import get_run_context
 from sqlalchemy import text
 from config.config import Config
-from shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics
+from shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics, Dependency
 from shared.query_builder import build_query
 import logging
 import numpy as np
 from shared.base_logger import BaseLogger
 import math
 from pathlib import Path
-
+from sqlalchemy.dialects.postgresql import insert
 
 class Utils(BaseLogger):
 
@@ -330,6 +330,44 @@ class Utils(BaseLogger):
         )
         return None
 
+
+    def persist_dependencies(self, dependencies):
+        if not dependencies:
+            self.logger.info("No dependencies to persist.")
+            return
+
+        try:
+            self.logger.info(f"Inserting {len(dependencies)} dependencies into the database.")
+
+            session = Session()
+
+            dep_dicts = [
+                {
+                    "repo_id": dep.repo_id,
+                    "name": dep.name,
+                    "version": dep.version,
+                    "package_type": dep.package_type,
+                }
+                for dep in dependencies
+            ]
+
+            ins_stmt = insert(Dependency)
+
+            upsert_stmt = ins_stmt.on_conflict_do_nothing(
+                index_elements=['repo_id', 'name', 'version']
+            )
+
+
+            session.execute(upsert_stmt, dep_dicts)
+            session.commit()
+            self.logger.info("Dependency insertion successful.")
+
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Failed to insert dependencies: {e}")
+            raise
+        finally:
+            session.close()
 
 def main():
 

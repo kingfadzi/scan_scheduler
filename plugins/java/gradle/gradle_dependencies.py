@@ -1,10 +1,14 @@
+import os
 from pathlib import Path
 import re
 import logging
 from typing import List, Dict
 from shared.base_logger import BaseLogger
+from shared.language_required_decorator import language_required
 from shared.models import Session, Dependency
 from shared.execution_decorator import analyze_execution
+from shared.utils import Utils
+
 
 class GradleDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
@@ -19,21 +23,30 @@ class GradleDependencyAnalyzer(BaseLogger):
         self.logger = logger if logger else self.get_logger("GradleHelper")
         self.logger.setLevel(logging.DEBUG)
 
+    @language_required("java")
     @analyze_execution(session_factory=Session, stage="Gradle Dependency Analysis")
-    def run_analysis(self, repo_dir: str, repo: object) -> List[Dependency]:
+    def run_analysis(self, repo_dir: str, repo: dict) -> str:
         self.logger.info(f"Processing Gradle repo: {repo['repo_id']}")
         try:
-            repo_path = Path(repo_dir).resolve()
-            if not repo_path.exists():
+            repo_dir = os.path.abspath(repo_dir)
+            if not os.path.exists(repo_dir):
                 raise FileNotFoundError(f"Directory not found: {repo_dir}")
+            repo_path = Path(repo_dir)
 
             build_files = self._find_gradle_files(repo_path)
             raw_deps = self._analyze_build_files(build_files)
-            return self._format_dependencies(raw_deps, repo)
+            dependencies = self._format_dependencies(raw_deps, repo)
+
+            utils = Utils()
+            utils.persist_dependencies(dependencies)
+
+            msg = f"Found {len(dependencies)} dependencies."
+            self.logger.info(msg)
+            return msg
 
         except Exception as e:
             self.logger.error(f"Gradle analysis failed: {str(e)}", exc_info=True)
-            return []
+            return f"Gradle analysis failed: {str(e)}"
 
     def _find_gradle_files(self, root: Path) -> List[Path]:
         build_files = []
@@ -124,17 +137,29 @@ class GradleDependencyAnalyzer(BaseLogger):
             for dep in raw_deps
         ]
 
+
 if __name__ == "__main__":
-    class MockRepo:
-        def __init__(self, repo_id):
-            self.repo_id = repo_id
 
-    helper = GradleDependencyAnalyzer()
-    helper.logger.setLevel(logging.INFO)
+    repo_dir = "/Users/fadzi/tools/gradle_projects/gradle-simple"
+    repo_id = "commjoen/wrongsecrets"
+    repo_slug = "gradle-example"
 
-    repo = MockRepo("test-org/example")
-    dependencies = helper.run_analysis("/tmp/gradle-example", repo)
+    analyzer = GradleDependencyAnalyzer()
 
-    print(f"Found {len(dependencies)} Gradle dependencies:")
-    for dep in dependencies[:3]:
-        print(f"{dep.name}@{dep.version}")
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_slug
+    }
+
+    session = Session()
+
+    try:
+        analyzer.logger.info(f"Starting analysis for {repo['repo_slug']}")
+        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        analyzer.logger.info(f"Analysis completed successfully")
+    except Exception as e:
+        analyzer.logger.error(f"Analysis failed: {e}")
+    finally:
+        session.close()
+        analyzer.logger.info("Database session closed")

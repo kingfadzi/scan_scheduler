@@ -4,9 +4,12 @@ import xml.etree.ElementTree as ET
 import logging
 from typing import List, Dict, Set
 from shared.base_logger import BaseLogger
+from shared.language_required_decorator import language_required
 from shared.models import Dependency, Session
 from config.config import Config
 from shared.execution_decorator import analyze_execution
+from shared.utils import Utils
+
 
 class MavenDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.git', 'target', '.idea', '.settings', 'bin'}
@@ -17,9 +20,13 @@ class MavenDependencyAnalyzer(BaseLogger):
         self.logger = logger if logger else self.get_logger("MavenHelper")
         self.logger.setLevel(logging.DEBUG)
 
+
+    @language_required("java")
     @analyze_execution(session_factory=Session, stage="Maven Dependency Analysis")
-    def run_analysis(self, repo_dir: str, repo: object) -> List[Dependency]:
+    def run_analysis(self, repo_dir: str, repo: object) -> str:
         self.logger.info(f"Processing Maven repo: {repo['repo_id']}")
+        utils = Utils()
+
         try:
             repo_path = Path(repo_dir).resolve()
             if not repo_path.exists():
@@ -29,7 +36,9 @@ class MavenDependencyAnalyzer(BaseLogger):
             effective_pom = self._generate_effective_pom(repo_path)
             if effective_pom:
                 self.logger.debug(f"Effective POM generated: {effective_pom}")
-                return self._parse_pom_file(effective_pom, repo, is_effective=True)
+                deps = self._parse_pom_file(effective_pom, repo, is_effective=True)
+                utils.persist_dependencies(deps)
+                return f"{len(deps)} dependencies found."
 
             root_pom = repo_path / "pom.xml"
             if root_pom.exists():
@@ -39,19 +48,23 @@ class MavenDependencyAnalyzer(BaseLogger):
                 self.logger.warning("No root pom.xml found; scanning all poms under directory.")
                 pom_files = list(repo_path.rglob("pom.xml"))
 
+            # Deduplicate POMs in the same directory
             seen_dirs = set()
             unique_poms = [p for p in pom_files if p.parent not in seen_dirs and not seen_dirs.add(p.parent)]
             self.logger.debug(f"Found {len(unique_poms)} unique POM files to process.")
 
+            # Process all collected POMs
             deps = []
             for pom in unique_poms:
                 self.logger.debug(f"Processing POM: {pom}")
                 deps.extend(self._parse_pom_file(pom, repo))
-            return deps
+
+            utils.persist_dependencies(deps)
+            return f"{len(deps)} dependencies found."
 
         except Exception as e:
             self.logger.error(f"Maven analysis failed: {str(e)}", exc_info=True)
-            return []
+            return "0 dependencies found."
 
     def _generate_effective_pom(self, repo_path: Path) -> Path:
         try:

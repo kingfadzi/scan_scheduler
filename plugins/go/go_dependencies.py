@@ -1,9 +1,13 @@
 import os
 import logging
 import subprocess
+
+from shared.language_required_decorator import language_required
 from shared.models import Dependency,Session
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
+from shared.utils import Utils
+
 
 class GoDependencyAnalyzer(BaseLogger):
 
@@ -13,17 +17,19 @@ class GoDependencyAnalyzer(BaseLogger):
         else:
             self.logger = logger
 
+    @language_required("go")
     @analyze_execution(session_factory=Session, stage="Go Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
-
         self.logger.info(f"Processing repository at: {repo_dir}")
+        utils = Utils()
+        deps = []
 
         go_mod = os.path.join(repo_dir, "go.mod")
         go_sum = os.path.join(repo_dir, "go.sum")
 
         if not os.path.isfile(go_mod):
             self.logger.error("No go.mod file found. Skipping repository.")
-            return []
+            return "0 dependencies found."
 
         if not os.path.isfile(go_sum):
             self.logger.info("Generating go.sum using 'go mod tidy'.")
@@ -32,13 +38,19 @@ class GoDependencyAnalyzer(BaseLogger):
             except subprocess.CalledProcessError as e:
                 self.logger.error(f"'go mod tidy' failed: {e}")
                 self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-                return []
+                return "0 dependencies found."
 
         if not os.path.isfile(go_sum):
             self.logger.error("go.sum file was not generated after running 'go mod tidy'.")
-            return []
+            return "0 dependencies found."
 
-        return self.parse_go_modules(repo_dir, repo)
+        try:
+            deps = self.parse_go_modules(repo_dir, repo)
+            utils.persist_dependencies(deps)
+            return f"{len(deps)} dependencies found."
+        except Exception as e:
+            self.logger.error(f"Failed to parse Go modules: {str(e)}")
+            return "0 dependencies found."
 
     def parse_go_modules(self, repo_dir, repo):
         try:

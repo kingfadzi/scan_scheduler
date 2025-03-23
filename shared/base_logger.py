@@ -3,15 +3,15 @@ import logging
 class BaseLogger:
     @classmethod
     def get_logger(cls, name=None):
-        logger_name = name or cls.__name__
-        logger = logging.getLogger(logger_name)
+        logger = logging.getLogger(name or cls.__name__)
 
-        if not logger.hasHandlers():
+        if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
+            handler.setFormatter(logging.Formatter(
+                '%(levelname)s - %(name)s: %(message)s'
+            ))
             logger.addHandler(handler)
-            logger.setLevel(logging.WARN)
+            logger.setLevel(logging.WARNING)
             logger.propagate = False
 
         return logger

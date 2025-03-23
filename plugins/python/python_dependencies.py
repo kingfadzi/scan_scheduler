@@ -1,9 +1,13 @@
 import subprocess
 import venv
+
+from shared.language_required_decorator import language_required
 from shared.models import Dependency, Session
 import os
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
+from shared.utils import Utils
+
 
 class PythonDependencyAnalyzer(BaseLogger):
 
@@ -14,6 +18,8 @@ class PythonDependencyAnalyzer(BaseLogger):
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
+
+    @language_required("Python")
     @analyze_execution(session_factory=Session, stage="Python Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Processing repository at: {repo_dir}")
@@ -40,7 +46,15 @@ class PythonDependencyAnalyzer(BaseLogger):
             for line in lines if "==" in line
             for name, version in [line.split("==", 1)]
         ]
-        return dependencies
+
+        self.logger.debug("Persisting dependencies to database...")
+        utils = Utils()
+        utils.persist_dependencies(dependencies)
+        self.logger.debug("Dependencies persisted successfully.")
+
+        msg = f"Found {len(dependencies)} dependencies."
+        self.logger.info(msg)
+        return msg
 
 
     def create_virtual_env(self, project_dir, env_name="venv"):

@@ -23,10 +23,10 @@ def start_task(flow_prefix: str) -> str:
 
 
 @task(name="Clone Repository Task", cache_policy=NO_CACHE)
-def clone_repository_task(repo, run_id, sub_dir):
+def clone_repository_task(repo, sub_dir):
     logger = get_run_logger()
     cloning_analyzer = CloningAnalyzer(logger=logger)
-    result = cloning_analyzer.clone_repository(repo=repo, run_id=run_id, sub_dir=sub_dir)
+    result = cloning_analyzer.clone_repository(repo=repo, sub_dir=sub_dir)
     return result
 
 

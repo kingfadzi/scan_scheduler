@@ -3,6 +3,7 @@ import json
 from sqlalchemy.dialects.postgresql import insert
 
 from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
+from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
@@ -14,10 +15,11 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
         super().__init__()
         if logger is None:
             self.logger = self.get_logger("JavaScriptAnalyzer")
+            self.logger.setLevel(logging.DEBUG)
         else:
             self.logger = logger
-        self.logger.setLevel(logging.DEBUG)
 
+    @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting JavaScript build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
