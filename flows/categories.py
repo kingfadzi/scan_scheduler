@@ -116,7 +116,7 @@ def fetch_chunks_for_type(package_type: str) -> list:
 def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list):
     context = get_run_context()
     logger = get_run_logger()
-    run_id = context.flow_run.id
+    run_id = context.task_run.flow_run_id
 
     categorizer = CategoryAnalyzer(logger=logger, run_id=run_id)
 
