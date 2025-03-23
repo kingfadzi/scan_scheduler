@@ -135,6 +135,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
                         return line.split('=')[-1].strip().strip('"\'')
         except Exception as e:
             self.logger.error(f"Error parsing pyproject.toml: {e}")
+            raise
         return "Unknown"
 
     def _parse_poetry_version(self, repo_dir):
