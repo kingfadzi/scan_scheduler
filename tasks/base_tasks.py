@@ -38,10 +38,10 @@ def cleanup_repo_task(repo_dir, run_id):
 
 
 @task(name="Update Processing Status Task", cache_policy=NO_CACHE)
-def update_status_task(repo, sub_dir, run_id):
+def update_status_task(repo, run_id):
     logger = get_run_logger()
-    utils = Utils(logger=logger, run_id=run_id)
-    utils.determine_final_status(repo, sub_dir, run_id)
+    utils = Utils(logger=logger)
+    utils.determine_final_status(repo, run_id)
 
 
 @task(name="Refresh Views Task")
