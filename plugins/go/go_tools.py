@@ -12,11 +12,13 @@ from shared.utils import Utils
 from shared.base_logger import BaseLogger
 
 class GoBuildToolAnalyzer(BaseLogger):
-    def __init__(self, logger=None):
-        super().__init__()
-        self.logger = logger or self.get_logger("GoAnalyzer")
+
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
+        self.logger.setLevel(logging.DEBUG)
         self.logger.setLevel(logging.DEBUG)
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
+
 
     @language_required("go")
     @analyze_execution(session_factory=Session, stage="Go Build Analysis")

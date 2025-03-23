@@ -12,9 +12,11 @@ from sqlalchemy.dialects.postgresql import insert
 
 
 class MavenJdkAnalyzer(BaseLogger):
-    def __init__(self, logger=None):
-        self.logger = logger or self.get_logger("MavenAnalyzer")
+
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+
         self.utils = Utils(logger=self.logger)
 
 

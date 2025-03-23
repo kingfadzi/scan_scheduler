@@ -1,12 +1,12 @@
 import functools
+import inspect
 import logging
 import time
-import inspect
 from datetime import datetime
 from shared.models import AnalysisExecutionLog
 
-
 def analyze_execution(session_factory, stage=None):
+
     def decorator(func):
         sig = inspect.signature(func)
         params = sig.parameters
@@ -17,9 +17,12 @@ def analyze_execution(session_factory, stage=None):
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
+            # Validate run_id is set on the analyzer instance
+            if not hasattr(self, 'run_id') or not self.run_id:
+                raise RuntimeError("Analyzer instance missing 'run_id'. ")
+
             session = session_factory()
             method_name = func.__name__
-            run_id = kwargs.get("run_id", "N/A")
             logger = getattr(self, 'logger', logging.getLogger('analysis'))
 
             try:
@@ -28,10 +31,10 @@ def analyze_execution(session_factory, stage=None):
                 bound_args.apply_defaults()
                 parameters = bound_args.arguments
 
+                # Extract and validate repo information
                 repo = parameters['repo']
-                repo_dir = parameters.get('repo_dir', None)  # Optional
+                repo_dir = parameters.get('repo_dir', None)
 
-                # Validate repo structure
                 if not isinstance(repo, dict):
                     raise TypeError(f"repo must be dict, got {type(repo)}")
                 if 'repo_id' not in repo:
@@ -39,7 +42,7 @@ def analyze_execution(session_factory, stage=None):
 
                 repo_id = repo['repo_id']
                 start_time = time.time()
-                logger.info(f"Starting {stage} (Repo ID: {repo_id})")
+                logger.debug(f"Starting {stage} (Repo ID: {repo_id}, Run ID: {self.run_id})")
 
                 # Execute decorated method
                 result = func(self, *args, **kwargs)
@@ -49,7 +52,7 @@ def analyze_execution(session_factory, stage=None):
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
-                    run_id=run_id,
+                    run_id=self.run_id,
                     repo_id=repo_id,
                     status="SUCCESS",
                     message=str(result),
@@ -58,7 +61,7 @@ def analyze_execution(session_factory, stage=None):
                 ))
                 session.commit()
 
-                logger.info(f"{stage} completed for {repo_id} ({elapsed_time:.2f}s)")
+                logger.info(f"{stage} completed for {repo_id} (Run: {self.run_id}, Duration: {elapsed_time:.2f}s)")
                 return result
 
             except Exception as e:
@@ -66,10 +69,11 @@ def analyze_execution(session_factory, stage=None):
                 error_message = str(e)
                 repo_id = repo.get('repo_id', 'unknown') if isinstance(repo, dict) else 'invalid-repo'
 
+                # Persist failure log
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
-                    run_id=run_id,
+                    run_id=self.run_id,
                     repo_id=repo_id,
                     status="FAILURE",
                     message=error_message,
@@ -78,7 +82,7 @@ def analyze_execution(session_factory, stage=None):
                 ))
                 session.commit()
 
-                logger.error(f"{stage} failed for {repo_id}: {error_message}")
+                logger.error(f"{stage} failed for {repo_id} (Run: {self.run_id}): {error_message}")
                 raise RuntimeError(f"{stage} failed: {error_message}") from e
 
             finally:

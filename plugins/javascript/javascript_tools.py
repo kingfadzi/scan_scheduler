@@ -11,13 +11,10 @@ from shared.base_logger import BaseLogger
 
 
 class JavaScriptBuildToolAnalyzer(BaseLogger):
-    def __init__(self, logger=None):
-        super().__init__()
-        if logger is None:
-            self.logger = self.get_logger("JavaScriptAnalyzer")
-            self.logger.setLevel(logging.DEBUG)
-        else:
-            self.logger = logger
+
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
+        self.logger.setLevel(logging.DEBUG)
 
     @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")

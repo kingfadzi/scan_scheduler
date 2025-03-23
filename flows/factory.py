@@ -30,7 +30,7 @@ def create_analysis_flow(
 
             for task_fn in sub_tasks:
                 try:
-                    task_fn(repo_dir, repo)
+                    task_fn(repo_dir, repo, run_id)
                 except Exception as e:
                     logger.error(f"Task {task_fn.__name__} failed: {str(e)}")
                     continue
@@ -41,7 +41,7 @@ def create_analysis_flow(
         finally:
             if repo_dir:
                 try:
-                    cleanup_repo_task(repo_dir)
+                    cleanup_repo_task(repo_dir, run_id)
                     logger.info(f"Cleanup completed for {repo_slug}")
                 except Exception as e:
                     logger.warning(f"Cleanup error: {str(e)}")

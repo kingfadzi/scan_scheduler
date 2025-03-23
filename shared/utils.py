@@ -11,6 +11,7 @@ from shared.base_logger import BaseLogger
 import math
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.inspection import inspect
 
 
 class Utils(BaseLogger):
@@ -369,6 +370,10 @@ class Utils(BaseLogger):
             raise
         finally:
             session.close()
+
+    def as_dict(model):
+        return {c.key: getattr(model, c.key) for c in inspect(model).mapper.column_attrs}
+
 
 def main():
 

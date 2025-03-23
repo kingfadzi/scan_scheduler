@@ -23,13 +23,11 @@ class GradlejdkAnalyzer(BaseLogger):
     JDK_MAPPING_FILE = CONFIG_DIR / 'jdk_mapping.yaml'
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea'}
 
-    def __init__(self, logger=None):
-        super().__init__()
-        if logger is None:
-            self.logger = self.get_logger("GradlejdkAnalyzer")
-        else:
-            self.logger = logger
+
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+
         self.utils = Utils(logger=logger)
         self.rules: List[Dict] = []
         self.jdk_mapping: Dict = {}

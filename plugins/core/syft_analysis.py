@@ -7,11 +7,9 @@ from shared.base_logger import BaseLogger
 import logging
 
 class SyftAnalyzer(BaseLogger):
-    def __init__(self, logger=None):
-        if logger is None:
-            self.logger = self.get_logger("SyftAnalyzer")
-        else:
-            self.logger = logger
+
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Syft Analysis")

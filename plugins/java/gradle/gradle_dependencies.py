@@ -18,9 +18,8 @@ class GradleDependencyAnalyzer(BaseLogger):
         r"(?:implementation|api|compile|runtimeOnly|testImplementation)[\s\n]*\"(.*?)\""
     ]
 
-    def __init__(self, logger=None):
-        super().__init__()
-        self.logger = logger if logger else self.get_logger("GradleHelper")
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
     @language_required("java")

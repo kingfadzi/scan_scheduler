@@ -11,11 +11,8 @@ from shared.utils import Utils
 
 class PythonDependencyAnalyzer(BaseLogger):
 
-    def __init__(self, logger=None):
-        if logger is None:
-            self.logger = self.get_logger("PythonHelper")
-        else:
-            self.logger = logger
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
 

@@ -9,11 +9,8 @@ import logging
 
 class GitLogAnalyzer(BaseLogger):
 
-    def __init__(self, logger=None):
-        if logger is None:
-            self.logger = self.get_logger("GitLogAnalyzer")
-        else:
-            self.logger = logger
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Git Log Analysis")

@@ -23,24 +23,24 @@ def start_task(flow_prefix: str) -> str:
 
 
 @task(name="Clone Repository Task", cache_policy=NO_CACHE)
-def clone_repository_task(repo, sub_dir):
+def clone_repository_task(repo, sub_dir, run_id):
     logger = get_run_logger()
-    cloning_analyzer = CloningAnalyzer(logger=logger)
+    cloning_analyzer = CloningAnalyzer(logger=logger, run_id=run_id)
     result = cloning_analyzer.clone_repository(repo=repo, sub_dir=sub_dir)
     return result
 
 
 @task(name="Clean Up Repository Task", cache_policy=NO_CACHE)
-def cleanup_repo_task(repo_dir):
+def cleanup_repo_task(repo_dir, run_id):
     logger = get_run_logger()
-    cloning_analyzer = CloningAnalyzer(logger=logger)
+    cloning_analyzer = CloningAnalyzer(logger=logger, run_id=run_id)
     cloning_analyzer.cleanup_repository_directory(repo_dir)
 
 
 @task(name="Update Processing Status Task", cache_policy=NO_CACHE)
-def update_status_task(repo, run_id):
+def update_status_task(repo, sub_dir, run_id):
     utils = Utils(logger = get_run_logger())
-    utils.determine_final_status(repo, run_id)
+    utils.determine_final_status(repo, sub_dir, run_id)
 
 
 @task(name="Refresh Views Task")

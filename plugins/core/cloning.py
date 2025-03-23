@@ -8,15 +8,14 @@ from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
 
+from shared.utils import Utils
+
 clone_semaphore = threading.Semaphore(10)
 
 class CloningAnalyzer(BaseLogger):
 
-    def __init__(self, logger=None):
-        if logger is None:
-            self.logger = self.get_logger("CloningAnalyzer")
-        else:
-            self.logger = logger
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Clone Repository")
@@ -137,14 +136,14 @@ if __name__ == "__main__":
         .all()
     )
 
-    analyzer = CloningAnalyzer()
+    analyzer = CloningAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
     for repo in repositories:
-
+        # Convert the SQLAlchemy model to a dict
+        repo_data = Utils.as_dict(repo)
         repo_dir = None
         try:
-            repo_dir = analyzer.clone_repository(repo)
-
+            repo_dir = analyzer.clone_repository(repo_data)
         except Exception as e:
             analyzer.logger.error(f"Cloning failed: {e}")
         finally:

@@ -15,9 +15,8 @@ class MavenDependencyAnalyzer(BaseLogger):
     EXCLUDE_DIRS = {'.git', 'target', '.idea', '.settings', 'bin'}
     NAMESPACE = {'m': 'http://maven.apache.org/POM/4.0.0'}
 
-    def __init__(self, logger=None):
-        super().__init__()
-        self.logger = logger if logger else self.get_logger("MavenHelper")
+    def __init__(self, logger=None, run_id=None):
+        super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
 
