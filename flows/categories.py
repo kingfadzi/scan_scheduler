@@ -170,8 +170,15 @@ def run_analysis_by_package_type():
 
     for package_type in package_types:
         logger.info(f"Starting rule load and chunk processing for '{package_type}'")
+
         rules = load_rules_for_type(package_type)
-        chunks = fetch_chunks_for_type(package_type)
+        chunks_future = fetch_chunks_for_type(package_type)
+        chunks = chunks_future.result()  # FIX: Resolve the future before mapping
+
+        if not chunks:
+            logger.warning(f"No chunks to process for package type '{package_type}'")
+            continue
+
         process_chunk_with_rules.map(chunks, unmapped(rules))
         logger.info(f"Completed processing for '{package_type}'")
 
