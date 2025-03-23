@@ -26,7 +26,7 @@ def create_analysis_flow(
         repo_dir = None
         try:
             logger.info(f"Starting processing for {repo_slug}")
-            repo_dir = clone_repository_task.with_options(retries=1)(repo, sub_dir)
+            repo_dir = clone_repository_task.with_options(retries=1)(repo, sub_dir, run_id)
 
             for task_fn in sub_tasks:
                 try:
