@@ -52,10 +52,11 @@ def create_analysis_flow(
                 except Exception as e:
                     logger.warning(f"Cleanup error: {str(e)}")
 
-        try:
-            update_status_task(repo, run_id)
-        except Exception as e:
-            logger.error(f"Status update failed: {str(e)}")
+            try:
+                update_status_task(repo, run_id)
+                logger.info(f"Status: {repo['status']} update completed for {repo_slug}")
+            except Exception as e:
+                logger.error(f"Status update failed: {str(e)}")
 
         return repo
 
@@ -67,7 +68,7 @@ def create_analysis_flow(
             sub_dir: str,
             sub_tasks: List[Callable],
             flow_prefix: str,
-            parent_run_id: str  # Added parent_run_id parameter
+            parent_run_id: str
     ):
         logger = get_run_logger()
         try:
