@@ -17,10 +17,10 @@ sub_tasks = [
 ]
 
 dependencies_flow = create_analysis_flow(
-    flow_name="build_tools_and_dependencies_flow",
+    flow_name="dependencies_flow",
     flow_run_name=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     default_sub_tasks=sub_tasks,
-    default_sub_dir="build_tools_and_dependencies_flow",
+    default_sub_dir="dependencies",
     default_flow_prefix="DEPENDENCIES",
     default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
     default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
