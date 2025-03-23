@@ -176,43 +176,53 @@ class Utils(BaseLogger):
         except Exception as e:
             session.rollback()
             self.logger.error(f"Error refreshing materialized views: {e}")
+            raise
         finally:
             session.close()
 
     def determine_final_status(self, repo: dict, run_id):
-        repo_id = repo["repo_id"]
-        self.logger.info(f"Determining status for {repo['repo_name']} ({repo_id}) run_id: {run_id}")
+        session = None
+        try:
+            repo_id = repo["repo_id"]
+            self.logger.info(f"Determining status for {repo['repo_name']} ({repo_id}) run_id: {run_id}")
 
-        session = Session()
+            session = Session()
 
-        statuses = (
-            session.query(AnalysisExecutionLog.status)
-            .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo_id)
-            .filter(AnalysisExecutionLog.status != "PROCESSING")
-            .all()
-        )
+            statuses = (
+                session.query(AnalysisExecutionLog.status)
+                .filter(AnalysisExecutionLog.run_id == run_id, AnalysisExecutionLog.repo_id == repo_id)
+                .filter(AnalysisExecutionLog.status != "PROCESSING")
+                .all()
+            )
 
-        # Fetch the repository record from the database using repo_id.
-        repository_record = session.query(Repository).filter(Repository.repo_id == repo_id).one_or_none()
-        if not repository_record:
-            self.logger.error(f"Repository record with id {repo_id} not found.")
-            return
+            # Fetch the repository record from the database using repo_id.
+            repository_record = session.query(Repository).filter(Repository.repo_id == repo_id).one_or_none()
+            if not repository_record:
+                self.logger.error(f"Repository record with id {repo_id} not found.")
+                return
 
-        if not statuses:
-            repository_record.status = "ERROR"
-            repository_record.comment = "No analysis records."
-        elif any(s == "FAILURE" for (s,) in statuses):
-            repository_record.status = "FAILURE"
-        elif all(s == "SUCCESS" for (s,) in statuses):
-            repository_record.status = "SUCCESS"
-            repository_record.comment = "All steps completed."
-        else:
-            repository_record.status = "UNKNOWN"
+            if not statuses:
+                repository_record.status = "ERROR"
+                repository_record.comment = "No analysis records."
+            elif any(s == "FAILURE" for (s,) in statuses):
+                repository_record.status = "FAILURE"
+            elif all(s == "SUCCESS" for (s,) in statuses):
+                repository_record.status = "SUCCESS"
+                repository_record.comment = "All steps completed."
+            else:
+                repository_record.status = "UNKNOWN"
 
-        repository_record.updated_on = datetime.utcnow()
-        session.add(repository_record)
-        session.commit()
-        session.close()
+            repository_record.updated_on = datetime.utcnow()
+            session.add(repository_record)
+            session.commit()
+        except Exception as e:
+            if session:
+                session.rollback()
+            self.logger.exception("An error occurred in determine_final_status.")
+            raise
+        finally:
+            if session:
+                session.close()
 
 
     @staticmethod
@@ -276,6 +286,7 @@ class Utils(BaseLogger):
             )
         except Exception as e:
             self.logger.error(f"Error getting main language for repo: {e}")
+            raise
         finally:
             session.close()
         return None
