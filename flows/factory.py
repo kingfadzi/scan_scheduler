@@ -53,7 +53,7 @@ def create_analysis_flow(
                     logger.warning(f"Cleanup error: {str(e)}")
 
             try:
-                update_status_task(repo, repo_dir, run_id)
+                update_status_task(repo, run_id)
                 logger.info(f"Status: {repo['status']} update completed for {repo_slug}")
             except Exception as e:
                 logger.error(f"Status update failed: {str(e)}")
