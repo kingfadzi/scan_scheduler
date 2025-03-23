@@ -49,7 +49,7 @@ def language_required(*languages):
                              original_list, received_lang)
 
                 if received_lang not in expected_lower:
-                    logger.warning("Language mismatch for %s", repo_id)
+                    logger.warning("Language mismatch for %s. Skipping", repo_id)
                     return f"skipped: {repo_id} requires {original_list} (found {main_language})"
 
                 return func(self, repo_dir, repo, *args, **kwargs)

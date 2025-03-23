@@ -163,3 +163,11 @@ def run_xeol_analysis_task(repo_dir, repo):
     )
     logger.info(f"[Component Patterns] Completed Xeol analysis for repository: {repo['repo_id']}")
 
+
+@task(name="Category Analysis Task", cache_policy=NO_CACHE)
+def run_catgeory_analysis_task(run_id):
+    logger = get_run_logger()
+    logger.info(f"[Component Patterns] Starting Category analysis")
+    analyzer = CategoryAnalyzer(logger=logger)
+    analyzer.run_analysis()
+    logger.info(f"[Component Patterns] Completed Category analysis.")

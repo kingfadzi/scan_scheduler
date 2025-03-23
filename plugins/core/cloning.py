@@ -19,7 +19,7 @@ class CloningAnalyzer(BaseLogger):
             self.logger = logger
         self.logger.setLevel(logging.DEBUG)
 
-    #@analyze_execution(session_factory=Session, stage="Clone Repository")
+    @analyze_execution(session_factory=Session, stage="Clone Repository")
     def clone_repository(self, repo: dict, sub_dir=None):
         self.logger.info(f"Starting cloning for repo: {repo['repo_id']}")
 

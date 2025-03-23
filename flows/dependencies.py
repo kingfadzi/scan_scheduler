@@ -3,6 +3,7 @@ from datetime import datetime
 from flows.factory import create_analysis_flow
 
 from config.config import Config
+from tasks.core_tasks import run_catgeory_analysis_task
 from tasks.go_tasks import run_go_dependency_task, run_go_build_tool_task
 from tasks.java_tasks import run_gradle_dependency_task, run_gradlejdk_task, run_maven_dependency_task, \
     run_mavenjdk_task
@@ -11,15 +12,10 @@ from tasks.python_tasks import run_python_dependency_task, run_python_build_tool
 
 sub_tasks = [
     run_go_dependency_task,
-    run_go_build_tool_task,
     run_gradle_dependency_task,
-    run_gradlejdk_task,
     run_maven_dependency_task,
-    run_mavenjdk_task,
     run_javascript_dependency_task,
-    run_javascript_build_tool_task,
-    run_python_dependency_task,
-    run_python_build_tool_task
+    run_python_dependency_task
 ]
 
 build_tools_and_dependencies_flow = create_analysis_flow(
