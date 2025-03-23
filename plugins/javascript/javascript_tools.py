@@ -1,8 +1,9 @@
 import os
 import json
 from sqlalchemy.dialects.postgresql import insert
-
+import logging
 from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
+from plugins.javascript.js_utls import detect_js_build_tool
 from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
@@ -59,7 +60,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
             self.logger.info(message)
             return message
 
-        js_build_tool = utils.detect_js_build_tool(repo_dir)
+        js_build_tool = detect_js_build_tool(repo_dir)
         if js_build_tool not in ['npm', 'Yarn', 'pnpm']:
             message = f"Repo {repo['repo_id']} is JavaScript but doesn't use npm/Yarn/pnpm. Skipping."
             self.logger.info(message)
@@ -109,7 +110,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
                     tool_version=tool_version,
                     runtime_version=node_version,
                 ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool"],
+                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
                     set_={
                         "tool_version": tool_version,
                         "runtime_version": node_version,

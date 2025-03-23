@@ -16,7 +16,6 @@ class GoBuildToolAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
-        self.logger.setLevel(logging.DEBUG)
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
 
 
@@ -25,7 +24,7 @@ class GoBuildToolAnalyzer(BaseLogger):
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
-        utils = Utils(0)
+        utils = Utils()
         repo_languages = utils.detect_repo_languages(repo['repo_id'])
         if 'Go' not in repo_languages:
             msg = f"Skipping non-Go repo {repo['repo_id']}"
@@ -46,7 +45,7 @@ class GoBuildToolAnalyzer(BaseLogger):
                     tool_version=tool_version,
                     runtime_version=go_version,
                 ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool"],
+                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
                     set_={
                         "tool_version": tool_version,
                         "runtime_version": go_version,

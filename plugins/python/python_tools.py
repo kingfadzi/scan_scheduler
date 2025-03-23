@@ -49,7 +49,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
                     tool_version=tool_version,
                     runtime_version=python_version,
                 ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool"],
+                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
                     set_={
                         "tool_version": tool_version,
                         "runtime_version": python_version,
@@ -184,6 +184,22 @@ class PythonBuildToolAnalyzer(BaseLogger):
                         return self.version_pattern.search(line).group(1)
         except Exception as e:
             self.logger.error(f"Error parsing requirements.txt: {e}")
+        return "Unknown"
+
+    def _parse_runtime_file(self, repo_dir):
+
+        path = Path(repo_dir) / 'runtime.txt'
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                # Look for patterns like "python-3.9.1" or "3.9.1"
+                content = f.read().strip()
+                match = re.search(r'(?:python-)?(\d+\.\d+\.\d+|\d+\.\d+)', content)
+                if match:
+                    return match.group(1)
+        except FileNotFoundError:
+            self.logger.debug(f"No runtime.txt found in {repo_dir}")
+        except Exception as e:
+            self.logger.error(f"Error parsing runtime.txt: {e}")
         return "Unknown"
 
     def _parse_setuptools_version(self, repo_dir):

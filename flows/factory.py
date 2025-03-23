@@ -18,14 +18,20 @@ def create_analysis_flow(
 ):
 
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
-    def repo_subflow(repo: dict, sub_dir: str, sub_tasks: List[Callable], flow_prefix: str, repo_slug: str):
+    def repo_subflow(
+            repo: dict,
+            sub_dir: str,
+            sub_tasks: List[Callable],
+            flow_prefix: str,
+            repo_slug: str,
+            parent_run_id: str
+    ):
         logger = get_run_logger()
-        ctx = get_run_context()
-        run_id = str(ctx.flow_run.id) if ctx and hasattr(ctx, 'flow_run') else "default"
-
+        run_id = parent_run_id
         repo_dir = None
+
         try:
-            logger.info(f"Starting processing for {repo_slug}")
+            logger.info(f"Starting processing for {repo_slug} under parent run {parent_run_id}")
             repo_dir = clone_repository_task.with_options(retries=1)(repo, sub_dir, run_id)
 
             for task_fn in sub_tasks:
@@ -56,7 +62,13 @@ def create_analysis_flow(
     @task(name=f"{default_flow_prefix} - Subflow Trigger",
           task_run_name="{repo[repo_slug]}",
           retries=1)
-    def trigger_subflow(repo: dict, sub_dir: str, sub_tasks: List[Callable], flow_prefix: str):
+    def trigger_subflow(
+            repo: dict,
+            sub_dir: str,
+            sub_tasks: List[Callable],
+            flow_prefix: str,
+            parent_run_id: str  # Added parent_run_id parameter
+    ):
         logger = get_run_logger()
         try:
             return repo_subflow(
@@ -64,7 +76,8 @@ def create_analysis_flow(
                 sub_dir,
                 sub_tasks,
                 flow_prefix,
-                repo['repo_slug']
+                repo['repo_slug'],
+                parent_run_id
             )
         except Exception as e:
             logger.error(f"Subflow failed: {str(e)}")
@@ -86,10 +99,9 @@ def create_analysis_flow(
         try:
             start_task(flow_prefix)
             ctx = get_run_context()
-            parent_run_id = str(ctx.flow_run.id) if ctx and hasattr(ctx, 'flow_run') else "default"
+            parent_run_id = str(ctx.flow_run.id)  # Parent run ID
             logger.info(f"Main flow {parent_run_id} starting with concurrency {default_concurrency}")
 
-            # Fetch repositories using batch_size for query pagination
             repos = fetch_repositories_task.with_options(retries=1)(payload, batch_size)
             logger.info(f"Total repositories to process: {len(repos)}")
 
@@ -98,10 +110,10 @@ def create_analysis_flow(
                 sub_dir=unmapped(sub_dir),
                 sub_tasks=unmapped(sub_tasks),
                 flow_prefix=unmapped(flow_prefix),
+                parent_run_id=unmapped(parent_run_id),
                 return_state=True
             )
 
-            # Process results
             successful = []
             for state in states:
                 if state.is_completed():
