@@ -51,14 +51,12 @@ def create_analysis_flow(
                     logger.info(f"Cleanup completed for {repo_slug}")
                 except Exception as e:
                     logger.warning(f"Cleanup error: {str(e)}")
-                    raise
 
             try:
                 update_status_task(repo, run_id)
                 logger.info(f"Status: {repo['status']} update completed for {repo_slug}")
             except Exception as e:
                 logger.error(f"Status update failed: {str(e)}")
-                raise
 
         return repo
 
@@ -84,7 +82,7 @@ def create_analysis_flow(
             )
         except Exception as e:
             logger.error(f"Subflow failed: {str(e)}")
-            raise
+            return None
 
     @flow(name=flow_name,
           flow_run_name=flow_run_name,
