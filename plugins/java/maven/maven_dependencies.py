@@ -64,7 +64,8 @@ class MavenDependencyAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.error(f"Maven analysis failed: {str(e)}", exc_info=True)
-            return "0 dependencies found."
+            # return "0 dependencies found."
+            raise
 
     def _generate_effective_pom(self, repo_path: Path) -> Path:
         try:

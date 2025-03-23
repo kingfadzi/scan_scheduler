@@ -8,14 +8,14 @@ os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
     branch=Config.FLOW_GIT_BRANCH,  # Use the correct branch
-
 )
 
 DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
     ("flows/fundamentals.py:fundamental_metrics_flow", "fundamentals", "fundamentals-pool"),
-    ("flows/components.py:component_patterns_flow", "component-patterns", "components-pool"),
+    ("flows/build_tools.py:build_tools_flow", "build_tools", "components-pool"),
+    ("flows/dependencies.py:dependencies_flow", "dependencies", "components-pool"),
     ("flows/vulnerabilities.py:vulnerabilities_flow", "vulnerabilities", "vulnerabilities-pool"),
     ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool")
 ]

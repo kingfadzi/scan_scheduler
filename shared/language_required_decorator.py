@@ -5,7 +5,6 @@ from pprint import pformat
 from shared.utils import Utils
 
 def language_required(*languages):
-    """Decorator to enforce repository language requirements."""
 
     expected_lower = {str(lang).lower() for lang in languages}
     original_list = languages

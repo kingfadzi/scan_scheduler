@@ -24,41 +24,45 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
     @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="Javascript Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
-        pkg_json_path = os.path.join(repo_dir, "package.json")
-        lock_file = None
-        utils = Utils()  # Create Utils instance once
+        try:
+            pkg_json_path = os.path.join(repo_dir, "package.json")
+            lock_file = None
+            utils = Utils()  # Create Utils instance once
 
-        if not os.path.isfile(pkg_json_path):
-            self.logger.warn("No package.json found in the repository.")
+            if not os.path.isfile(pkg_json_path):
+                self.logger.warn("No package.json found in the repository.")
+                return "0 dependencies found."
+
+            pkg_lock = os.path.join(repo_dir, "package-lock.json")
+            yarn_lock = os.path.join(repo_dir, "yarn.lock")
+
+            if os.path.isfile(pkg_lock):
+                lock_file = pkg_lock
+            elif os.path.isfile(yarn_lock):
+                lock_file = yarn_lock
+
+            if lock_file:
+                self.logger.info(f"Lock file {lock_file} exists. Parsing dependencies.")
+                dependencies = self.parse_dependencies(lock_file, repo)
+                utils.persist_dependencies(dependencies)  # Persist here
+                return f"{len(dependencies)} dependencies found."
+
+            self.logger.info("No lock file found. Installing dependencies to generate one.")
+            pm = self.detect_package_manager(pkg_json_path)
+            lock_file = pkg_lock if pm == "npm" else yarn_lock
+
+            if not self.install_dependencies(repo_dir, pm, lock_file):
+                return "0 dependencies found."
+
+            if os.path.isfile(lock_file):
+                dependencies = self.parse_dependencies(lock_file, repo)
+                utils.persist_dependencies(dependencies)  # Persist here too
+                return f"{len(dependencies)} dependencies found."
+
             return "0 dependencies found."
-
-        pkg_lock = os.path.join(repo_dir, "package-lock.json")
-        yarn_lock = os.path.join(repo_dir, "yarn.lock")
-
-        if os.path.isfile(pkg_lock):
-            lock_file = pkg_lock
-        elif os.path.isfile(yarn_lock):
-            lock_file = yarn_lock
-
-        if lock_file:
-            self.logger.info(f"Lock file {lock_file} exists. Parsing dependencies.")
-            dependencies = self.parse_dependencies(lock_file, repo)
-            utils.persist_dependencies(dependencies)  # Persist here
-            return f"{len(dependencies)} dependencies found."
-
-        self.logger.info("No lock file found. Installing dependencies to generate one.")
-        pm = self.detect_package_manager(pkg_json_path)
-        lock_file = pkg_lock if pm == "npm" else yarn_lock
-
-        if not self.install_dependencies(repo_dir, pm, lock_file):
-            return "0 dependencies found."
-
-        if os.path.isfile(lock_file):
-            dependencies = self.parse_dependencies(lock_file, repo)
-            utils.persist_dependencies(dependencies)  # Persist here too
-            return f"{len(dependencies)} dependencies found."
-
-        return "0 dependencies found."
+        except Exception as e:
+            self.logger.error(f"Exception occurred during analysis: {e}", exc_info=True)
+            raise
 
     def detect_package_manager(self, pkg_json_path):
 

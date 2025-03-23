@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
 
+
 class Utils(BaseLogger):
 
     def __init__(self, logger=None):

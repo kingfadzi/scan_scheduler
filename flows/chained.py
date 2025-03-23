@@ -7,7 +7,8 @@ from shared.utils import Utils
 
 DEPLOYMENTS = [
     "fundamental-metrics-flow/fundamentals",
-    "component-patterns-flow/component-patterns",
+    "build_tools_flow/build_tools",
+    "dependencies_flow/dependencies",
     "standards-assessment-flow/standards-assessment",
     "vulnerabilities-flow/vulnerabilities"
 ]

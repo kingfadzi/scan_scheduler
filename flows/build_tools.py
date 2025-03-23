@@ -17,19 +17,19 @@ sub_tasks = [
     run_python_build_tool_task,
 ]
 
-build_tools_and_dependencies_flow = create_analysis_flow(
+build_tools_flow = create_analysis_flow(
     flow_name="build_tools_and_dependencies_flow",
     flow_run_name=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     default_sub_tasks=sub_tasks,
     default_sub_dir="build_tools_and_dependencies_flow",
-    default_flow_prefix="COMPOSITION",
-    default_batch_size=10,
-    default_concurrency=5
+    default_flow_prefix="BUILD_TOOLS",
+    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
+    default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
 )
 
 
 if __name__ == "__main__":
-    build_tools_and_dependencies_flow({
+    build_tools_flow({
         "payload": {
             "host_name": [Config.GITLAB_HOSTNAME],
             #"main_language": ["Java"]

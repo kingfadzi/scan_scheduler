@@ -22,7 +22,37 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
     @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
     def run_analysis(self, repo_dir, repo):
-        self.logger.info(f"Starting JavaScript build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
+        try:
+            self.logger.info(
+                f"Starting JavaScript build analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']})."
+            )
+
+            js_build_tool = self.validate_repo_and_tool(repo_dir, repo)
+            if js_build_tool not in ['npm', 'Yarn', 'pnpm']:
+                return js_build_tool
+
+            node_version, tool_version = self.extract_versions(repo_dir, js_build_tool)
+            self.logger.info(
+                f"Detected {js_build_tool}. Version: {tool_version}, Node.js version: {node_version}"
+            )
+
+            self.persist_analysis_result(repo, js_build_tool, tool_version, node_version)
+
+            result = {
+                "repo_id": repo['repo_id'],
+                "tool": js_build_tool,
+                "tool_version": tool_version,
+                "runtime_version": node_version,
+            }
+            self.logger.info("JavaScript build analysis completed.")
+            return json.dumps(result)
+
+        except Exception as e:
+            self.logger.exception(f"Error during run_analysis for repo_id {repo['repo_id']}: {e}")
+            raise
+
+
+    def validate_repo_and_tool(self, repo_dir, repo):
 
         utils = Utils()
 
@@ -43,6 +73,10 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
+        return js_build_tool
+
+
+    def extract_versions(self, repo_dir, js_build_tool):
         package_json_path = os.path.join(repo_dir, "package.json")
         node_version = "Unknown"
         tool_version = "Unknown"
@@ -51,7 +85,6 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
             try:
                 with open(package_json_path) as f:
                     package_data = json.load(f)
-
                     engines = package_data.get('engines', {})
                     if 'node' in engines:
                         node_version = engines['node'].strip()
@@ -66,10 +99,11 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
             except Exception as e:
                 self.logger.error(f"Error parsing package.json: {e}")
 
-        self.logger.info(f"Detected {js_build_tool}. Version: {tool_version}, Node.js version: {node_version}")
+        return node_version, tool_version
 
+
+    def persist_analysis_result(self, repo, js_build_tool, tool_version, node_version):
         session = Session()
-
         try:
             session.execute(
                 insert(BuildTool).values(
@@ -93,14 +127,6 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
         finally:
             session.close()
 
-        result = {
-            "repo_id": repo['repo_id'],
-            "tool": js_build_tool,
-            "tool_version": tool_version,
-            "runtime_version": node_version,
-        }
-        self.logger.info("JavaScript build analysis completed.")
-        return json.dumps(result)
 
 
 if __name__ == "__main__":

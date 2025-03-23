@@ -46,7 +46,8 @@ class GradleDependencyAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.error(f"Gradle analysis failed: {str(e)}", exc_info=True)
-            return f"Gradle analysis failed: {str(e)}"
+            #return f"Gradle analysis failed: {str(e)}"
+            raise
 
     def _find_gradle_files(self, root: Path) -> List[Path]:
         build_files = []

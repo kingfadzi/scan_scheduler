@@ -22,39 +22,44 @@ class PythonDependencyAnalyzer(BaseLogger):
     @language_required("Python")
     @analyze_execution(session_factory=Session, stage="Python Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
-        self.logger.info(f"Processing repository at: {repo_dir}")
-        env_path = self.create_virtual_env(repo_dir)
-        req_file_path = os.path.join(repo_dir, "requirements.txt")
+        try:
+            self.logger.info(f"Processing repository at: {repo_dir}")
+            env_path = self.create_virtual_env(repo_dir)
+            req_file_path = os.path.join(repo_dir, "requirements.txt")
 
-        if not (os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0):
-            self.logger.info("No valid requirements.txt found. Generating one using pipreqs.")
-            try:
-                self.generate_requirements_with_pipreqs(repo_dir)
-            except Exception as e:
-                self.logger.error(f"Failed to generate requirements.txt using pipreqs: {e}")
-                Path(req_file_path).touch()
+            if not (os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0):
+                self.logger.info("No valid requirements.txt found. Generating one using pipreqs.")
+                try:
+                    self.generate_requirements_with_pipreqs(repo_dir)
+                except Exception as e:
+                    self.logger.error(f"Failed to generate requirements.txt using pipreqs: {e}")
+                    Path(req_file_path).touch()
 
-        self.install_requirements(repo_dir, env_path)
-        final_req_file = self.freeze_requirements(repo_dir, env_path)
+            self.install_requirements(repo_dir, env_path)
+            final_req_file = self.freeze_requirements(repo_dir, env_path)
 
-        if not os.path.isfile(final_req_file):
-            return []
+            if not os.path.isfile(final_req_file):
+                return []
 
-        lines = Path(final_req_file).read_text().splitlines()
-        dependencies = [
-            Dependency(repo_id=repo['repo_id'], name=name, version=version, package_type="pip")
-            for line in lines if "==" in line
-            for name, version in [line.split("==", 1)]
-        ]
+            lines = Path(final_req_file).read_text().splitlines()
+            dependencies = [
+                Dependency(repo_id=repo['repo_id'], name=name, version=version, package_type="pip")
+                for line in lines if "==" in line
+                for name, version in [line.split("==", 1)]
+            ]
 
-        self.logger.debug("Persisting dependencies to database...")
-        utils = Utils()
-        utils.persist_dependencies(dependencies)
-        self.logger.debug("Dependencies persisted successfully.")
+            self.logger.debug("Persisting dependencies to database...")
+            utils = Utils()
+            utils.persist_dependencies(dependencies)
+            self.logger.debug("Dependencies persisted successfully.")
 
-        msg = f"Found {len(dependencies)} dependencies."
-        self.logger.info(msg)
-        return msg
+            msg = f"Found {len(dependencies)} dependencies."
+            self.logger.info(msg)
+            return msg
+
+        except Exception as e:
+            self.logger.exception(f"Error during run_analysis for repo at {repo_dir}: {e}")
+            raise
 
 
     def create_virtual_env(self, project_dir, env_name="venv"):
