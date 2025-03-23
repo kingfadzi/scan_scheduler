@@ -84,7 +84,7 @@ def create_analysis_flow(
             )
         except Exception as e:
             logger.error(f"Subflow failed: {str(e)}")
-            return None
+            raise
 
     @flow(name=flow_name,
           flow_run_name=flow_run_name,
