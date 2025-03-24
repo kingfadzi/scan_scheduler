@@ -1,9 +1,11 @@
 import subprocess
 import venv
+import os
+import logging
+from pathlib import Path
 
 from shared.language_required_decorator import language_required
 from shared.models import Dependency, Session
-import os
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
@@ -14,138 +16,150 @@ class PythonDependencyAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
-
+        self.utils = Utils(logger=self.logger)
 
     @analyze_execution(
-      session_factory=Session,
-      stage="Python Dependency Analysis",
-      require_language="Python"
+        session_factory=Session,
+        stage="Python Dependency Analysis",
+        require_language=["Python", "Jupyter Notebook"]
     )
     def run_analysis(self, repo_dir, repo):
+        all_dependencies = []
+        processed_dirs = []
+        root_dir = Path(repo_dir)
+        
         try:
             self.logger.info(f"Processing repository at: {repo_dir}")
-            env_path = self.create_virtual_env(repo_dir)
-            req_file_path = os.path.join(repo_dir, "requirements.txt")
+            
+            # First check subdirectories
+            for root, dirs, files in os.walk(repo_dir):
+                current_dir = Path(root)
+                if current_dir == root_dir:
+                    continue  # Skip root in first pass
+                    
+                if self._is_python_project(current_dir):
+                    self.logger.info(f"Found Python/Jupyter project in: {current_dir}")
+                    processed_dirs.append(current_dir)
+                    dependencies = self._process_directory(current_dir, repo)
+                    all_dependencies.extend(dependencies)
 
-            if not (os.path.isfile(req_file_path) and os.path.getsize(req_file_path) > 0):
-                self.logger.info("No valid requirements.txt found. Generating one using pipreqs.")
-                try:
-                    self.generate_requirements_with_pipreqs(repo_dir)
-                except Exception as e:
-                    self.logger.error(f"Failed to generate requirements.txt using pipreqs: {e}")
-                    Path(req_file_path).touch()
-
-            self.install_requirements(repo_dir, env_path)
-            final_req_file = self.freeze_requirements(repo_dir, env_path)
-
-            if not os.path.isfile(final_req_file):
-                return []
-
-            lines = Path(final_req_file).read_text().splitlines()
-            dependencies = [
-                Dependency(repo_id=repo['repo_id'], name=name, version=version, package_type="pip")
-                for line in lines if "==" in line
-                for name, version in [line.split("==", 1)]
-            ]
+            # Fallback to root if no subdirectories found
+            if not processed_dirs:
+                if self._is_python_project(root_dir):
+                    self.logger.info("Processing root directory as fallback")
+                    dependencies = self._process_directory(root_dir, repo)
+                    all_dependencies.extend(dependencies)
+                else:
+                    self.logger.warning("No Python/Jupyter projects found in repository")
+                    return "No Python/Jupyter projects found"
 
             self.logger.debug("Persisting dependencies to database...")
-            utils = Utils()
-            utils.persist_dependencies(dependencies)
-            self.logger.debug("Dependencies persisted successfully.")
-
-            msg = f"Found {len(dependencies)} dependencies."
+            self.utils.persist_dependencies(all_dependencies)
+            
+            msg = f"Found {len(all_dependencies)} dependencies across {len(processed_dirs)} directories"
             self.logger.info(msg)
             return msg
 
         except Exception as e:
-            self.logger.exception(f"Error during run_analysis for repo at {repo_dir}: {e}")
+            self.logger.exception(f"Error during analysis: {e}")
             raise
 
+    def _is_python_project(self, directory):
+        """Check if directory contains Python/Jupyter files or requirements.txt"""
+        has_relevant_files = any(f.suffix in ('.py', '.ipynb') for f in directory.iterdir())
+        has_req_file = (directory / "requirements.txt").exists()
+        return has_relevant_files or has_req_file
 
-    def create_virtual_env(self, project_dir, env_name="venv"):
-        env_path = os.path.join(project_dir, env_name)
-        self.logger.info(f"Creating virtual environment in: {env_path}")
-        if os.path.isdir(env_path):
-            self.logger.warning(f"Virtual environment already exists at: {env_path}")
-        else:
-            try:
+    def _process_directory(self, directory, repo):
+        """Process a single directory and return dependencies"""
+        try:
+            self.logger.debug(f"Processing directory: {directory}")
+            
+            # Create and manage virtual environment
+            env_path = directory / "venv"
+            if not env_path.exists():
+                self.logger.debug("Creating virtual environment")
                 venv.create(env_path, with_pip=True)
-                self.logger.info("Virtual environment created successfully.")
-            except Exception as e:
-                self.logger.error(f"Error creating virtual environment: {e}")
-                raise
-        return env_path
 
-    def install_requirements(self, project_dir, env_path, requirements_file="requirements.txt"):
-        req_path = os.path.join(project_dir, requirements_file)
-        if os.path.isfile(req_path):
-            self.logger.info(f"Installing dependencies from {req_path}")
-            pip_executable = os.path.join(env_path, "bin", "pip")
-            command_list = [pip_executable, "install", "-r", req_path]
-            self.logger.debug("Executing command: " + " ".join(command_list))
+            # Generate requirements if needed
+            req_file = directory / "requirements.txt"
+            if not req_file.exists() or req_file.stat().st_size == 0:
+                self._generate_requirements(directory)
+
+            # Install and freeze requirements
+            self._install_requirements(directory, env_path)
+            frozen_file = self._freeze_requirements(directory, env_path)
+            
+            return self._parse_dependencies(frozen_file, repo)
+
+        except Exception as e:
+            self.logger.error(f"Failed to process {directory}: {e}")
+            return []
+
+    def _generate_requirements(self, directory):
+        """Generate requirements.txt only if needed"""
+        try:
+            self.logger.info(f"Generating requirements.txt in {directory}")
+            subprocess.run(
+                ["pipreqs", str(directory), "--force", "--savepath", "requirements.txt"],
+                cwd=directory,
+                check=True,
+                capture_output=True
+            )
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"pipreqs failed in {directory}: {e.stderr.decode()}")
+            (directory / "requirements.txt").touch()
+
+    def _install_requirements(self, directory, env_path):
+        """Install requirements from directory"""
+        req_file = directory / "requirements.txt"
+        if req_file.exists():
+            pip = env_path / "bin" / "pip"
             try:
-                result = subprocess.run(
-                    command_list,
-                    cwd=project_dir,
-                    capture_output=True,
-                    text=True,
-                    check=True
+                subprocess.run(
+                    [str(pip), "install", "-r", str(req_file)],
+                    cwd=directory,
+                    check=True,
+                    capture_output=True
                 )
-                self.logger.info("Dependencies installed successfully.")
-                self.logger.debug("pip install output: " + result.stdout)
-            except Exception as e:
-                self.logger.error(f"Failed to install dependencies: {e}")
-                self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-                raise
-        else:
-            self.logger.warning(f"{requirements_file} does not exist in {project_dir}. Skipping installation.")
+            except subprocess.CalledProcessError as e:
+                self.logger.error(f"Install failed in {directory}: {e.stderr.decode()}")
 
-    def freeze_requirements(self, project_dir, env_path, output_file="requirements.txt"):
-        self.logger.info("Freezing the environment to generate an updated requirements file.")
-        pip_executable = os.path.join(env_path, "bin", "pip")
-        command_list = [pip_executable, "freeze"]
+    def _freeze_requirements(self, directory, env_path):
+        """Generate frozen requirements"""
+        pip = env_path / "bin" / "pip"
         try:
             result = subprocess.run(
-                command_list,
-                cwd=project_dir,
+                [str(pip), "freeze"],
+                cwd=directory,
+                check=True,
                 capture_output=True,
-                text=True,
-                check=True
+                text=True
             )
-            output_path = os.path.join(project_dir, output_file)
-            with open(output_path, "w") as f:
-                f.write(result.stdout)
-            self.logger.info(f"Requirements file generated at: {output_path}")
-            return output_path
-        except Exception as e:
-            self.logger.error(f"Failed to run pip freeze: {e}")
-            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
+            output = directory / "requirements.frozen.txt"
+            output.write_text(result.stdout)
+            return output
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Freeze failed in {directory}: {e.stderr.decode()}")
             raise
 
-    def generate_requirements_with_pipreqs(self, project_dir, output_file="requirements.txt"):
-        self.logger.info("Generating requirements.txt using pipreqs.")
-        output_path = os.path.join(project_dir, output_file)
-        command_list = ["pipreqs", project_dir, "--force", "--savepath", output_path]
-        try:
-            result = subprocess.run(
-                command_list,
-                cwd=project_dir,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.logger.info("Requirements file generated by pipreqs.")
-            self.logger.debug("pipreqs output: " + result.stdout)
-            return output_path
-        except Exception as e:
-            self.logger.error(f"pipreqs failed: {e}")
-            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-            raise
+    def _parse_dependencies(self, req_file, repo):
+        """Parse dependencies from frozen file"""
+        dependencies = []
+        for line in req_file.read_text().splitlines():
+            if "==" in line:
+                try:
+                    name, version = line.split("==", 1)
+                    dependencies.append(Dependency(
+                        repo_id=repo['repo_id'],
+                        name=name.strip(),
+                        version=version.strip(),
+                        package_type="pip"
+                    ))
+                except ValueError:
+                    self.logger.warning(f"Skipping malformed dependency: {line}")
+        return dependencies
 
-
-
-import logging
-from pathlib import Path
 
 class Repo:
     def __init__(self, repo_id):
@@ -157,14 +171,12 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    helper = PythonDependencyAnalyzer()
-    repo_directory = "/Users/fadzi/python_repos/Tiredful-API-py3-beta"
-    repo = Repo(repo_id="dashboard")
+    analyzer = PythonDependencyAnalyzer()
+    repo_directory = "/path/to/your/repository"
+    repo = Repo(repo_id="example-repo")
 
     try:
-        dependencies = helper.run_analysis(repo_directory, repo)
-        for dep in dependencies:
-            print(f"Dependency: {dep.name} - {dep.version}")
+        result = analyzer.run_analysis(repo_directory, repo)
+        print(f"Analysis result: {result}")
     except Exception as e:
-        print(f"An error occurred while processing the repository: {e}")
-
+        print(f"Analysis failed: {str(e)}")
