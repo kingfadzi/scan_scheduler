@@ -1,6 +1,7 @@
 import json
 import re
 import logging
+import os
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
 
@@ -15,213 +16,167 @@ class PythonBuildToolAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
-
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
-   
     @analyze_execution(
-      session_factory=Session,
-      stage="Python Build Tool Analysis", 
-      require_language=["Python", "Jupyter Notebook"] 
+        session_factory=Session,
+        stage="Python Build Tool Analysis", 
+        require_language=["Python", "Jupyter Notebook"] 
     )
     def run_analysis(self, repo_dir, repo):
-        self.logger.info(f"Starting Python analysis for {repo['repo_id']}")
+        self.logger.info(f"Starting Python build tool analysis for {repo['repo_id']}")
+        results = []
 
-        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
-        if 'Python' not in repo_languages:
-            msg = f"Skipping non-Python repo {repo['repo_id']}"
-            self.logger.info(msg)
-            return msg
+        if not self._validate_repo(repo):
+            return json.dumps({"status": "skipped", "reason": "Not a Python project"})
 
-        build_tool = self.detect_build_tool(repo_dir)
-        if not build_tool:
-            msg = f"No Python build tool detected for {repo['repo_id']}"
-            self.logger.info(msg)
-            return msg
-
-        python_version = self.detect_python_version(repo_dir, build_tool)
-        tool_version = self.detect_tool_version(repo_dir, build_tool)
-
-        self.utils.persist_build_tool(build_tool, repo["repo_id"], python_version, tool_version)
+        for root, dirs, files in os.walk(repo_dir):
+            current_dir = Path(root)
+            relative_path = current_dir.relative_to(repo_dir)
+            
+            self.logger.debug(f"Scanning directory: {relative_path}")
+            
+            build_tool = self._detect_build_tool(current_dir)
+            if not build_tool:
+                continue
+                
+            python_version = self._detect_python_version(current_dir, build_tool)
+            tool_version = self._detect_tool_version(current_dir, build_tool)
+            
+            self.logger.info(f"Found {build_tool} in {relative_path}")
+            self._persist_finding(repo, build_tool, python_version, tool_version, relative_path)
+            
+            results.append({
+                "directory": str(relative_path),
+                "build_tool": build_tool,
+                "tool_version": tool_version,
+                "python_version": python_version
+            })
 
         return json.dumps({
             "repo_id": repo['repo_id'],
-            "tool": build_tool,
-            "tool_version": tool_version,
-            "runtime_version": python_version
-        })
+            "findings": results,
+            "total_findings": len(results)
+        }, indent=2)
 
-    def detect_build_tool(self, repo_dir):
+    def _validate_repo(self, repo):
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
+        return 'Python' in repo_languages
 
-        detection_order = [
+    def _detect_build_tool(self, directory):
+        tool_detectors = [
             ('poetry.lock', 'Poetry'),
             ('pyproject.toml', self._detect_poetry),
             ('Pipfile.lock', 'Pipenv'),
             ('Pipfile', 'Pipenv'),
-            ('requirements.txt', 'pip'),
             ('setup.py', 'Setuptools'),
             ('setup.cfg', 'Setuptools'),
             ('hatch.toml', 'Hatch')
         ]
 
-        for file_name, tool in detection_order:
-            path = Path(repo_dir) / file_name
-            if path.exists():
-                if callable(tool):
-                    return tool(path)
-                return tool
+        for file_name, detector in tool_detectors:
+            if (directory / file_name).exists():
+                if callable(detector):
+                    if result := detector(directory):
+                        return result
+                else:
+                    return detector
         return None
 
-    def _detect_poetry(self, toml_path):
-
+    def _detect_poetry(self, directory):
         try:
-            with open(toml_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                if '[tool.poetry]' in content:
+            with open(directory / 'pyproject.toml', 'r', encoding='utf-8') as f:
+                if '[tool.poetry]' in f.read():
                     return 'Poetry'
         except Exception as e:
             self.logger.error(f"Error reading pyproject.toml: {e}")
         return None
 
-    def detect_python_version(self, repo_dir, build_tool):
-
-        version_sources = {
-            'Poetry': lambda: self._parse_pyproject_version(repo_dir),
-            'Pipenv': lambda: self._parse_pipfile_python(repo_dir),
-            'pip': lambda: self._parse_runtime_file(repo_dir),
-            'Setuptools': lambda: self._parse_setup_py_python(repo_dir)
+    def _detect_python_version(self, directory, build_tool):
+        version_detectors = {
+            'Poetry': self._get_poetry_python_version,
+            'Pipenv': self._get_pipenv_python_version,
+            'Setuptools': self._get_setuptools_python_version
         }
+        return version_detectors.get(build_tool, lambda _: "Unknown")(directory)
 
-        return version_sources.get(build_tool, lambda: "Unknown")()
-
-    def detect_tool_version(self, repo_dir, build_tool):
-
-        version_methods = {
-            'Poetry': lambda: self._parse_poetry_version(repo_dir),
-            'Pipenv': lambda: self._parse_pipfile_version(repo_dir),
-            'pip': lambda: self._parse_pip_version(repo_dir),
-            'Setuptools': lambda: self._parse_setuptools_version(repo_dir)
+    def _detect_tool_version(self, directory, build_tool):
+        version_detectors = {
+            'Poetry': self._get_poetry_version,
+            'Pipenv': self._get_pipenv_version,
+            'Setuptools': self._get_setuptools_version
         }
+        return version_detectors.get(build_tool, lambda _: "Unknown")(directory)
 
-        return version_methods.get(build_tool, lambda: "Unknown")()
+    def _persist_finding(self, repo, tool, py_ver, tool_ver, rel_path):
+        self.utils.persist_build_tool(
+            tool_name=tool,
+            repo_id=repo["repo_id"],
+            tool_version=tool_ver,
+            runtime_version=py_ver,
+            subdirectory=str(rel_path)
+        )
 
-    def _parse_pyproject_version(self, repo_dir):
-
-        path = Path(repo_dir) / 'pyproject.toml'
+    # Version detection methods (kept as in original but adjusted for directory parameter)
+    def _get_poetry_python_version(self, directory):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(directory / 'pyproject.toml', 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.strip().startswith('python = '):
                         return line.split('=')[-1].strip().strip('"\'')
         except Exception as e:
-            self.logger.error(f"Error parsing pyproject.toml: {e}")
-            raise
+            self.logger.error(f"Error parsing Python version: {e}")
         return "Unknown"
 
-    def _parse_setup_py_python(self, repo_dir):
-        setup_py = Path(repo_dir) / 'setup.py'
+    def _get_poetry_version(self, directory):
         try:
-            with open(setup_py, 'r', encoding='utf-8') as f:
-                content = f.read()
-                match = re.search(r'python_requires\s*=\s*["\']([^"\']+)["\']', content)
-                if match:
-                    return match.group(1)
-        except Exception as e:
-            self.logger.error(f"Error parsing setup.py for python version: {e}", exc_info=True)
-        return "Unknown"
-
-
-    def _parse_poetry_version(self, repo_dir):
-
-        path = Path(repo_dir) / 'poetry.lock'
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(directory / 'poetry.lock', 'r', encoding='utf-8') as f:
                 for line in f:
-                    if line.strip().startswith('metadata'):
-                        next_line = next(f).strip()
-                        if 'poetry-version' in next_line:
-                            return next_line.split('=')[-1].strip().strip('"')
-        except (StopIteration, FileNotFoundError):
-            pass
-        return "Unknown"
+                    if 'poetry-version' in line:
+                        return line.split('=')[-1].strip().strip('"')
+        except Exception:
+            return "Unknown"
 
-    def _parse_pipfile_python(self, repo_dir):
-
-        path = Path(repo_dir) / 'Pipfile'
+    def _get_pipenv_python_version(self, directory):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(directory / 'Pipfile', 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.strip().startswith('python_version'):
                         return line.split('=')[-1].strip().strip('"')
-        except Exception as e:
-            self.logger.error(f"Error parsing Pipfile: {e}")
-        return "Unknown"
-
-    def _parse_pipfile_version(self, repo_dir):
-
-        path = Path(repo_dir) / 'Pipfile.lock'
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('_meta', {}).get('requires', {}).get('pip_version')
-        except (json.JSONDecodeError, FileNotFoundError):
+        except Exception:
             return "Unknown"
 
-    def _parse_pip_version(self, repo_dir):
-
-        path = Path(repo_dir) / 'requirements.txt'
+    def _get_pipenv_version(self, directory):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.partition('#')[0].strip()
-                    if line.startswith('pip=='):
-                        return self.version_pattern.search(line).group(1)
-        except Exception as e:
-            self.logger.error(f"Error parsing requirements.txt: {e}")
-        return "Unknown"
+            with open(directory / 'Pipfile.lock', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('_meta', {}).get('requires', {}).get('pip_version', 'Unknown')
+        except Exception:
+            return "Unknown"
 
-    def _parse_runtime_file(self, repo_dir):
-
-        path = Path(repo_dir) / 'runtime.txt'
+    def _get_setuptools_python_version(self, directory):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                # Look for patterns like "python-3.9.1" or "3.9.1"
-                content = f.read().strip()
-                match = re.search(r'(?:python-)?(\d+\.\d+\.\d+|\d+\.\d+)', content)
-                if match:
-                    return match.group(1)
-        except FileNotFoundError:
-            self.logger.debug(f"No runtime.txt found in {repo_dir}")
-        except Exception as e:
-            self.logger.error(f"Error parsing runtime.txt: {e}")
-        return "Unknown"
+            with open(directory / 'setup.py', 'r', encoding='utf-8') as f:
+                content = f.read()
+                match = re.search(r'python_requires\s*=\s*["\']([^"\']+)["\']', content)
+                return match.group(1) if match else "Unknown"
+        except Exception:
+            return "Unknown"
 
-    def _parse_setuptools_version(self, repo_dir):
-
-        setup_py = Path(repo_dir) / 'setup.py'
+    def _get_setuptools_version(self, directory):
         try:
-            with open(setup_py, 'r', encoding='utf-8') as f:
+            with open(directory / 'setup.py', 'r', encoding='utf-8') as f:
                 content = f.read()
                 match = re.search(r'setup_requires\s*=\s*\[([^\]]*)\]', content)
                 if match:
-                    return re.search(r'setuptools(?:==|\s+)(\d+\.\d+\.?\d*)', match.group(1)).group(1)
-        except FileNotFoundError:
-            pass
-
-        setup_cfg = Path(repo_dir) / 'setup.cfg'
-        try:
-            with open(setup_cfg, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip().startswith('setup_requires'):
-                        return re.search(r'setuptools(?:==|\s+)(\d+\.\d+\.?\d*)', line).group(1)
-        except FileNotFoundError:
-            pass
-
-        return "Unknown"
+                    version_match = re.search(r'setuptools(?:==|\s+)(\d+\.\d+\.?\d*)', match.group(1))
+                    return version_match.group(1) if version_match else "Unknown"
+            return "Unknown"
+        except Exception:
+            return "Unknown"
 
 if __name__ == "__main__":
-
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -231,29 +186,18 @@ if __name__ == "__main__":
         def __init__(self, repo_id, repo_slug):
             self.repo_id = repo_id
             self.repo_slug = repo_slug
-            self.repo_name = repo_slug
 
-
-    test_repo = MockRepo("python-test-123", "example-python-repo")
-    test_repo_dir = "/path/to/your/python/project"  # Replace with actual path
+    test_repo = MockRepo("python-build-test", "build-tool-analysis")
+    test_repo_dir = "/path/to/test/repository"
 
     analyzer = PythonBuildToolAnalyzer()
-    session = Session()
-
+    
     try:
-
         result = analyzer.run_analysis(
             repo_dir=test_repo_dir,
-            repo=test_repo,
-            session=session
+            repo=test_repo
         )
-
-
-        print("\nAnalysis Results:")
+        print("Build Tool Analysis Results:")
         print(json.dumps(json.loads(result), indent=2))
-
     except Exception as e:
-        print(f"\nAnalysis failed: {str(e)}")
-    finally:
-        session.close()
-        print("\nAnalysis session closed")
+        print(f"Analysis failed: {str(e)}")
