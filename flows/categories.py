@@ -102,12 +102,20 @@ def load_rules_for_type(package_type: str):
                         patterns = sub.get('patterns', [])
                         logger.debug(f"[{package_type}]  Subcategory: {sub_name} ({len(patterns)} patterns)")
                         for pattern in patterns:
-                            compiled_list.append((re.compile(pattern, re.IGNORECASE), category_name, sub_name))
+                            compiled_list.append((
+                                re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
+                                category_name, 
+                                sub_name
+                            ))
                 else:
                     patterns = cat.get('patterns', [])
                     logger.debug(f"[{package_type}]  Top-level patterns: {len(patterns)}")
                     for pattern in patterns:
-                        compiled_list.append((re.compile(pattern, re.IGNORECASE), category_name, ""))
+                        compiled_list.append((
+                            re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
+                            category_name, 
+                            ""
+                        ))
             
             logger.info(f"[{package_type}] Loaded {len(rules.get('categories', []))} categories from {os.path.basename(file_path)}")
 
@@ -137,7 +145,6 @@ def fetch_chunks_for_type(package_type: str) -> list:
             logger.debug(f"[{package_type}] Chunk {idx+1}: {chunk_size} rows")
             if not chunk.empty:
                 chunks.append(chunk)
-                logger.debug(f"[{package_type}] Sample dependency: {chunk.iloc[0]['name']} ({chunk.iloc[0]['version']})")
             else:
                 logger.warning(f"[{package_type}] Empty chunk {idx+1}")
         
@@ -159,23 +166,14 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         # Start categorization
         cat_start = time.time()
         
-        # Vectorized categorization without row-wise logging
-        patterns = []
-        categories = []
-        sub_categories = []
-        
-        # Pre-compile regex patterns for faster matching
-        for regex, top_cat, sub_cat in compiled_rules:
-            patterns.append((regex, top_cat, sub_cat))
-        
-        # Create mask array for vectorized operations
+        # Vectorized categorization
         matches = pd.Series(False, index=chunk.index)
         category_series = pd.Series("Other", index=chunk.index)
         sub_category_series = pd.Series("", index=chunk.index)
         
-        # Batch pattern matching
-        for regex, top_cat, sub_cat in patterns:
-            current_matches = chunk['name'].str.contains(regex, case=False)
+        # Batch pattern matching with proper flag handling
+        for regex, top_cat, sub_cat in compiled_rules:
+            current_matches = chunk['name'].str.contains(regex)
             new_matches = current_matches & ~matches
             category_series = category_series.mask(new_matches, top_cat)
             sub_category_series = sub_category_series.mask(new_matches, sub_cat)
@@ -199,13 +197,6 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
             update_start = time.time()
             categorizer.bulk_update_dependencies(session.connection(), updates)
             logger.info(f"[{package_type}] Updated {len(updates)} rows in {time.time() - update_start:.2f}s")
-
-        # Sample logging for verification (only in debug mode)
-        if logger.isEnabledFor(logging.DEBUG):
-            samples = chunk[['name', 'category', 'sub_category']].sample(n=min(3, len(chunk)))
-            logger.debug(f"[{package_type}] Sample categorizations:")
-            for _, row in samples.iterrows():
-                logger.debug(f"[{package_type}]  {row['name']} → {row['category']}/{row['sub_category']}")
 
         return chunk_size
 
