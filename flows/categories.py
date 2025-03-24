@@ -163,7 +163,7 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         def categorize_with_logging(row):
             result = categorize_row(row, compiled_rules)
             if result['category'] != 'Other':
-                logger.trace(f"[{package_type}] Matched {row['name']} to {result['category']}/{result['sub_category']}")
+                logger.debug(f"[{package_type}] Matched {row['name']} to {result['category']}/{result['sub_category']}")
             return result
             
         cat_values = chunk.apply(categorize_with_logging, axis=1)
