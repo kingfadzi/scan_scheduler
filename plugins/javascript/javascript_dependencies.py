@@ -183,24 +183,27 @@ if __name__ == "__main__":
         sys.exit(1)
 
     repo_directory = os.path.abspath(sys.argv[1])
-    repo = Repo(repo_id=os.path.basename(repo_directory))
     
-    # Initialize analyzer with specific run ID
+    # Convert Repo instance to dictionary format
+    repo_instance = Repo(repo_id=os.path.basename(repo_directory))
+    repo_dict = {
+        'repo_id': repo_instance.repo_id,
+        # Add other required fields if needed
+    }
+    
     analyzer = JavaScriptDependencyAnalyzer(
-        run_id="STANDALONE_RUN_001"  
+        run_id="STANDALONE_RUN_001"
     )
-
 
     GENERATE_LOCK_FILES = False
 
     try:
         result = analyzer.run_analysis(
             repo_directory,
-            repo,
+            repo_dict,  # Pass the dictionary instead of Repo instance
             generate_lock_files=GENERATE_LOCK_FILES
         )
         print(f"Analysis complete. {result}")
     except Exception as e:
         print(f"Analysis failed: {str(e)}")
         sys.exit(1)
-        
