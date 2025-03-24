@@ -12,6 +12,7 @@ from psycopg2.extras import execute_values
 from shared.models import Session
 from config.config import Config
 from shared.base_logger import BaseLogger
+import warnings
 
 # Constants
 CHUNK_SIZE = 50000
