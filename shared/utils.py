@@ -399,11 +399,14 @@ class Utils(BaseLogger):
                 index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
             )
             session.execute(stmt)
+            session.commit()
         except Exception as e:
             self.logger.error(f"Error persisting build tool for {repo_id_value}: {e}")
             raise
-
-
+        finally:
+            session.close()
+   
+          
 
 def main():
 

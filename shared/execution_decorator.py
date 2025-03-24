@@ -17,7 +17,7 @@ def analyze_execution(session_factory, stage=None, require_language=None):
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # Validate analyzer instance setup
+          
             if not hasattr(self, 'run_id') or not self.run_id:
                 raise RuntimeError("Analyzer instance missing 'run_id'")
 
@@ -26,12 +26,11 @@ def analyze_execution(session_factory, stage=None, require_language=None):
             logger = getattr(self, 'logger', logging.getLogger('analysis'))
 
             try:
-                # Bind and validate arguments
+             
                 bound_args = sig.bind(self, *args, **kwargs)
                 bound_args.apply_defaults()
                 parameters = bound_args.arguments
-
-                # Extract repo information
+         
                 repo = parameters['repo']
                 if not isinstance(repo, dict):
                     raise TypeError(f"repo must be dict, got {type(repo)}")
@@ -39,7 +38,6 @@ def analyze_execution(session_factory, stage=None, require_language=None):
                     raise KeyError("repo missing 'repo_id'")
                 repo_id = repo['repo_id']
 
-                # Language filter check
                 if require_language:
                     actual_lang = _get_normalized_language(repo_id)
                     expected_langs = _normalize_language_spec(require_language)
@@ -50,8 +48,7 @@ def analyze_execution(session_factory, stage=None, require_language=None):
                             f"Language '{actual_lang or 'none'}' not in required set: {expected_langs}"
                         )
                         return None
-
-                # Proceed with execution
+            
                 start_time = time.time()
                 logger.debug(f"Starting {stage} (Repo ID: {repo_id}, Run ID: {self.run_id})")
 
@@ -75,7 +72,7 @@ def analyze_execution(session_factory, stage=None, require_language=None):
                 return result
 
             except Exception as e:
-                # Error handling remains unchanged
+               
                 elapsed_time = time.time() - start_time if 'start_time' in locals() else 0
                 error_message = str(e)
                 repo_id = repo.get('repo_id', 'unknown') if isinstance(repo, dict) else 'invalid-repo'
