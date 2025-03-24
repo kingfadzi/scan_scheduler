@@ -3,7 +3,8 @@ import inspect
 import logging
 import time
 from datetime import datetime
-from shared.models import AnalysisExecutionLog
+from shared.models import AnalysisExecutionLo
+from shared.utils import Utils
 
 def analyze_execution(session_factory, stage=None, require_language=None):
   
