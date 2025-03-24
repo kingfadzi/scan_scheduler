@@ -3,7 +3,8 @@ import time
 from prefect.context import get_run_context
 from sqlalchemy import text
 from config.config import Config
-from shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics, Dependency
+from shared.models import Session, Repository, AnalysisExecutionLog, GoEnryAnalysis, CombinedRepoMetrics, Dependency, \
+    BuildTool
 from shared.query_builder import build_query
 import logging
 import numpy as np
@@ -381,6 +382,27 @@ class Utils(BaseLogger):
 
     def as_dict(model):
         return {c.key: getattr(model, c.key) for c in inspect(model).mapper.column_attrs}
+
+
+    def persist_build_tool(self, build_tool, repo_id_value, tool_version, runtime_version):
+        try:
+            self.logger.debug(
+                f"Persisting versions for {repo_id_value} - build tool: {build_tool} version: {tool_version}, runtime_version: {runtime_version}"
+            )
+            session = Session()
+            stmt = insert(BuildTool).values(
+                repo_id=repo_id_value,
+                tool=build_tool,
+                tool_version=tool_version,
+                runtime_version=runtime_version,
+            ).on_conflict_do_nothing(
+                index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
+            )
+            session.execute(stmt)
+        except Exception as e:
+            self.logger.error(f"Error persisting build tool for {repo_id_value}: {e}")
+            raise
+
 
 
 def main():

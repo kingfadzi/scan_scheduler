@@ -39,30 +39,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         python_version = self.detect_python_version(repo_dir, build_tool)
         tool_version = self.detect_tool_version(repo_dir, build_tool)
 
-        session = Session()
-
-        try:
-            session.execute(
-                insert(BuildTool).values(
-                    repo_id=repo['repo_id'],
-                    tool=build_tool,
-                    tool_version=tool_version,
-                    runtime_version=python_version,
-                ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
-                    set_={
-                        "tool_version": tool_version,
-                        "runtime_version": python_version,
-                    }
-                )
-            )
-            session.commit()
-        except Exception as e:
-            self.logger.error(f"Database error: {e}")
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        self.utils.persist_build_tool(build_tool, repo["repo_id"], python_version, tool_version)
 
         return json.dumps({
             "repo_id": repo['repo_id'],

@@ -38,7 +38,7 @@ class MavenJdkAnalyzer(BaseLogger):
                 self.logger.debug("Detected root pom.xml. Treating as single Maven project.")
                 maven_version = self.extract_maven_version(repo_path)
                 java_version = self.extract_jdk_version(repo_path)
-                self.persist_entry(session, repo["repo_id"], maven_version, java_version)
+                self.utils.persist_build_tool("maven", repo["repo_id"], maven_version, java_version)
                 results.append((repo["repo_id"], maven_version, java_version))
             else:
                 self.logger.debug("No root pom.xml found. Scanning for all pom.xml files.")
@@ -53,7 +53,7 @@ class MavenJdkAnalyzer(BaseLogger):
                     java_version = self.extract_jdk_version(project_dir)
                     # Use the folder name as a qualified repo id for sub-projects.
                     project_repo_id = f"{repo['repo_id']}/{project_dir.relative_to(repo_path).as_posix()}"
-                    self.persist_entry(session, project_repo_id, maven_version, java_version)
+                    self.utils.persist_build_tool("maven", repo["repo_id"], maven_version, java_version)
                     results.append((project_repo_id, maven_version, java_version))
             session.commit()
         except Exception as e:
@@ -65,19 +65,6 @@ class MavenJdkAnalyzer(BaseLogger):
 
         return results
 
-    def persist_entry(self, session, repo_id_value, maven_version, java_version):
-        self.logger.debug(
-            f"Persisting versions for {repo_id_value} - Maven: {maven_version}, JDK: {java_version}"
-        )
-        stmt = insert(BuildTool).values(
-            repo_id=repo_id_value,
-            tool="Maven",
-            tool_version=maven_version,
-            runtime_version=java_version,
-        ).on_conflict_do_nothing(
-            index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
-        )
-        session.execute(stmt)
 
     def extract_maven_version(self, repo_path: Path) -> str:
         props_file = repo_path / ".mvn" / "wrapper" / "maven-wrapper.properties"

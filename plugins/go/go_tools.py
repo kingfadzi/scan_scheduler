@@ -17,15 +17,14 @@ class GoBuildToolAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
-
+        self.utils = Utils(logger=self.logger)
 
     @language_required("go")
     @analyze_execution(session_factory=Session, stage="Go Build Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
-        utils = Utils()
-        repo_languages = utils.detect_repo_languages(repo['repo_id'])
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         if 'Go' not in repo_languages:
             msg = f"Skipping non-Go repo {repo['repo_id']}"
             self.logger.info(msg)
@@ -35,30 +34,7 @@ class GoBuildToolAnalyzer(BaseLogger):
         go_version = self.detect_go_version(repo_dir)
         tool_version = self.detect_tool_version(repo_dir, build_tool)
 
-        session = Session()
-
-        try:
-            session.execute(
-                insert(BuildTool).values(
-                    repo_id=repo['repo_id'],
-                    tool=build_tool,
-                    tool_version=tool_version,
-                    runtime_version=go_version,
-                ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
-                    set_={
-                        "tool_version": tool_version,
-                        "runtime_version": go_version,
-                    }
-                )
-            )
-            session.commit()
-        except Exception as e:
-            self.logger.error(f"Database error: {e}")
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        self.utils.persist_build_tool(build_tool, repo["repo_id"], tool_version, go_version)
 
         return json.dumps({
             "repo_id": repo['repo_id'],

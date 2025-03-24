@@ -17,6 +17,8 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
+        self.utils = Utils(logger=self.logger)
+
     @language_required("JavaScript", "TypeScript")
     @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
     def run_analysis(self, repo_dir, repo):
@@ -34,7 +36,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
                 f"Detected {js_build_tool}. Version: {tool_version}, Node.js version: {node_version}"
             )
 
-            self.persist_analysis_result(repo, js_build_tool, tool_version, node_version)
+            self.utils.persist_build_tool(js_build_tool, repo["repo_id"], tool_version, node_version)
 
             result = {
                 "repo_id": repo['repo_id'],
@@ -52,9 +54,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
 
     def validate_repo_and_tool(self, repo_dir, repo):
 
-        utils = Utils()
-
-        repo_languages = utils.detect_repo_languages(repo['repo_id'])
+        repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         if not {'JavaScript', 'TypeScript'}.intersection(repo_languages):
             message = f"Repo {repo['repo_id']} is not a JavaScript/TypeScript project. Skipping."
             self.logger.info(message)
@@ -98,33 +98,6 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
                 self.logger.error(f"Error parsing package.json: {e}")
 
         return node_version, tool_version
-
-
-    def persist_analysis_result(self, repo, js_build_tool, tool_version, node_version):
-        session = Session()
-        try:
-            session.execute(
-                insert(BuildTool).values(
-                    repo_id=repo['repo_id'],
-                    tool=js_build_tool,
-                    tool_version=tool_version,
-                    runtime_version=node_version,
-                ).on_conflict_do_update(
-                    index_elements=["repo_id", "tool", "tool_version", "runtime_version"],
-                    set_={
-                        "tool_version": tool_version,
-                        "runtime_version": node_version,
-                    }
-                )
-            )
-            session.commit()
-            self.logger.info(f"JavaScript build analysis results committed for repo_id: {repo['repo_id']}.")
-        except Exception as e:
-            self.logger.exception(f"Error persisting JavaScript analysis for repo_id {repo['repo_id']}: {e}")
-            raise RuntimeError(e)
-        finally:
-            session.close()
-
 
 
 if __name__ == "__main__":

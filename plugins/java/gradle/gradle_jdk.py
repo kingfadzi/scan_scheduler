@@ -113,33 +113,6 @@ class GradlejdkAnalyzer(BaseLogger):
         self.logger.debug(f"Checked versions: {', '.join(lookup_path)}")
         return "JDK version unknown"
 
-    def _persist_results(self, repo, gradle_version: str, java_version: str) -> None:
-
-        self.logger.info(f"Persisting Gradle {gradle_version} with JDK {java_version}")
-
-        session = Session()
-
-        try:
-
-            stmt = insert(BuildTool).values(
-                repo_id=repo['repo_id'],
-                tool="Gradle",
-                tool_version=gradle_version,
-                runtime_version=java_version,
-            ).on_conflict_do_nothing(
-                index_elements=["repo_id", "tool", "tool_version", "runtime_version"]
-            )
-
-            session.execute(stmt)
-            session.commit()
-            self.logger.info("Successfully persisted results to database")
-        except Exception as e:
-            self.logger.error("Database operation failed", exc_info=True)
-            session.rollback()
-            raise RuntimeError(f"Persistence error: {str(e)}") from e
-        finally:
-            session.close()
-
 
     @language_required("java")
     @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
@@ -192,7 +165,8 @@ class GradlejdkAnalyzer(BaseLogger):
 
             jdk_version = self.find_jdk_version(gradle_version)
             self.logger.info(f"Final JDK determination: {jdk_version}")
-            self._persist_results(repo, gradle_version, jdk_version)
+
+            self.utils.persist_build_tool("gradle", repo["repo_id"], gradle_version, jdk_version)
 
             return json.dumps({
                 "gradle_project": True,
