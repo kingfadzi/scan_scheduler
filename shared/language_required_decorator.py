@@ -34,6 +34,7 @@ def language_required(*languages):
                     return f"error: Invalid language format for {repo_id}"
 
                 if received_lang not in expected_lower:
+                    logger.debug("Not a %s repo. Skipping.", expected_lower)
                     return f"skipped: {repo_id} requires {original_list} (found {main_language})"
 
                 logger.debug("Performing %s analysis", received_lang)
