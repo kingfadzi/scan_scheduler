@@ -17,153 +17,179 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
-
     @analyze_execution(
         session_factory=Session,
         stage="Javascript Dependency Analysis",
         require_language=["JavaScript", "TypeScript"]
     )
-    def run_analysis(self, repo_dir, repo):
+    def run_analysis(self, repo_dir, repo, generate_lock_files=False):
         try:
-            pkg_json_path = os.path.join(repo_dir, "package.json")
-            lock_file = None
-            utils = Utils()  # Create Utils instance once
+            utils = Utils()
+            dependencies = []
 
-            if not os.path.isfile(pkg_json_path):
-                self.logger.warn("No package.json found in the repository.")
-                return "0 dependencies found."
+            for root, _, files in os.walk(repo_dir):
+                if "package.json" in files:
+                    pkg_dir = root
+                    self.logger.debug(f"Found package.json at: {os.path.join(pkg_dir, 'package.json')}")
+                    
+                    # Process lock files for this package
+                    lock_files = self.process_directory(pkg_dir, generate_lock_files)
+                    
+                    for lock_file in lock_files:
+                        deps = self.parse_dependencies(lock_file, repo)
+                        dependencies.extend(deps)
 
-            pkg_lock = os.path.join(repo_dir, "package-lock.json")
-            yarn_lock = os.path.join(repo_dir, "yarn.lock")
-
-            if os.path.isfile(pkg_lock):
-                lock_file = pkg_lock
-            elif os.path.isfile(yarn_lock):
-                lock_file = yarn_lock
-
-            if lock_file:
-                self.logger.info(f"Lock file {lock_file} exists. Parsing dependencies.")
-                dependencies = self.parse_dependencies(lock_file, repo)
-                utils.persist_dependencies(dependencies)  # Persist here
-                return f"{len(dependencies)} dependencies found."
-
-            self.logger.info("No lock file found. Installing dependencies to generate one.")
-            pm = self.detect_package_manager(pkg_json_path)
-            lock_file = pkg_lock if pm == "npm" else yarn_lock
-
-            if not self.install_dependencies(repo_dir, pm, lock_file):
-                return "0 dependencies found."
-
-            if os.path.isfile(lock_file):
-                dependencies = self.parse_dependencies(lock_file, repo)
-                utils.persist_dependencies(dependencies)  # Persist here too
-                return f"{len(dependencies)} dependencies found."
-
-            return "0 dependencies found."
+            utils.persist_dependencies(dependencies)
+            return f"{len(dependencies)} dependencies found."
         except Exception as e:
-            self.logger.error(f"Exception occurred during analysis: {e}", exc_info=True)
+            self.logger.error(f"Analysis failed: {e}", exc_info=True)
             raise
 
-    def detect_package_manager(self, pkg_json_path):
+    def process_directory(self, pkg_dir, generate_lock_files):
+        """Handle lock file processing for a single package directory"""
+        lock_files = self.find_lock_files(pkg_dir)
+        
+        if not lock_files and generate_lock_files:
+            self.logger.info(f"Attempting lock file generation in {pkg_dir}")
+            generated = self.generate_lock_files(pkg_dir)
+            if generated:
+                lock_files = self.find_lock_files(pkg_dir)
+        
+        if not lock_files:
+            self.logger.warning(f"No lock files found in {pkg_dir}")
+            return []
+            
+        return lock_files
 
+    def find_lock_files(self, directory):
+        """Identify existing lock files in directory"""
+        lock_files = []
+        for name in ["package-lock.json", "yarn.lock"]:
+            path = os.path.join(directory, name)
+            if os.path.isfile(path):
+                lock_files.append(path)
+                self.logger.info(f"Found lock file: {path}")
+        return lock_files
+
+    def generate_lock_files(self, pkg_dir):
+        """Generate lock files through package manager install"""
         try:
-            with open(pkg_json_path, "r", encoding="utf-8") as f:
+            pkg_json = os.path.join(pkg_dir, "package.json")
+            pm = self.detect_package_manager(pkg_json)
+            success = self.install_dependencies(pkg_dir, pm)
+            return success
+        except Exception as e:
+            self.logger.error(f"Generation failed in {pkg_dir}: {e}")
+            return False
+
+    def detect_package_manager(self, pkg_json_path):
+        """Determine package manager from package.json"""
+        try:
+            with open(pkg_json_path, "r") as f:
                 pkg_data = json.load(f)
-            return "yarn" if "packageManager" in pkg_data and "yarn" in pkg_data["packageManager"] else "npm"
+            if "packageManager" in pkg_data and "yarn" in pkg_data["packageManager"]:
+                return "yarn"
         except Exception as e:
             self.logger.error(f"Error reading package.json: {e}")
-            return "npm"
+        return "npm"
 
-    def install_dependencies(self, repo_dir, pm, lock_file):
-
+    def install_dependencies(self, dir_path, pm):
+        """Run package manager install command"""
         cmd = ["yarn", "install"] if pm == "yarn" else ["npm", "install"]
-        self.logger.info(f"Running {pm} install in repository.")
+        self.logger.info(f"Running {' '.join(cmd)} in {dir_path}")
+        
         try:
-            subprocess.run(cmd, cwd=repo_dir, check=True, capture_output=True, text=True)
-            if os.path.isfile(lock_file):
-                self.logger.info(f"Lock file generated at: {lock_file}")
-                return True
+            result = subprocess.run(
+                cmd,
+                cwd=dir_path,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            self.logger.debug(f"Install output:\n{result.stdout}")
+            return True
         except subprocess.CalledProcessError as e:
-            self.logger.error(f"{pm} install failed: {e}")
-            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-        return False
-
+            self.logger.error(f"Install failed in {dir_path}")
+            self.logger.error(f"Error output:\n{e.stderr}")
+            return False
 
     def parse_dependencies(self, lock_file, repo):
-
+        """Extract dependencies from lock file"""
         dependencies = []
-        if not os.path.isfile(lock_file):
-            return dependencies
-
-        if lock_file.endswith("package-lock.json"):
-            try:
+        
+        try:
+            if lock_file.endswith("package-lock.json"):
                 with open(lock_file, "r", encoding="utf-8") as f:
                     lock_data = json.load(f)
-
+                
                 if "dependencies" in lock_data:
                     for name, details in lock_data["dependencies"].items():
-                        version = details.get("version", "unknown")
-                        dependencies.append(
-                            Dependency(
-                                repo_id=repo['repo_id'],
-                                name=name,
-                                version=version,
-                                package_type="npm"
-                            )
-                        )
+                        dependencies.append(Dependency(
+                            repo_id=repo['repo_id'],
+                            name=name,
+                            version=details.get("version", "unknown"),
+                            package_type="npm"
+                        ))
 
-            except Exception as e:
-                self.logger.error(f"Error parsing package-lock.json: {e}")
-
-        elif lock_file.endswith("yarn.lock"):
-            try:
+            elif lock_file.endswith("yarn.lock"):
                 with open(lock_file, "r", encoding="utf-8") as f:
-                    lines = f.readlines()
+                    current_name = None
+                    current_version = None
+                    
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith("#"):
+                            continue
+                            
+                        if line.startswith("version"):
+                            current_version = line.split(" ")[-1].strip('"')
+                        elif '"' in line and "@" in line and not line.startswith("  "):
+                            current_name = line.split("@")[0].strip('"')
+                            
+                        if current_name and current_version:
+                            dependencies.append(Dependency(
+                                repo_id=repo['repo_id'],
+                                name=current_name,
+                                version=current_version,
+                                package_type="yarn"
+                            ))
+                            current_name = None
+                            current_version = None
 
-                name = None
-                for line in lines:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        if ":" in line:
-                            name = line.split(":")[0].strip().strip('"')
-                        elif name and line.startswith("version"):
-                            version = line.split(" ")[-1].strip().strip('"')
-                            dependencies.append(
-                                Dependency(
-                                    repo_id=repo['repo_id'],
-                                    name=name,
-                                    version=version,
-                                    package_type="yarn"
-                                )
-                            )
-                            name = None
-            except Exception as e:
-                self.logger.error(f"Error parsing yarn.lock: {e}")
-
+        except Exception as e:
+            self.logger.error(f"Failed to parse {lock_file}: {str(e)}")
+            
         return dependencies
 
 
 class Repo:
+    """Simple repository representation"""
     def __init__(self, repo_id):
         self.repo_id = repo_id
 
+    def __getitem__(self, key):
+        return getattr(self, key) if key == 'repo_id' else None
+
+
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     if len(sys.argv) < 2:
-        print("Usage: python script.py /path/to/repo")
+        print("Usage: python js_analyzer.py /path/to/repo [--generate]")
         sys.exit(1)
 
-    repo_directory = sys.argv[1]
-    repo = Repo(repo_id="node_project")  # Replace with actual repo_id logic
-    helper = JavaScriptDependencyAnalyzer()
+    repo_path = os.path.abspath(sys.argv[1])
+    generate_flag = "--generate" in sys.argv
+    repo = Repo(repo_id=os.path.basename(repo_path))
+    analyzer = JavaScriptDependencyAnalyzer()
 
     try:
-        dependencies = helper.run_analysis(repo_directory, repo)
-        for dep in dependencies:
-            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+        result = analyzer.run_analysis(repo_path, repo, generate_lock_files=generate_flag)
+        print(f"Analysis completed: {result}")
     except Exception as e:
-        print(f"An error occurred while processing the repository: {e}")
+        print(f"Analysis failed: {str(e)}")
+        sys.exit(1)
