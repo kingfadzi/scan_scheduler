@@ -19,7 +19,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
-    @language_required("Python")
+    @language_required("Python", "Jupiter Notebook")
     @analyze_execution(session_factory=Session, stage="Python Build Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Python analysis for {repo['repo_id']}")
@@ -49,7 +49,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         })
 
     def detect_build_tool(self, repo_dir):
-        """Detect build tool through file presence with priority"""
+
         detection_order = [
             ('poetry.lock', 'Poetry'),
             ('pyproject.toml', self._detect_poetry),
@@ -114,6 +114,19 @@ class PythonBuildToolAnalyzer(BaseLogger):
             self.logger.error(f"Error parsing pyproject.toml: {e}")
             raise
         return "Unknown"
+
+    def _parse_setup_py_python(self, repo_dir):
+        setup_py = Path(repo_dir) / 'setup.py'
+        try:
+            with open(setup_py, 'r', encoding='utf-8') as f:
+                content = f.read()
+                match = re.search(r'python_requires\s*=\s*["\']([^"\']+)["\']', content)
+                if match:
+                    return match.group(1)
+        except Exception as e:
+            self.logger.error(f"Error parsing setup.py for python version: {e}", exc_info=True)
+        return "Unknown"
+
 
     def _parse_poetry_version(self, repo_dir):
 
