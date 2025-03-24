@@ -171,13 +171,19 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         category_series = pd.Series("Other", index=chunk.index)
         sub_category_series = pd.Series("", index=chunk.index)
         
-        # Batch pattern matching with proper flag handling
+        # Modified pattern handling to suppress warnings
         for regex, top_cat, sub_cat in compiled_rules:
-            current_matches = chunk['name'].str.contains(regex)
-            new_matches = current_matches & ~matches
-            category_series = category_series.mask(new_matches, top_cat)
-            sub_category_series = sub_category_series.mask(new_matches, sub_cat)
-            matches = matches | current_matches
+            # Use regex.pattern directly with fixed flags
+            with pd.option_context('mode.chained_assignment', None):
+                current_matches = chunk['name'].str.contains(
+                    regex.pattern,
+                    flags=regex.flags,
+                    regex=True
+                )
+                new_matches = current_matches & ~matches
+                category_series = category_series.mask(new_matches, top_cat)
+                sub_category_series = sub_category_series.mask(new_matches, sub_cat)
+                matches = matches | current_matches
 
         chunk["category"] = category_series
         chunk["sub_category"] = sub_category_series
