@@ -19,8 +19,11 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
 
         self.utils = Utils(logger=self.logger)
 
-    @language_required("JavaScript", "TypeScript")
-    @analyze_execution(session_factory=Session, stage="JavaScript Build Analysis")
+    @analyze_execution(
+        session_factory=Session,
+        stage="JavaScript Build Analysis",
+        require_language=["JavaScript", "TypeScript"]
+    )
     def run_analysis(self, repo_dir, repo):
         try:
             self.logger.info(

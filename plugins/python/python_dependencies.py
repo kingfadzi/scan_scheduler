@@ -16,8 +16,11 @@ class PythonDependencyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 
-    @language_required("Python")
-    @analyze_execution(session_factory=Session, stage="Python Dependency Analysis")
+    @analyze_execution(
+      session_factory=Session,
+      stage="Python Dependency Analysis",
+      require_language="Python"
+    )
     def run_analysis(self, repo_dir, repo):
         try:
             self.logger.info(f"Processing repository at: {repo_dir}")

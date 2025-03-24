@@ -22,8 +22,11 @@ class GradleDependencyAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
-    @language_required("java")
-    @analyze_execution(session_factory=Session, stage="Gradle Dependency Analysis")
+    @analyze_execution(
+        session_factory=Session,
+        stage="Gradle Dependency Analysis",
+        require_language="java"
+    )
     def run_analysis(self, repo_dir: str, repo: dict) -> str:
         self.logger.info(f"Processing Gradle repo: {repo['repo_id']}")
         try:

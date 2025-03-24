@@ -15,8 +15,11 @@ class GoDependencyAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
-    @language_required("go")
-    @analyze_execution(session_factory=Session, stage="Go Dependency Analysis")
+    @analyze_execution(
+      session_factory=Session,
+      stage="Go Dependency Analysis",
+      require_language="go"
+    )
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Processing repository at: {repo_dir}")
         utils = Utils()

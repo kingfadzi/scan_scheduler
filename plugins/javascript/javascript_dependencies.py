@@ -18,8 +18,11 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 
-    @language_required("JavaScript", "TypeScript")
-    @analyze_execution(session_factory=Session, stage="Javascript Dependency Analysis")
+    @analyze_execution(
+        session_factory=Session,
+        stage="Javascript Dependency Analysis",
+        require_language=["JavaScript", "TypeScript"]
+    )
     def run_analysis(self, repo_dir, repo):
         try:
             pkg_json_path = os.path.join(repo_dir, "package.json")

@@ -19,8 +19,12 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
-    @language_required("Python", "Jupiter Notebook")
-    @analyze_execution(session_factory=Session, stage="Python Build Analysis")
+   
+    @analyze_execution(
+      session_factory=Session,
+      stage="Python Build Tool Analysis", 
+      require_language=["Python", "Jupyter Notebook"] 
+    )
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Python analysis for {repo['repo_id']}")
 

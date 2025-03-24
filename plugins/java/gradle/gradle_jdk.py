@@ -114,8 +114,11 @@ class GradlejdkAnalyzer(BaseLogger):
         return "JDK version unknown"
 
 
-    @language_required("java")
-    @analyze_execution(session_factory=Session, stage="Gradle JDK Analysis")
+    @analyze_execution(
+      session_factory=Session,
+      stage="Gradle JDK Analysis",
+      require_language="java"
+    )
     def run_analysis(self, repo_dir, repo):
 
         self.logger.info(f"Starting analysis for repository: {repo_dir}")

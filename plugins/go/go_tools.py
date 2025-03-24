@@ -19,8 +19,11 @@ class GoBuildToolAnalyzer(BaseLogger):
         self.version_regex = re.compile(r'go (\d+\.\d+(?:\.\d+)?)')
         self.utils = Utils(logger=self.logger)
 
-    @language_required("go")
-    @analyze_execution(session_factory=Session, stage="Go Build Analysis")
+    @analyze_execution(
+      session_factory=Session,
+      stage="Go Build Analysis",
+      require_language="go"
+    )
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Go analysis for {repo['repo_id']}")
 
