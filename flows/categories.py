@@ -171,13 +171,17 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         category_series = pd.Series("Other", index=chunk.index)
         sub_category_series = pd.Series("", index=chunk.index)
         
-        # Modified pattern handling to suppress warnings
-        for regex, top_cat, sub_cat in compiled_rules:
-            # Use regex.pattern directly with fixed flags
-            with pd.option_context('mode.chained_assignment', None):
+        # Suppress specific pandas warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='This pattern is interpreted as a regular expression',
+                category=UserWarning
+            )
+            
+            for regex, top_cat, sub_cat in compiled_rules:
                 current_matches = chunk['name'].str.contains(
-                    regex.pattern,
-                    flags=regex.flags,
+                    regex,
                     regex=True
                 )
                 new_matches = current_matches & ~matches
