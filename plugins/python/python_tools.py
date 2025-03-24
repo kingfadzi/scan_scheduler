@@ -45,7 +45,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
             tool_version = self._detect_tool_version(current_dir, build_tool)
             
             self.logger.info(f"Found {build_tool} in {relative_path}")
-            self._persist_finding(repo, build_tool, python_version, tool_version, relative_path)
+            self._persist_finding(repo, build_tool, python_version, tool_version)
             
             results.append({
                 "directory": str(relative_path),
@@ -109,16 +109,16 @@ class PythonBuildToolAnalyzer(BaseLogger):
         }
         return version_detectors.get(build_tool, lambda _: "Unknown")(directory)
 
-    def _persist_finding(self, repo, tool, py_ver, tool_ver, rel_path):
+    def _persist_finding(self, repo, tool, py_ver, tool_ver):
+        # Corrected to match persist_build_tool signature
         self.utils.persist_build_tool(
-            tool_name=tool,
-            repo_id=repo["repo_id"],
+            build_tool=tool,
+            repo_id_value=repo["repo_id"],
             tool_version=tool_ver,
-            runtime_version=py_ver,
-            subdirectory=str(rel_path)
+            runtime_version=py_ver
         )
 
-    # Version detection methods (kept as in original but adjusted for directory parameter)
+    # Version detection methods remain unchanged
     def _get_poetry_python_version(self, directory):
         try:
             with open(directory / 'pyproject.toml', 'r', encoding='utf-8') as f:
