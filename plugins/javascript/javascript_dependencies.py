@@ -179,17 +179,28 @@ if __name__ == "__main__":
     )
 
     if len(sys.argv) < 2:
-        print("Usage: python js_analyzer.py /path/to/repo [--generate]")
+        print("Usage: python javascript_analyzer.py /path/to/repo")
         sys.exit(1)
 
-    repo_path = os.path.abspath(sys.argv[1])
-    generate_flag = "--generate" in sys.argv
-    repo = Repo(repo_id=os.path.basename(repo_path))
-    analyzer = JavaScriptDependencyAnalyzer()
+    repo_directory = os.path.abspath(sys.argv[1])
+    repo = Repo(repo_id=os.path.basename(repo_directory))
+    
+    # Initialize analyzer with specific run ID
+    analyzer = JavaScriptDependencyAnalyzer(
+        run_id="STANDALONE_RUN_001"  
+    )
+
+
+    GENERATE_LOCK_FILES = False
 
     try:
-        result = analyzer.run_analysis(repo_path, repo, generate_lock_files=generate_flag)
-        print(f"Analysis completed: {result}")
+        result = analyzer.run_analysis(
+            repo_directory,
+            repo,
+            generate_lock_files=GENERATE_LOCK_FILES
+        )
+        print(f"Analysis complete. {result}")
     except Exception as e:
         print(f"Analysis failed: {str(e)}")
         sys.exit(1)
+        
