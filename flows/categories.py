@@ -152,43 +152,60 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
 
     chunk_size = len(chunk)
     logger.info(f"[{package_type}] Processing chunk ({chunk_size} rows)")
-    logger.debug(f"[{package_type}] First dependency: {chunk.iloc[0]['name']}")
 
     categorizer = CategoryAnalyzer(logger=logger, run_id=run_id)
 
     try:
-        logger.debug(f"[{package_type}] Applying {len(compiled_rules)} rules...")
+        # Start categorization
         cat_start = time.time()
         
-        def categorize_with_logging(row):
-            result = categorize_row(row, compiled_rules)
-            if result['category'] != 'Other':
-                logger.debug(f"[{package_type}] Matched {row['name']} to {result['category']}/{result['sub_category']}")
-            return result
-            
-        cat_values = chunk.apply(categorize_with_logging, axis=1)
-        chunk["category"] = cat_values["category"]
-        chunk["sub_category"] = cat_values["sub_category"]
+        # Vectorized categorization without row-wise logging
+        patterns = []
+        categories = []
+        sub_categories = []
+        
+        # Pre-compile regex patterns for faster matching
+        for regex, top_cat, sub_cat in compiled_rules:
+            patterns.append((regex, top_cat, sub_cat))
+        
+        # Create mask array for vectorized operations
+        matches = pd.Series(False, index=chunk.index)
+        category_series = pd.Series("Other", index=chunk.index)
+        sub_category_series = pd.Series("", index=chunk.index)
+        
+        # Batch pattern matching
+        for regex, top_cat, sub_cat in patterns:
+            current_matches = chunk['name'].str.contains(regex, case=False)
+            new_matches = current_matches & ~matches
+            category_series = category_series.mask(new_matches, top_cat)
+            sub_category_series = sub_category_series.mask(new_matches, sub_cat)
+            matches = matches | current_matches
 
+        chunk["category"] = category_series
+        chunk["sub_category"] = sub_category_series
+
+        # Calculate statistics
         duration = time.time() - cat_start
         category_dist = chunk['category'].value_counts().to_dict()
         logger.debug(f"[{package_type}] Categorization stats ({duration:.2f}s):")
         for cat, count in category_dist.items():
             logger.debug(f"[{package_type}]  {cat}: {count} rows")
 
+        # Prepare updates
         updates = chunk[["id", "category", "sub_category"]].to_dict(orient="records")
-        logger.debug(f"[{package_type}] Preparing {len(updates)} updates")
-
+        
+        # Database update
         with Session() as session:
-            logger.info(f"[{package_type}] Starting bulk update")
             update_start = time.time()
             categorizer.bulk_update_dependencies(session.connection(), updates)
             logger.info(f"[{package_type}] Updated {len(updates)} rows in {time.time() - update_start:.2f}s")
 
-        sample_output = chunk[['name', 'category', 'sub_category']].sample(min(3, len(chunk))).to_dict('records')
-        logger.debug(f"[{package_type}] Sample results:")
-        for item in sample_output:
-            logger.debug(f"[{package_type}]  {item['name']} → {item['category']}/{item['sub_category']}")
+        # Sample logging for verification (only in debug mode)
+        if logger.isEnabledFor(logging.DEBUG):
+            samples = chunk[['name', 'category', 'sub_category']].sample(n=min(3, len(chunk)))
+            logger.debug(f"[{package_type}] Sample categorizations:")
+            for _, row in samples.iterrows():
+                logger.debug(f"[{package_type}]  {row['name']} → {row['category']}/{row['sub_category']}")
 
         return chunk_size
 
