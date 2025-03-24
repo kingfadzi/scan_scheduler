@@ -17,7 +17,8 @@ DEPLOYMENTS = [
     ("flows/build_tools.py:build_tools_flow", "build_tools", "components-pool"),
     ("flows/dependencies.py:dependencies_flow", "dependencies", "components-pool"),
     ("flows/vulnerabilities.py:vulnerabilities_flow", "vulnerabilities", "vulnerabilities-pool"),
-    ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool")
+    ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool"),
+    ("flows/categories.py:categories_flow", "categorize_dependencies", "standards-pool")
 ]
 
 def create_deployments():

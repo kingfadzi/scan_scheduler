@@ -91,7 +91,7 @@ def load_rules_for_type(package_type: str):
             logger.debug(f"[{package_type}] Processing file: {os.path.basename(file_path)}")
             with open(file_path, 'r') as f:
                 rules = yaml.safe_load(f)
-            
+
             for cat in rules.get('categories', []):
                 category_name = cat['name']
                 subcats = cat.get('subcategories', [])
@@ -105,7 +105,7 @@ def load_rules_for_type(package_type: str):
                         for pattern in patterns:
                             compiled_list.append((
                                 re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
-                                category_name, 
+                                category_name,
                                 sub_name
                             ))
                 else:
@@ -114,10 +114,10 @@ def load_rules_for_type(package_type: str):
                     for pattern in patterns:
                         compiled_list.append((
                             re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
-                            category_name, 
+                            category_name,
                             ""
                         ))
-            
+
             logger.info(f"[{package_type}] Loaded {len(rules.get('categories', []))} categories from {os.path.basename(file_path)}")
 
         except Exception as e:
@@ -148,7 +148,7 @@ def fetch_chunks_for_type(package_type: str) -> list:
                 chunks.append(chunk)
             else:
                 logger.warning(f"[{package_type}] Empty chunk {idx+1}")
-        
+
         logger.info(f"[{package_type}] Total chunks: {len(chunks)} ({total_rows} rows)")
         return chunks
 
@@ -166,12 +166,12 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
     try:
         # Start categorization
         cat_start = time.time()
-        
+
         # Vectorized categorization
         matches = pd.Series(False, index=chunk.index)
         category_series = pd.Series("Other", index=chunk.index)
         sub_category_series = pd.Series("", index=chunk.index)
-        
+
         # Suppress specific pandas warnings
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -179,7 +179,7 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
                 message='This pattern is interpreted as a regular expression',
                 category=UserWarning
             )
-            
+
             for regex, top_cat, sub_cat in compiled_rules:
                 current_matches = chunk['name'].str.contains(
                     regex,
@@ -202,7 +202,7 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
 
         # Prepare updates
         updates = chunk[["id", "category", "sub_category"]].to_dict(orient="records")
-        
+
         # Database update
         with Session() as session:
             update_start = time.time()
@@ -215,8 +215,8 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         logger.error(f"[{package_type}] Processing failed: {str(e)}", exc_info=True)
         raise
 
-@flow(name="Categorize Dependencies By Package Type")
-def run_analysis_by_package_type():
+@flow(name="categories_flow")
+def categories_flow():
     logger = get_run_logger()
     start = time.time()
     logger.info("Starting dependency categorization flow")
@@ -250,4 +250,4 @@ def run_analysis_by_package_type():
 
 if __name__ == "__main__":
     print("Starting categorization flow...")
-    run_analysis_by_package_type()
+    categories_flow()
