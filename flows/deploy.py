@@ -18,7 +18,8 @@ DEPLOYMENTS = [
     ("flows/dependencies.py:dependencies_flow", "dependencies", "components-pool"),
     ("flows/vulnerabilities.py:vulnerabilities_flow", "vulnerabilities", "vulnerabilities-pool"),
     ("flows/standards.py:standards_assessment_flow", "standards-assessment", "standards-pool"),
-    ("flows/categories.py:categories_flow", "categorize_dependencies", "standards-pool")
+    ("flows/categories.py:categories_flow", "categorize_dependencies", "standards-pool"),
+    ("flows/allinone.py:allinone_flow", "allinone", "standards-pool")
 ]
 
 def create_deployments():

@@ -7,7 +7,7 @@ from shared.models import AnalysisExecutionLog
 from shared.utils import Utils
 
 def analyze_execution(session_factory, stage=None, require_language=None):
-  
+
     def decorator(func):
         sig = inspect.signature(func)
         params = sig.parameters
@@ -17,7 +17,7 @@ def analyze_execution(session_factory, stage=None, require_language=None):
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-          
+
             if not hasattr(self, 'run_id') or not self.run_id:
                 raise RuntimeError("Analyzer instance missing 'run_id'")
 
@@ -26,11 +26,11 @@ def analyze_execution(session_factory, stage=None, require_language=None):
             logger = getattr(self, 'logger', logging.getLogger('analysis'))
 
             try:
-             
+
                 bound_args = sig.bind(self, *args, **kwargs)
                 bound_args.apply_defaults()
                 parameters = bound_args.arguments
-         
+
                 repo = parameters['repo']
                 if not isinstance(repo, dict):
                     raise TypeError(f"repo must be dict, got {type(repo)}")
@@ -48,14 +48,13 @@ def analyze_execution(session_factory, stage=None, require_language=None):
                             f"Language '{actual_lang or 'none'}' not in required set: {expected_langs}"
                         )
                         return None
-            
+
                 start_time = time.time()
                 logger.debug(f"Starting {stage} (Repo ID: {repo_id}, Run ID: {self.run_id})")
 
                 result = func(self, *args, **kwargs)
                 elapsed_time = time.time() - start_time
 
-                # Record success
                 session.add(AnalysisExecutionLog(
                     method_name=method_name,
                     stage=stage,
@@ -72,7 +71,7 @@ def analyze_execution(session_factory, stage=None, require_language=None):
                 return result
 
             except Exception as e:
-               
+
                 elapsed_time = time.time() - start_time if 'start_time' in locals() else 0
                 error_message = str(e)
                 repo_id = repo.get('repo_id', 'unknown') if isinstance(repo, dict) else 'invalid-repo'
@@ -99,12 +98,12 @@ def analyze_execution(session_factory, stage=None, require_language=None):
     return decorator
 
 def _get_normalized_language(repo_id):
-    """Get normalized repository main language."""
+
     lang = Utils().get_repo_main_language(repo_id)
     return lang.strip().lower() if lang else None
 
 def _normalize_language_spec(languages):
-    """Convert language input to normalized set."""
+
     if isinstance(languages, str):
         return {languages.strip().lower()}
     return {lang.strip().lower() for lang in languages}
