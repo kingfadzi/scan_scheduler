@@ -61,24 +61,20 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
     def analyze_directory(self, dir_path, repo, repo_dir):
         try:
             self.logger.debug(f"Analyzing directory: {dir_path}")
-            
-            # Detect build tool for this directory
+
             tool = detect_js_build_tool(dir_path)
             if tool not in ['npm', 'Yarn', 'pnpm']:
                 self.logger.debug(f"No supported build tool in {dir_path}")
                 return None
 
-            # Extract version information
             node_ver, tool_ver = self.extract_versions(dir_path, tool)
-            
-            # Calculate relative path from repository root
+
             rel_path = os.path.relpath(dir_path, start=repo_dir)
-            
-            # Persist results
+
             self.utils.persist_build_tool(
-                tool, 
-                repo["repo_id"], 
-                tool_ver, 
+                tool,
+                repo["repo_id"],
+                tool_ver,
                 node_ver
             )
 
@@ -88,7 +84,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
                 "tool_version": tool_ver,
                 "node_version": node_ver
             }
-            
+
             self.logger.debug(f"Build tool detected: {json.dumps(result, indent=2)}")
             return result
 
@@ -99,7 +95,7 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
     def extract_versions(self, dir_path, tool):
         pkg_path = os.path.join(dir_path, "package.json")
         self.logger.debug(f"Extracting versions from: {pkg_path}")
-        
+
         node_ver = "Unknown"
         tool_ver = "Unknown"
 
@@ -107,14 +103,12 @@ class JavaScriptBuildToolAnalyzer(BaseLogger):
             try:
                 with open(pkg_path) as f:
                     data = json.load(f)
-                    
-                    # Get Node.js version
+
                     node_ver = data.get('engines', {}).get('node', 'Unknown').strip()
-                    
-                    # Get build tool version
+
                     deps = data.get('dependencies', {})
                     dev_deps = data.get('devDependencies', {})
-                    
+
                     tool_ver = {
                         'npm': deps.get('npm', 'bundled'),
                         'Yarn': dev_deps.get('yarn', 'Unknown'),
@@ -135,7 +129,6 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Test configuration
     repo_dir = "/path/to/test/repository"
     repo_data = {
         'repo_id': "test-repo-001",
@@ -143,7 +136,7 @@ if __name__ == "__main__":
     }
 
     analyzer = JavaScriptBuildToolAnalyzer(run_id="FULL_RUN_001")
-    
+
     try:
         result = analyzer.run_analysis(repo_dir, repo_data)
         print("Final Analysis Results:")

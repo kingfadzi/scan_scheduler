@@ -51,7 +51,6 @@ class MavenJdkAnalyzer(BaseLogger):
                     self.logger.debug(f"Processing project at {project_dir}")
                     maven_version = self.extract_maven_version(project_dir)
                     java_version = self.extract_jdk_version(project_dir)
-                    # Use the folder name as a qualified repo id for sub-projects.
                     project_repo_id = f"{repo['repo_id']}/{project_dir.relative_to(repo_path).as_posix()}"
                     self.utils.persist_build_tool("maven", repo["repo_id"], maven_version, java_version)
                     results.append((project_repo_id, maven_version, java_version))

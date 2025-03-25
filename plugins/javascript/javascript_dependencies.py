@@ -31,10 +31,9 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
                 if "package.json" in files:
                     pkg_dir = root
                     self.logger.debug(f"Found package.json at: {os.path.join(pkg_dir, 'package.json')}")
-                    
-                    # Process lock files for this package
+
                     lock_files = self.process_directory(pkg_dir, generate_lock_files)
-                    
+
                     for lock_file in lock_files:
                         deps = self.parse_dependencies(lock_file, repo)
                         dependencies.extend(deps)
@@ -46,23 +45,21 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
             raise
 
     def process_directory(self, pkg_dir, generate_lock_files):
-        """Handle lock file processing for a single package directory"""
         lock_files = self.find_lock_files(pkg_dir)
-        
+
         if not lock_files and generate_lock_files:
             self.logger.info(f"Attempting lock file generation in {pkg_dir}")
             generated = self.generate_lock_files(pkg_dir)
             if generated:
                 lock_files = self.find_lock_files(pkg_dir)
-        
+
         if not lock_files:
             self.logger.warning(f"No lock files found in {pkg_dir}")
             return []
-            
+
         return lock_files
 
     def find_lock_files(self, directory):
-        """Identify existing lock files in directory"""
         lock_files = []
         for name in ["package-lock.json", "yarn.lock"]:
             path = os.path.join(directory, name)
@@ -72,7 +69,6 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         return lock_files
 
     def generate_lock_files(self, pkg_dir):
-        """Generate lock files through package manager install"""
         try:
             pkg_json = os.path.join(pkg_dir, "package.json")
             pm = self.detect_package_manager(pkg_json)
@@ -83,7 +79,6 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
             return False
 
     def detect_package_manager(self, pkg_json_path):
-        """Determine package manager from package.json"""
         try:
             with open(pkg_json_path, "r") as f:
                 pkg_data = json.load(f)
@@ -94,10 +89,9 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
         return "npm"
 
     def install_dependencies(self, dir_path, pm):
-        """Run package manager install command"""
         cmd = ["yarn", "install"] if pm == "yarn" else ["npm", "install"]
         self.logger.info(f"Running {' '.join(cmd)} in {dir_path}")
-        
+
         try:
             result = subprocess.run(
                 cmd,
@@ -115,14 +109,13 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
             return False
 
     def parse_dependencies(self, lock_file, repo):
-        """Extract dependencies from lock file"""
         dependencies = []
-        
+
         try:
             if lock_file.endswith("package-lock.json"):
                 with open(lock_file, "r", encoding="utf-8") as f:
                     lock_data = json.load(f)
-                
+
                 if "dependencies" in lock_data:
                     for name, details in lock_data["dependencies"].items():
                         dependencies.append(Dependency(
@@ -136,17 +129,17 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
                 with open(lock_file, "r", encoding="utf-8") as f:
                     current_name = None
                     current_version = None
-                    
+
                     for line in f:
                         line = line.strip()
                         if not line or line.startswith("#"):
                             continue
-                            
+
                         if line.startswith("version"):
                             current_version = line.split(" ")[-1].strip('"')
                         elif '"' in line and "@" in line and not line.startswith("  "):
                             current_name = line.split("@")[0].strip('"')
-                            
+
                         if current_name and current_version:
                             dependencies.append(Dependency(
                                 repo_id=repo['repo_id'],
@@ -159,12 +152,11 @@ class JavaScriptDependencyAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.error(f"Failed to parse {lock_file}: {str(e)}")
-            
+
         return dependencies
 
 
 class Repo:
-    """Simple repository representation"""
     def __init__(self, repo_id):
         self.repo_id = repo_id
 
@@ -183,14 +175,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     repo_directory = os.path.abspath(sys.argv[1])
-    
-    # Convert Repo instance to dictionary format
+
     repo_instance = Repo(repo_id=os.path.basename(repo_directory))
     repo_dict = {
         'repo_id': repo_instance.repo_id,
-        # Add other required fields if needed
     }
-    
+
     analyzer = JavaScriptDependencyAnalyzer(
         run_id="STANDALONE_RUN_001"
     )

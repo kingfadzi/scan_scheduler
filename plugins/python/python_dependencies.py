@@ -10,7 +10,6 @@ from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 
-
 class PythonDependencyAnalyzer(BaseLogger):
 
     def __init__(self, logger=None, run_id=None):
@@ -27,23 +26,22 @@ class PythonDependencyAnalyzer(BaseLogger):
         all_dependencies = []
         processed_dirs = []
         root_dir = Path(repo_dir)
-        
+
         try:
             self.logger.info(f"Processing repository at: {repo_dir}")
-            
-            # First check subdirectories
+
             for root, dirs, files in os.walk(repo_dir):
                 current_dir = Path(root)
                 if current_dir == root_dir:
-                    continue  # Skip root in first pass
-                    
+                    continue
+
                 if self._is_python_project(current_dir):
                     self.logger.info(f"Found Python/Jupyter project in: {current_dir}")
                     processed_dirs.append(current_dir)
                     dependencies = self._process_directory(current_dir, repo)
                     all_dependencies.extend(dependencies)
 
-            # Fallback to root if no subdirectories found
+
             if not processed_dirs:
                 if self._is_python_project(root_dir):
                     self.logger.info("Processing root directory as fallback")
@@ -55,7 +53,7 @@ class PythonDependencyAnalyzer(BaseLogger):
 
             self.logger.debug("Persisting dependencies to database...")
             self.utils.persist_dependencies(all_dependencies)
-            
+
             msg = f"Found {len(all_dependencies)} dependencies across {len(processed_dirs)} directories"
             self.logger.info(msg)
             return msg
@@ -65,31 +63,26 @@ class PythonDependencyAnalyzer(BaseLogger):
             raise
 
     def _is_python_project(self, directory):
-        """Check if directory contains Python/Jupyter files or requirements.txt"""
         has_relevant_files = any(f.suffix in ('.py', '.ipynb') for f in directory.iterdir())
         has_req_file = (directory / "requirements.txt").exists()
         return has_relevant_files or has_req_file
 
     def _process_directory(self, directory, repo):
-        """Process a single directory and return dependencies"""
         try:
             self.logger.debug(f"Processing directory: {directory}")
-            
-            # Create and manage virtual environment
+
             env_path = directory / "venv"
             if not env_path.exists():
                 self.logger.debug("Creating virtual environment")
                 venv.create(env_path, with_pip=True)
 
-            # Generate requirements if needed
             req_file = directory / "requirements.txt"
             if not req_file.exists() or req_file.stat().st_size == 0:
                 self._generate_requirements(directory)
 
-            # Install and freeze requirements
             self._install_requirements(directory, env_path)
             frozen_file = self._freeze_requirements(directory, env_path)
-            
+
             return self._parse_dependencies(frozen_file, repo)
 
         except Exception as e:
@@ -97,7 +90,6 @@ class PythonDependencyAnalyzer(BaseLogger):
             return []
 
     def _generate_requirements(self, directory):
-        """Generate requirements.txt only if needed"""
         try:
             self.logger.info(f"Generating requirements.txt in {directory}")
             subprocess.run(
@@ -111,7 +103,6 @@ class PythonDependencyAnalyzer(BaseLogger):
             (directory / "requirements.txt").touch()
 
     def _install_requirements(self, directory, env_path):
-        """Install requirements from directory"""
         req_file = directory / "requirements.txt"
         if req_file.exists():
             pip = env_path / "bin" / "pip"
@@ -126,7 +117,6 @@ class PythonDependencyAnalyzer(BaseLogger):
                 self.logger.error(f"Install failed in {directory}: {e.stderr.decode()}")
 
     def _freeze_requirements(self, directory, env_path):
-        """Generate frozen requirements"""
         pip = env_path / "bin" / "pip"
         try:
             result = subprocess.run(
@@ -144,7 +134,6 @@ class PythonDependencyAnalyzer(BaseLogger):
             raise
 
     def _parse_dependencies(self, req_file, repo):
-        """Parse dependencies from frozen file"""
         dependencies = []
         for line in req_file.read_text().splitlines():
             if "==" in line:

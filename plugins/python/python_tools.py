@@ -21,8 +21,8 @@ class PythonBuildToolAnalyzer(BaseLogger):
 
     @analyze_execution(
         session_factory=Session,
-        stage="Python Build Tool Analysis", 
-        require_language=["Python", "Jupyter Notebook"] 
+        stage="Python Build Tool Analysis",
+        require_language=["Python", "Jupyter Notebook"]
     )
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Python build tool analysis for {repo['repo_id']}")
@@ -34,19 +34,19 @@ class PythonBuildToolAnalyzer(BaseLogger):
         for root, dirs, files in os.walk(repo_dir):
             current_dir = Path(root)
             relative_path = current_dir.relative_to(repo_dir)
-            
+
             self.logger.debug(f"Scanning directory: {relative_path}")
-            
+
             build_tool = self._detect_build_tool(current_dir)
             if not build_tool:
                 continue
-                
+
             python_version = self._detect_python_version(current_dir, build_tool)
             tool_version = self._detect_tool_version(current_dir, build_tool)
-            
+
             self.logger.info(f"Found {build_tool} in {relative_path}")
             self._persist_finding(repo, build_tool, python_version, tool_version)
-            
+
             results.append({
                 "directory": str(relative_path),
                 "build_tool": build_tool,
@@ -110,7 +110,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         return version_detectors.get(build_tool, lambda _: "Unknown")(directory)
 
     def _persist_finding(self, repo, tool, py_ver, tool_ver):
-        # Corrected to match persist_build_tool signature
+
         self.utils.persist_build_tool(
             build_tool=tool,
             repo_id_value=repo["repo_id"],
@@ -118,7 +118,6 @@ class PythonBuildToolAnalyzer(BaseLogger):
             runtime_version=py_ver
         )
 
-    # Version detection methods remain unchanged
     def _get_poetry_python_version(self, directory):
         try:
             with open(directory / 'pyproject.toml', 'r', encoding='utf-8') as f:
@@ -191,7 +190,7 @@ if __name__ == "__main__":
     test_repo_dir = "/path/to/test/repository"
 
     analyzer = PythonBuildToolAnalyzer()
-    
+
     try:
         result = analyzer.run_analysis(
             repo_dir=test_repo_dir,

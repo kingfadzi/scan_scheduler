@@ -47,12 +47,10 @@ class MavenDependencyAnalyzer(BaseLogger):
                 self.logger.warning("No root pom.xml found; scanning all poms under directory.")
                 pom_files = list(repo_path.rglob("pom.xml"))
 
-            # Deduplicate POMs in the same directory
             seen_dirs = set()
             unique_poms = [p for p in pom_files if p.parent not in seen_dirs and not seen_dirs.add(p.parent)]
             self.logger.debug(f"Found {len(unique_poms)} unique POM files to process.")
 
-            # Process all collected POMs
             deps = []
             for pom in unique_poms:
                 self.logger.debug(f"Processing POM: {pom}")
@@ -63,7 +61,6 @@ class MavenDependencyAnalyzer(BaseLogger):
 
         except Exception as e:
             self.logger.error(f"Maven analysis failed: {str(e)}", exc_info=True)
-            # return "0 dependencies found."
             raise
 
     def _generate_effective_pom(self, repo_path: Path) -> Path:
