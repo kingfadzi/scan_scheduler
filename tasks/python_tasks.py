@@ -18,7 +18,7 @@ def run_python_dependency_task(repo_dir, repo, run_id):
 
 
 @task(name="Run Python Build Tool Analysis Task", cache_policy=NO_CACHE)
-def run_python_build_tool_task(repo_dir, repo, run_id):
+async def run_python_build_tool_task(repo_dir, repo, run_id):
     logger = get_run_logger()
     logger.info(f"Starting Python Build Tool analysis for repository: {repo['repo_id']}")
     analyzer = PythonBuildToolAnalyzer(logger=logger, run_id=run_id)

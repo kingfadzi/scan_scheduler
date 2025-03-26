@@ -18,7 +18,7 @@ def run_go_dependency_task(repo_dir, repo, run_id):
 
 
 @task(name="Run Go Build Tool Analysis Task", cache_policy=NO_CACHE)
-def run_go_build_tool_task(repo_dir, repo, run_id):
+async def run_go_build_tool_task(repo_dir, repo, run_id):
     logger = get_run_logger()
     logger.info(f"Starting Go Build Tool analysis for repository: {repo['repo_id']}")
     analyzer = GoBuildToolAnalyzer(logger=logger, run_id=run_id)
