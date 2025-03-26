@@ -11,6 +11,7 @@ from prefect.context import get_run_context
 from typing import List, Callable, Dict, Optional
 import asyncio
 from anyio import move_on_after
+from asyncio import timeout 
 
 def create_analysis_flow(
     flow_name: str,
@@ -34,7 +35,7 @@ def create_analysis_flow(
         repo_dir = None
         
         try:
-            async with move_on_after(300):
+            async with timeout(300):
                 logger.info(f"Starting processing for {repo_slug}")
                 repo_dir = await clone_repository_task.with_options(retries=1)(repo, sub_dir, parent_run_id)
                 
