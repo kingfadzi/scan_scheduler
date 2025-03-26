@@ -24,7 +24,7 @@ def create_analysis_flow(
     default_concurrency: Optional[int] = None,  # Deprecated but maintained
     work_pool_name: str = "fundamentals-pool"     # New concurrency control
 ):
-    logger = get_run_logger()
+    
     
     # Deprecation warning for default_concurrency
     if default_concurrency is not None:
@@ -43,7 +43,7 @@ def create_analysis_flow(
         parent_run_id: str
     ):
         repo_dir = None
-        
+        logger = get_run_logger()
         try:
             async with timeout(300):  # 5-minute timeout
                 logger.info(f"Starting processing for {repo_slug}")
