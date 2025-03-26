@@ -28,7 +28,8 @@ def create_analysis_flow(
     
     # Deprecation warning for default_concurrency
     if default_concurrency is not None:
-        logger.warning(
+        import warnings
+        warnings.warn(
             "The 'default_concurrency' parameter is deprecated and will be removed in future versions. "
             f"Concurrency is now controlled by the '{work_pool_name}' work pool configuration."
         )
