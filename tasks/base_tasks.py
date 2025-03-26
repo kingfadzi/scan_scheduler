@@ -5,7 +5,7 @@ from shared.utils import Utils
 
 
 @task(name="Fetch Repositories Task")
-def fetch_repositories_task(payload: dict, batch_size):
+aync def fetch_repositories_task(payload: dict, batch_size):
     logger = get_run_logger()
     utils = Utils(logger = logger)
     all_repos = []
