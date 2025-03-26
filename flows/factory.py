@@ -19,7 +19,7 @@ def create_analysis_flow(
     default_sub_dir: str,
     default_flow_prefix: str,
     default_batch_size: int = 10,
-    default_concurrency: int = 10  # Now using for semaphore limit
+    default_concurrency: int = 10
 ):
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
     async def repo_subflow(
@@ -34,20 +34,15 @@ def create_analysis_flow(
         repo_dir = None
         
         try:
-            # Add timeout to prevent stuck subflows
-            async with move_on_after(300):  # 5-minute timeout
-                logger.info(f"Starting processing for {repo_slug} under parent run {parent_run_id}")
-                
-                # Clone repository (async-compatible version needed)
+            async with move_on_after(300):
+                logger.info(f"Starting processing for {repo_slug}")
                 repo_dir = await clone_repository_task.with_options(retries=1)(repo, sub_dir, parent_run_id)
                 
-                # Execute analysis tasks
                 for task_fn in sub_tasks:
                     try:
-                        # Assume tasks are async-compatible
                         await task_fn(repo_dir, repo, parent_run_id)
                     except Exception as e:
-                        logger.error(f"Task {task_fn.__name__} failed: {str(e)}")
+                        logger.error(f"Task failed: {str(e)}")
                         continue
                         
                 return repo
@@ -59,7 +54,6 @@ def create_analysis_flow(
             logger.error(f"Critical failure: {str(e)}")
             raise
         finally:
-            # Cleanup operations
             await perform_cleanup(repo_dir, repo, repo_slug, parent_run_id, logger)
 
     async def perform_cleanup(repo_dir, repo, repo_slug, parent_run_id, logger):
@@ -87,21 +81,20 @@ def create_analysis_flow(
         logger = get_run_logger()
         ctx = get_run_context()
         parent_run_id = str(ctx.flow_run.id)
+        progress_task = None  # Initialize progress task
         
         try:
+            # Fixed: Ensure start_task is async-compatible
             await start_task(flow_prefix)
-            logger.info(f"Main flow {parent_run_id} starting with concurrency {default_concurrency}")
             
-            # Fetch repositories (async-compatible version needed)
+            logger.info(f"Main flow starting with concurrency {default_concurrency}")
             repos = await fetch_repositories_task.with_options(retries=1)(payload, batch_size)
-            logger.info(f"Total repositories to process: {len(repos)}")
             
-            # Create rate limiting semaphore
             sem = asyncio.Semaphore(default_concurrency)
-            total_repos = len(repos)
+            total = len(repos)
             processed = 0
             
-            async def process_repo(repo: dict):
+            async def process_repo(repo):
                 nonlocal processed
                 async with sem:
                     result = await repo_subflow(
@@ -115,35 +108,28 @@ def create_analysis_flow(
                     processed += 1
                     return result
             
-            # Create all tasks at once but limited by semaphore
             tasks = [process_repo(repo) for repo in repos]
             
-            # Add progress reporting
             async def report_progress():
-                while processed < total_repos:
-                    logger.info(f"Progress: {processed}/{total_repos} ({processed/total_repos:.1%})")
-                    await asyncio.sleep(30)
+                while processed < total:
+                    logger.info(f"Progress: {processed}/{total}")
+                    await asyncio.sleep(5)
             
             progress_task = asyncio.create_task(report_progress())
-            
-            # Execute with error handling
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
-            # Filter successful results
-            successful = [
-                result for result in results 
-                if not isinstance(result, (Exception, type(None)))
-            ]
-            
-            logger.info(f"Processing complete. Successful: {len(successful)}/{len(repos)}")
+            successful = [r for r in results if not isinstance(r, (Exception, type(None)))]
+            logger.info(f"Completed: {len(successful)}/{len(repos)}")
             return successful
             
         except Exception as e:
-            logger.error(f"Critical flow failure: {str(e)}")
+            logger.error(f"Critical failure: {str(e)}")
             raise
         finally:
             try:
-                progress_task.cancel()  # Stop progress reporting
+                if progress_task:  # Add null check before cancellation
+                    progress_task.cancel()
+                # Fixed: Ensure refresh_views_task is async-compatible
                 await refresh_views_task(flow_prefix)
                 logger.info("View refresh completed")
             except Exception as e:
