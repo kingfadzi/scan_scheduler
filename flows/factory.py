@@ -25,14 +25,6 @@ def create_analysis_flow(
     work_pool_name: str = "fundamentals-pool"     # New concurrency control
 ):
     
-    
-    # Deprecation warning for default_concurrency
-    if default_concurrency is not None:
-        import warnings
-        warnings.warn(
-            "The 'default_concurrency' parameter is deprecated and will be removed in future versions. "
-            f"Concurrency is now controlled by the '{work_pool_name}' work pool configuration."
-        )
 
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
     async def repo_subflow(
