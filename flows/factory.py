@@ -9,7 +9,7 @@ from tasks.base_tasks import (
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client.orchestration import get_client
-from typing import List, Callable, Dict
+from typing import List, Callable, Dict, Optional
 from asyncio import timeout
 import asyncio
 
@@ -20,8 +20,19 @@ def create_analysis_flow(
     default_sub_dir: str,
     default_flow_prefix: str,
     default_batch_size: int = 100,
-    work_pool_name: str = "fundamentals-pool"  # Added work pool parameter
+    # Backwards-compatible parameters
+    default_concurrency: Optional[int] = None,  # Deprecated but maintained
+    work_pool_name: str = "fundamentals-pool"     # New concurrency control
 ):
+    logger = get_run_logger()
+    
+    # Deprecation warning for default_concurrency
+    if default_concurrency is not None:
+        logger.warning(
+            "The 'default_concurrency' parameter is deprecated and will be removed in future versions. "
+            f"Concurrency is now controlled by the '{work_pool_name}' work pool configuration."
+        )
+
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
     async def repo_subflow(
         repo: dict,
@@ -31,12 +42,11 @@ def create_analysis_flow(
         repo_slug: str,
         parent_run_id: str
     ):
-        logger = get_run_logger()
         repo_dir = None
         
         try:
             async with timeout(300):  # 5-minute timeout
-                logger.info(f"Processing {repo_slug}")
+                logger.info(f"Starting processing for {repo_slug}")
                 repo_dir = await clone_repository_task.with_options(retries=1)(repo, sub_dir, parent_run_id)
                 
                 for task_fn in sub_tasks:
@@ -68,7 +78,9 @@ def create_analysis_flow(
         sub_tasks: List[Callable] = default_sub_tasks,
         sub_dir: str = default_sub_dir,
         flow_prefix: str = default_flow_prefix,
-        batch_size: int = default_batch_size
+        batch_size: int = default_batch_size,
+        # Dummy parameter for backwards compatibility
+        _deprecated_concurrency: Optional[int] = default_concurrency
     ):
         logger = get_run_logger()
         ctx = get_run_context()
@@ -82,7 +94,6 @@ def create_analysis_flow(
             logger.info(f"Processing {len(repos)} repositories")
             
             async with get_client() as client:
-                # Submit all subflows to work pool
                 flow_runs = []
                 for repo in repos:
                     flow_run = await client.create_flow_run(
@@ -101,7 +112,6 @@ def create_analysis_flow(
                     )
                     flow_runs.append(flow_run.id)
                 
-                # Monitor progress
                 total = len(flow_runs)
                 last_completed = 0
                 while True:
@@ -134,20 +144,23 @@ if __name__ == "__main__":
     import asyncio
     from datetime import datetime
     
-    async def deploy_and_run():
+    async def smoke_test():
         analysis_flow = create_analysis_flow(
-            flow_name="Repo Analyzer",
-            flow_run_name=f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-            default_sub_tasks=[],  # Add your analysis tasks
+            flow_name="Smoke Test Flow",
+            flow_run_name=f"smoke-test-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            default_sub_tasks=[],  # Add your tasks here
             default_sub_dir="/tmp/repos",
-            default_flow_prefix="analysis",
-            work_pool_name="repo-processing"
+            default_flow_prefix="smoke-test",
+            # default_concurrency=5  # Still works but shows warning
         )
         
-        # Test with 10 sample repos
         return await analysis_flow({
             "organization": "test-org",
-            "max_repos": 10
+            "max_repos": 5
         })
     
-    asyncio.run(deploy_and_run())
+    try:
+        result = asyncio.run(smoke_test())
+        print(f" Smoke test result: {result}")
+    except Exception as e:
+        print(f"Smoke test failed: {str(e)}")
