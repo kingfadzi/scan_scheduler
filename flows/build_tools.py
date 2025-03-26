@@ -23,8 +23,8 @@ build_tools_flow = create_analysis_flow(
     default_sub_tasks=sub_tasks,
     default_sub_dir="build_tools",
     default_flow_prefix="BUILD_TOOLS",
-    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
+    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE
+    #default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
 )
 
 

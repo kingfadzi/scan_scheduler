@@ -20,7 +20,7 @@ def create_analysis_flow(
     default_sub_dir: str,
     default_flow_prefix: str,
     default_batch_size: int = 100,
-    work_pool_name: str = "repo-processing"  # Added work pool parameter
+    work_pool_name: str = "fundamentals-pool"  # Added work pool parameter
 ):
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
     async def repo_subflow(
