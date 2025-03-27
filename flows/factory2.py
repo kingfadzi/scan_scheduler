@@ -20,8 +20,13 @@ TASK_REGISTRY = {
     "js": "tasks.javascript_tasks.run_javascript_build_tool_task",
     "gradle": "tasks.java_tasks.run_gradlejdk_task",
     "maven": "tasks.java_tasks.run_mavenjdk_task",
-    "python": "tasks.python_tasks.run_python_build_tool_task"
+    "python": "tasks.python_tasks.run_python_build_tool_task",
+
+    # Additional tasks
+    "ruby": "tasks.ruby_tasks.run_ruby_build_tool_task",
+    "swift": "tasks.swift_tasks.run_swift_build_tool_task"
 }
+
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
