@@ -26,7 +26,11 @@ TASK_REGISTRY = {
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
-    flow_prefix: str = Field(..., regex=r'^[a-z0-9_-]+$')
+    flow_prefix: str = Field(
+        ..., 
+        pattern=r'^[a-z0-9_-]+$',  # Changed from regex to pattern
+        examples=["build-tools-2025"]
+    )
     additional_tasks: List[str] = Field(
         default=[],
         description="Task names from TASK_REGISTRY"
