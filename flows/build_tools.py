@@ -13,32 +13,29 @@ TASK_REGISTRY_KEYS = {
 }
 
 # Convert original task list to registry keys
-sub_tasks = [
-    TASK_REGISTRY_KEYS["run_go_build_tool_task"],
-    TASK_REGISTRY_KEYS["run_gradlejdk_task"],
-    TASK_REGISTRY_KEYS["run_mavenjdk_task"], 
-    TASK_REGISTRY_KEYS["run_javascript_build_tool_task"],
-    TASK_REGISTRY_KEYS["run_python_build_tool_task"]
-]
+sub_tasks = [TASK_REGISTRY_KEYS[key] for key in [
+    "run_go_build_tool_task",
+    "run_gradlejdk_task",
+    "run_mavenjdk_task",
+    "run_javascript_build_tool_task",
+    "run_python_build_tool_task"
+]]
 
-# Create flow with registered task names
+# Create flow with work pool configuration
 build_tools_flow = create_analysis_flow(
     flow_name="build_tools_flow",
     default_sub_dir="build_tools",
     default_flow_prefix="BUILD_TOOLS",
-    default_additional_tasks=sub_tasks,
-    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE
+    default_additional_tasks=sub_tasks
 )
 
-async def main():
-    result = await build_tools_flow(
+if __name__ == "__main__":
+    # Structure matches your exact requirements
+    asyncio.run(build_tools_flow(
         payload={
-            "payload": {
+            "payload": {  # Outer payload key as requested
                 "host_name": [Config.GITLAB_HOSTNAME],
-                # "main_language": ["Java"]  # Uncomment if needed
+                # "main_language": ["Java"]  # Uncomment to filter
             }
         }
-    )
-    print(f"Flow result: {result}")
-if __name__ == "__main__":
-    asyncio.run(main())
+    ))
