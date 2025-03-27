@@ -14,6 +14,8 @@ from typing import List, Dict
 import asyncio
 from asyncio import Semaphore
 from asyncio import timeout
+from asyncio import Queue, Semaphore
+from anyio import create_task_group
 
 # Task registry mapping names to import paths
 TASK_REGISTRY = {
@@ -105,7 +107,7 @@ def create_analysis_flow(
 
     @flow(
         name=flow_name,
-        task_runner=ConcurrentTaskRunner(max_workers=10),  # 10 concurrent subflows
+        task_runner=ConcurrentTaskRunner(max_workers=10),  # Not used here; we manage concurrency manually
         validate_parameters=False
     )
     async def main_flow(
@@ -116,7 +118,6 @@ def create_analysis_flow(
             additional_tasks: List[str] = default_additional_tasks
     ):
         logger = get_run_logger()
-        processed = 0
 
         try:
             config = FlowConfig(
@@ -129,13 +130,31 @@ def create_analysis_flow(
             await start_task(flow_prefix)
             repos = await fetch_repositories_task(payload, batch_size)
 
-            # Process in batches of 10
-            for i in range(0, len(repos), 10):
-                batch = repos[i:i+10]
-                subflows = [repo_subflow(config, repo) for repo in batch]
-                await asyncio.gather(*subflows)
-                processed += len(batch)
-                logger.info(f"Progress: {processed}/{len(repos)}")
+            # Create a queue for repositories
+            repo_queue = Queue()
+            for repo in repos:
+                await repo_queue.put(repo)
+
+            # Concurrency semaphore
+            concurrency_sem = Semaphore(10)
+
+            # Start processing with max 10 concurrent tasks
+            async with create_task_group() as tg:
+                async def process_repo(repo):
+                    async with concurrency_sem:
+                        await repo_subflow(config, repo)
+
+                # Start initial tasks
+                for _ in range(min(10, len(repos))):
+                    repo = await repo_queue.get()
+                    tg.create_task(process_repo(repo))
+
+                # Monitor task completion and add new tasks dynamically
+                while not repo_queue.empty():
+                    await asyncio.sleep(0.1)  # Poll for task completion
+                    if tg.size() < 10:  # If there's room for more tasks
+                        repo = await repo_queue.get()
+                        tg.create_task(process_repo(repo))
 
             return f"Processed {len(repos)} repositories"
 
