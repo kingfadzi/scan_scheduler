@@ -20,12 +20,9 @@ def create_analysis_flow(
     default_sub_dir: str,
     default_flow_prefix: str,
     default_batch_size: int = 100,
-    # Backwards-compatible parameters
-    default_concurrency: Optional[int] = None,  # Deprecated but maintained
-    work_pool_name: str = "fundamentals-pool"     # New concurrency control
+    default_concurrency: Optional[int] = None,  # Silently ignored
+    work_pool_name: str = "repo-processing"
 ):
-    
-
     @flow(name=f"{flow_name} - Subflow", flow_run_name="{repo_slug}")
     async def repo_subflow(
         repo: dict,
@@ -35,10 +32,11 @@ def create_analysis_flow(
         repo_slug: str,
         parent_run_id: str
     ):
-        repo_dir = None
         logger = get_run_logger()
+        repo_dir = None
+        
         try:
-            async with timeout(300):  # 5-minute timeout
+            async with timeout(300):
                 logger.info(f"Starting processing for {repo_slug}")
                 repo_dir = await clone_repository_task.with_options(retries=1)(repo, sub_dir, parent_run_id)
                 
@@ -71,9 +69,7 @@ def create_analysis_flow(
         sub_tasks: List[Callable] = default_sub_tasks,
         sub_dir: str = default_sub_dir,
         flow_prefix: str = default_flow_prefix,
-        batch_size: int = default_batch_size,
-        # Dummy parameter for backwards compatibility
-        _deprecated_concurrency: Optional[int] = default_concurrency
+        batch_size: int = default_batch_size
     ):
         logger = get_run_logger()
         ctx = get_run_context()
@@ -132,28 +128,3 @@ def create_analysis_flow(
             await refresh_views_task(flow_prefix)
 
     return main_flow
-
-if __name__ == "__main__":
-    import asyncio
-    from datetime import datetime
-    
-    async def smoke_test():
-        analysis_flow = create_analysis_flow(
-            flow_name="Smoke Test Flow",
-            flow_run_name=f"smoke-test-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-            default_sub_tasks=[],  # Add your tasks here
-            default_sub_dir="/tmp/repos",
-            default_flow_prefix="smoke-test",
-            # default_concurrency=5  # Still works but shows warning
-        )
-        
-        return await analysis_flow({
-            "organization": "test-org",
-            "max_repos": 5
-        })
-    
-    try:
-        result = asyncio.run(smoke_test())
-        print(f" Smoke test result: {result}")
-    except Exception as e:
-        print(f"Smoke test failed: {str(e)}")
