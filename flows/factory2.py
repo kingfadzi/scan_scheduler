@@ -16,11 +16,18 @@ import anyio
 import asyncio
 
 # Task registry mapping names to import paths
+
 TASK_REGISTRY = {
-    "go_build": "tasks.go_tasks.run_go_build_tool_task",
+    # Base tasks
+    "clone": "tasks.base_tasks.clone_repository_task",
+    "cleanup": "tasks.base_tasks.cleanup_repo_task",
+    "update_status": "tasks.base_tasks.update_status_task",
+    
+    # Build tools
+    "go": "tasks.go_tasks.run_go_build_tool_task",  # Added 'go' key
+    "js": "tasks.javascript_tasks.run_javascript_build_tool_task",  # Added 'js' key
     "gradle": "tasks.java_tasks.run_gradlejdk_task",
     "maven": "tasks.java_tasks.run_mavenjdk_task",
-    "javascript": "tasks.javascript_tasks.run_javascript_build_tool_task",
     "python": "tasks.python_tasks.run_python_build_tool_task"
 }
 
