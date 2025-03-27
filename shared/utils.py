@@ -412,62 +412,23 @@ class Utils(BaseLogger):
         finally:
             session.close()
     
-    async def fetch_repositories_dict_async(self, payload, batch_size=1000):
-      self.logger.info(
-          f"Initializing repository fetch - Payload: {payload.keys()}, "
-          f"Page size: {batch_size}"
-      )
+    import asyncio
 
-      async with Session() as session:
-          offset = 0
-          total_fetched = 0
-          base_query = build_query(payload)  # Assuming this is still synchronous
-  
-          self.logger.debug(f"Base SQL template:\n{base_query}")
-  
-          try:
-              while True:
-                  final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-                  self.logger.info(
-                      f"Executing paginated query - Offset: {offset:,}, "
-                      f"Limit: {batch_size}"
-                  )
-  
-                  start_time = time.perf_counter()
-                  # Perform an asynchronous query using SQLAlchemy's async API
-                  result = await session.execute(select(Repository).from_statement(text(final_query)))
-                  batch = result.scalars().all()
-                  query_time = time.perf_counter() - start_time
-  
-                  batch_size_actual = len(batch)
-                  total_fetched += batch_size_actual
-  
-                  self.logger.debug(
-                      f"Query completed in {query_time:.2f}s - "
-                      f"Returned {batch_size_actual} results\n"
-                      f"Sample results: {[r.repo_slug[:20] for r in batch[:3]]}..."
-                  )
-  
-                  if not batch:
-                      self.logger.info("Empty result set - Ending pagination")
-                      break
-  
-                  # Convert ORM objects to dictionaries
-                  def serialize_repo(repo):
-                      return {c.name: getattr(repo, c.name) for c in repo.__table__.columns}
-  
-                  batch_dicts = [serialize_repo(repo) for repo in batch]
-  
-                  yield batch_dicts
-                  offset += batch_size
-  
-          finally:
-              await session.close()
-              self.logger.info(
-                  f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
-                  f"over {offset//batch_size} pages"
-              ) 
-            
+    async def fetch_repositories_dict_async(self, payload, batch_size=1000):
+        loop = asyncio.get_running_loop()
+        
+        def generator_wrapper():
+            yield from self.fetch_repositories_dict(payload, batch_size)
+        
+        iterator = generator_wrapper()
+        
+        while True:
+            try:
+                batch = await loop.run_in_executor(None, next, iterator)
+                yield batch
+            except StopIteration:
+                break
+                
 
 def main():
 
