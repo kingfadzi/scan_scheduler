@@ -20,8 +20,11 @@ class MavenJdkAnalyzer(BaseLogger):
         self.utils = Utils(logger=self.logger)
 
 
-    @analyze_execution(session_factory=Session, stage="Maven Build Analysis")
-    @language_required("java")
+    @analyze_execution(
+        session_factory=Session,
+        stage="Maven Build Analysis",
+        require_language="java"
+    )
     def run_analysis(self, repo_dir, repo, run_id=None):
         repo_path = Path(repo_dir).resolve()
         if not repo_path.exists():

@@ -7,19 +7,20 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-from prefect import flow, task, get_run_logger, timeout, semaphore
+from prefect import flow, task, get_run_logger, semaphore
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
 from typing import List, Dict
 import asyncio
+from asyncio import timeout
 
 TASK_REGISTRY = {
     # Base tasks
     "clone": "tasks.base_tasks.clone_repository_task",
     "cleanup": "tasks.base_tasks.cleanup_repo_task",
     "update_status": "tasks.base_tasks.update_status_task",
-    
+
     # Build tools
     "go": "tasks.go_tasks.run_go_build_tool_task",
     "js": "tasks.javascript_tasks.run_javascript_build_tool_task",
@@ -53,7 +54,7 @@ async def execute_task(task_name: str, repo_dir: str, repo: Dict, parent_run_id:
             return await clone_repository_task(repo, repo_dir, parent_run_id)
     elif task_name == "update_status":
         return await update_status_task(repo, parent_run_id)
-    
+
     module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
     module = __import__(module_path, fromlist=[fn_name])
     task_fn = getattr(module, fn_name)
@@ -68,7 +69,7 @@ def create_analysis_flow(
     work_pool_name: str = "fundamentals-pool"  # Updated pool name
 ):
     @flow(
-        name=f"{flow_name}-subflow", 
+        name=f"{flow_name}-subflow",
         persist_result=True,
         retries=2,
         retry_delay_seconds=30
@@ -78,10 +79,10 @@ def create_analysis_flow(
         ctx = get_run_context()
         parent_run_id = str(ctx.flow_run.id)
         repo_dir = None
-        
+
         try:
             config.validate_tasks()
-            
+
             async with timeout(seconds=300):
                 # Process repository
                 for task_name in config.all_tasks:
@@ -89,9 +90,9 @@ def create_analysis_flow(
                         repo_dir = await execute_task(task_name, "", repo, parent_run_id)
                     else:
                         await execute_task(task_name, repo_dir, repo, parent_run_id)
-                
+
                 return repo
-            
+
         except Exception as e:
             logger.error(f"Subflow failed: {str(e)}")
             raise
@@ -113,7 +114,7 @@ def create_analysis_flow(
     ):
         logger = get_run_logger()
         processed = 0
-        
+
         try:
             config = FlowConfig(
                 sub_dir=sub_dir,
@@ -121,10 +122,10 @@ def create_analysis_flow(
                 additional_tasks=additional_tasks
             )
             config.validate_tasks()
-            
+
             await start_task(flow_prefix)
             repos = await fetch_repositories_task(payload, batch_size)
-            
+
             # Process in batches of 10
             for i in range(0, len(repos), 10):
                 batch = repos[i:i+10]
@@ -132,9 +133,9 @@ def create_analysis_flow(
                 await asyncio.gather(*subflows)
                 processed += len(batch)
                 logger.info(f"Progress: {processed}/{len(repos)}")
-            
+
             return f"Processed {len(repos)} repositories"
-            
+
         except Exception as e:
             logger.error(f"Critical failure: {str(e)}")
             raise

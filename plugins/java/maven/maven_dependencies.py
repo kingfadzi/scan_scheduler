@@ -20,8 +20,11 @@ class MavenDependencyAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
 
-    @language_required("java")
-    @analyze_execution(session_factory=Session, stage="Maven Dependency Analysis")
+    @analyze_execution(
+        session_factory=Session,
+        stage="Maven Dependency Analysis",
+        require_language="java"
+    )
     def run_analysis(self, repo_dir: str, repo: object) -> str:
         self.logger.info(f"Processing Maven repo: {repo['repo_id']}")
         utils = Utils()
