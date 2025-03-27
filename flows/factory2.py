@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict
 import asyncio
 from asyncio import Semaphore
+from asyncio import timeout
 
 # Task registry mapping names to import paths
 TASK_REGISTRY = {
