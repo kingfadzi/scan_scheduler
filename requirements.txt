@@ -20,4 +20,5 @@ pipreqs
 pip-tools
 checkov
 lxml
-prefect-dask
+pydantic>=2.0
+
