@@ -28,7 +28,7 @@ class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
     flow_prefix: str = Field(
         ..., 
-        pattern=r'^[a-z0-9_-]+$',  # Changed from regex to pattern
+        pattern=r'^[a-zA-Z0-9_-]+$', # Changed from regex to pattern
         examples=["build-tools-2025"]
     )
     additional_tasks: List[str] = Field(
