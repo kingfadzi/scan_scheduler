@@ -413,10 +413,10 @@ class Utils(BaseLogger):
             session.close()
     
     async def fetch_repositories_dict_async(self, payload, batch_size=1000):
-    self.logger.info(
-        f"Initializing repository fetch - Payload: {payload.keys()}, "
-        f"Page size: {batch_size}"
-    )
+      self.logger.info(
+          f"Initializing repository fetch - Payload: {payload.keys()}, "
+          f"Page size: {batch_size}"
+      )
 
       async with self.Session() as session:
           offset = 0
