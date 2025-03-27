@@ -9,7 +9,8 @@ from tasks.base_tasks import (
 from prefect import flow, task, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
-from pydantic.v2 import BaseModel, Field
+from pydantic import BaseModel, Field
+
 from typing import List, Dict
 import anyio
 import asyncio
