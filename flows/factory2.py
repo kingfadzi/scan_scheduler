@@ -147,14 +147,14 @@ def create_analysis_flow(
                 # Start initial tasks
                 for _ in range(min(10, len(repos))):
                     repo = await repo_queue.get()
-                    tg.create_task(process_repo(repo))
+                    tg.start_soon(process_repo, repo)
 
                 # Monitor task completion and add new tasks dynamically
                 while not repo_queue.empty():
                     await asyncio.sleep(0.1)  # Poll for task completion
-                    if tg.size() < 10:  # If there's room for more tasks
+                    if tg.total_tasks() < 10:  # If there's room for more tasks
                         repo = await repo_queue.get()
-                        tg.create_task(process_repo(repo))
+                        tg.start_soon(process_repo, repo)
 
             return f"Processed {len(repos)} repositories"
 
