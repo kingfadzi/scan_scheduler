@@ -418,7 +418,7 @@ class Utils(BaseLogger):
           f"Page size: {batch_size}"
       )
 
-      async with self.Session() as session:
+      async with Session() as session:
           offset = 0
           total_fetched = 0
           base_query = build_query(payload)  # Assuming this is still synchronous
