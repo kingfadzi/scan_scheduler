@@ -83,10 +83,13 @@ def create_analysis_flow(
             logger.info(f"Processing {len(repos)} repositories")
             
             async with get_client() as client:
+                # Get subflow ID by name
+                subflow = await client.read_flow_by_name(f"{flow_name} - Subflow")
                 flow_runs = []
+                
                 for repo in repos:
                     flow_run = await client.create_flow_run(
-                        flow_name=f"{flow_name} - Subflow",
+                        flow_id=subflow.id,
                         parameters={
                             "repo": repo,
                             "sub_dir": sub_dir,
@@ -96,7 +99,6 @@ def create_analysis_flow(
                             "parent_run_id": parent_run_id
                         },
                         tags=[flow_prefix, "subflow"],
-                        
                         work_pool_name=work_pool_name
                     )
                     flow_runs.append(flow_run.id)
