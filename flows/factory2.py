@@ -54,7 +54,7 @@ def create_analysis_flow(
     async def repo_subflow(config: FlowConfig, repo: Dict):
         """Individual repository processing flow"""
         logger = get_run_logger()
-        #parent_run_id = str(get_run_context().flow_run.id)
+        # Use task_run.flow_run_id instead of flow_run.id
         parent_run_id = str(get_run_context().task_run.flow_run_id)
         repo_dir = None
         result = {"status": "failed", "repo": repo["repo_slug"]}
@@ -110,12 +110,17 @@ def create_analysis_flow(
             
             await start_task(flow_prefix)
             
-            # Stream repositories and submit for processing
-            async for repo in fetch_repositories_task(payload, 100):
-                # Submit to work pool for distributed processing
-                #repo_subflow.submit(config, repo)
-                await repo_subflow(config, repo)  # Not .submit()
-
+            futures = []
+            # Stream repositories and submit for processing as dynamic subflows
+            async for repo in fetch_repositories_task(payload, default_batch_size):
+                # Submit each subflow dynamically to the work pool
+                futures.append(repo_subflow.submit(config, repo))
+            
+            # Optionally, wait for all subflows to complete and log their results
+            for future in futures:
+                result = future.result()  # or await future.result() if needed
+                logger.info(f"Subflow result: {result}")
+            
             return "All repository processing jobs submitted successfully"
 
         finally:
