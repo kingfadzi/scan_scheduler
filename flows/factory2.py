@@ -6,7 +6,7 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-from prefect import flow, task, get_run_logger, timeout
+from prefect import flow, task, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
