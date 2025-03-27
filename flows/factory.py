@@ -96,7 +96,7 @@ def create_analysis_flow(
                             "parent_run_id": parent_run_id
                         },
                         tags=[flow_prefix, "subflow"],
-                        parent_task_run_id=ctx.task_run.id,
+                        
                         work_pool_name=work_pool_name
                     )
                     flow_runs.append(flow_run.id)
