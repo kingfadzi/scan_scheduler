@@ -26,9 +26,10 @@ build_tools_flow = create_analysis_flow(
     flow_name="build_tools_flow",
     default_sub_dir="build_tools",
     default_flow_prefix="BUILD_TOOLS",
-    default_task_order=sub_tasks,  # Now uses registry keys
+    default_additional_tasks=sub_tasks,  # Match new parameter name
     default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE
 )
+
 
 async def main():
     result = await build_tools_flow(
