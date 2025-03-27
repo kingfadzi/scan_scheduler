@@ -33,11 +33,12 @@ build_tools_flow = create_analysis_flow(
 async def main():
     result = await build_tools_flow(
         payload={
-            "host_name": [Config.GITLAB_HOSTNAME],
-            # "main_language": ["Java"]  # Uncomment if needed
+            "payload": {
+                "host_name": [Config.GITLAB_HOSTNAME],
+                # "main_language": ["Java"]  # Uncomment if needed
+            }
         }
     )
     print(f"Flow result: {result}")
-
 if __name__ == "__main__":
     asyncio.run(main())
