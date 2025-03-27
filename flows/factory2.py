@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict
 import anyio
 import asyncio
+from prefect import timeout  
 
 # Task registry mapping names to import paths
 
@@ -80,7 +81,7 @@ def create_analysis_flow(
             if invalid_tasks:
                 raise ValueError(f"Invalid tasks: {invalid_tasks}")
             
-            async with anyio.fail_after(300):
+            async with timeout(300):
                 # Execute base tasks
                 repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
                 
