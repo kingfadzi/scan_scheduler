@@ -89,7 +89,7 @@ def create_analysis_flow(
                 
                 for repo in repos:
                     flow_run = await client.create_flow_run(
-                        
+                        flow_id=subflow.id,  
                         parameters={
                             "repo": repo,
                             "sub_dir": sub_dir,
