@@ -7,11 +7,10 @@ from shared.utils import Utils
 @task(name="Fetch Repositories Task")
 async def fetch_repositories_task(payload: dict, batch_size):
     logger = get_run_logger()
-    utils = Utils(logger = logger)
+    utils = Utils(logger=logger)
 
-    # Make sure utils.fetch_repositories_dict() works asynchronously or
-    # use an async sleep or async call if it involves I/O.
-    async for batch in utils.fetch_repositories_dict(payload, batch_size=batch_size):
+    # Use async for, as fetch_repositories_dict_async is now an async generator
+    async for batch in utils.fetch_repositories_dict_async(payload, batch_size=batch_size):
         for repo in batch:
             yield repo  # Yield each repo asynchronously
 
