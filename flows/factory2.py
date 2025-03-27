@@ -86,7 +86,7 @@ def create_analysis_flow(
         try:
             config.validate_tasks()
 
-            async with timeout(seconds=300):
+            async with timeout(300):
                 # Process repository
                 for task_name in config.all_tasks:
                     if task_name == "clone":
