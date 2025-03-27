@@ -57,7 +57,7 @@ def create_analysis_flow(
         #parent_run_id = str(get_run_context().flow_run.id)
         parent_run_id = str(get_run_context().task_run.flow_run_id)
         repo_dir = None
-        result = {"status": "failed", "repo": repo["slug"]}
+        result = {"status": "failed", "repo": repo["repo_slug"]}
 
         try:
             # Clone repository
