@@ -110,7 +110,7 @@ def create_analysis_flow(
             await start_task(flow_prefix)
             
             # Stream repositories and submit for processing
-            async for repo in fetch_repositories_task(payload):
+            async for repo in fetch_repositories_task(payload, 100):
                 # Submit to work pool for distributed processing
                 repo_subflow.submit(config, repo)
 
