@@ -1,4 +1,3 @@
-# flows/factory2.py
 from tasks.base_tasks import (
     fetch_repositories_task,
     start_task,
@@ -7,21 +6,16 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-from prefect import flow, task, get_run_logger, semaphore
+from prefect import flow, task, get_run_logger, timeout
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
 from typing import List, Dict
 import asyncio
-from asyncio import timeout
+from asyncio import Semaphore
 
+# Task registry mapping names to import paths
 TASK_REGISTRY = {
-    # Base tasks
-    "clone": "tasks.base_tasks.clone_repository_task",
-    "cleanup": "tasks.base_tasks.cleanup_repo_task",
-    "update_status": "tasks.base_tasks.update_status_task",
-
-    # Build tools
     "go": "tasks.go_tasks.run_go_build_tool_task",
     "js": "tasks.javascript_tasks.run_javascript_build_tool_task",
     "gradle": "tasks.java_tasks.run_gradlejdk_task",
@@ -47,10 +41,13 @@ class FlowConfig(BaseModel):
         if invalid:
             raise ValueError(f"Invalid tasks: {invalid}")
 
+# Concurrency control for clone operations
+clone_semaphore = Semaphore(10)
+
 async def execute_task(task_name: str, repo_dir: str, repo: Dict, parent_run_id: str):
     """Execute registered tasks with concurrency control"""
     if task_name == "clone":
-        async with semaphore("clone_semaphore", 10):  # Concurrency limit
+        async with clone_semaphore:
             return await clone_repository_task(repo, repo_dir, parent_run_id)
     elif task_name == "update_status":
         return await update_status_task(repo, parent_run_id)
@@ -61,12 +58,12 @@ async def execute_task(task_name: str, repo_dir: str, repo: Dict, parent_run_id:
     return await task_fn(repo_dir, repo, parent_run_id)
 
 def create_analysis_flow(
-    flow_name: str,
-    default_sub_dir: str,
-    default_flow_prefix: str,
-    default_additional_tasks: List[str] = [],
-    default_batch_size: int = 100,
-    work_pool_name: str = "fundamentals-pool"  # Updated pool name
+        flow_name: str,
+        default_sub_dir: str,
+        default_flow_prefix: str,
+        default_additional_tasks: List[str] = [],
+        default_batch_size: int = 100,
+        work_pool_name: str = "fundamentals-pool"
 ):
     @flow(
         name=f"{flow_name}-subflow",
@@ -106,11 +103,11 @@ def create_analysis_flow(
         validate_parameters=False
     )
     async def main_flow(
-        payload: Dict,
-        sub_dir: str = default_sub_dir,
-        flow_prefix: str = default_flow_prefix,
-        batch_size: int = default_batch_size,
-        additional_tasks: List[str] = default_additional_tasks
+            payload: Dict,
+            sub_dir: str = default_sub_dir,
+            flow_prefix: str = default_flow_prefix,
+            batch_size: int = default_batch_size,
+            additional_tasks: List[str] = default_additional_tasks
     ):
         logger = get_run_logger()
         processed = 0
