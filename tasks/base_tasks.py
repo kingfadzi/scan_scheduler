@@ -8,11 +8,12 @@ from shared.utils import Utils
 async def fetch_repositories_task(payload: dict, batch_size):
     logger = get_run_logger()
     utils = Utils(logger = logger)
-    all_repos = []
-    for batch in utils.fetch_repositories_dict(payload, batch_size=batch_size):
-        all_repos.extend(batch)
-    logger.info(f"Fetched {len(all_repos)} repositories with payload: {payload}.")
-    return all_repos
+
+    # Make sure utils.fetch_repositories_dict() works asynchronously or
+    # use an async sleep or async call if it involves I/O.
+    async for batch in utils.fetch_repositories_dict(payload, batch_size=batch_size):
+        for repo in batch:
+            yield repo  # Yield each repo asynchronously
 
 
 @task(name="Start Task")
