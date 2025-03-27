@@ -1,3 +1,10 @@
+import asyncio
+from prefect import flow, get_run_logger
+from prefect.task_runners import ConcurrentTaskRunner
+from prefect.context import get_run_context
+from pydantic import BaseModel, Field
+from typing import List, Dict
+
 from tasks.base_tasks import (
     fetch_repositories_task,
     start_task,
@@ -6,12 +13,6 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-from prefect import flow, get_run_logger, timeout
-from prefect.task_runners import ConcurrentTaskRunner
-from prefect.context import get_run_context
-from pydantic import BaseModel, Field
-from typing import List, Dict
-import asyncio
 
 # Task registry including base and build tasks
 TASK_REGISTRY = {
@@ -45,7 +46,7 @@ def create_analysis_flow(
         default_flow_prefix: str,
         default_additional_tasks: List[str] = None,
         default_batch_size: int = 100,
-        max_concurrent: int = 10  # Add concurrency parameter
+        max_concurrent: int = 10
 ):
     @flow(
         name=f"{flow_name}-subflow",
@@ -60,7 +61,7 @@ def create_analysis_flow(
         repo_dir = None
 
         try:
-            async with timeout(300):
+            async with asyncio.timeout(300):
                 repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
                 for task_name in config.additional_tasks:
                     module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
@@ -105,9 +106,10 @@ def create_analysis_flow(
 
             # Create and execute all tasks with concurrency control
             tasks = [process_repo(repo) for repo in repos]
-            await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks)
 
-            return f"Processed {len(repos)} repositories"
+            successful = sum(1 for r in results if r is not None)
+            return f"Processed {successful}/{len(repos)} repositories successfully"
         finally:
             await refresh_views_task(flow_prefix)
 
