@@ -1,6 +1,5 @@
 import asyncio
 from prefect import flow, get_run_logger
-from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
 from typing import List, Dict
@@ -45,71 +44,78 @@ def create_analysis_flow(
         default_sub_dir: str,
         default_flow_prefix: str,
         default_additional_tasks: List[str] = None,
-        default_batch_size: int = 100,
-        max_concurrent: int = 10
+        default_batch_size: int = 100
 ):
     @flow(
         name=f"{flow_name}-subflow",
         persist_result=True,
-        retries=2,
-        retry_delay_seconds=30
+        retries=0  # Disable retries to prevent AwaitingRetry states
     )
     async def repo_subflow(config: FlowConfig, repo: Dict):
+        """Individual repository processing flow"""
         logger = get_run_logger()
-        ctx = get_run_context()
-        parent_run_id = str(ctx.flow_run.id)
+        parent_run_id = str(get_run_context().flow_run.id)
         repo_dir = None
+        result = {"status": "failed", "repo": repo["slug"]}
 
         try:
-            async with asyncio.timeout(300):
-                repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
-                for task_name in config.additional_tasks:
-                    module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
-                    module = __import__(module_path, fromlist=[fn_name])
-                    task_fn = getattr(module, fn_name)
-                    await task_fn(repo_dir, repo, parent_run_id)
-                return repo
+            # Clone repository
+            repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
+            
+            # Process configured tasks
+            for task_name in config.additional_tasks:
+                module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
+                module = __import__(module_path, fromlist=[fn_name])
+                task_fn = getattr(module, fn_name)
+                await task_fn(repo_dir, repo, parent_run_id)
+            
+            result["status"] = "success"
+            return result
+
+        except Exception as e:
+            logger.error(f"Processing failed: {str(e)}")
+            result["error"] = str(e)
+            return result
         finally:
-            if repo_dir:
-                await cleanup_repo_task(repo_dir, parent_run_id)
-            await update_status_task(repo, parent_run_id)
+            # Ensure cleanup always happens
+            await asyncio.gather(
+                cleanup_repo_task(repo_dir, parent_run_id),
+                update_status_task(repo, parent_run_id),
+                return_exceptions=True
+            )
 
     @flow(
         name=flow_name,
-        task_runner=ConcurrentTaskRunner(),
+        description="Main flow for continuous repository processing",
         validate_parameters=False
     )
     async def main_flow(
             payload: Dict,
             sub_dir: str = default_sub_dir,
             flow_prefix: str = default_flow_prefix,
-            batch_size: int = default_batch_size,
             additional_tasks: List[str] = default_additional_tasks or []
     ):
+        """Submit repositories for processing using work pool pattern"""
         logger = get_run_logger()
-        config = FlowConfig(
-            sub_dir=sub_dir,
-            flow_prefix=flow_prefix,
-            additional_tasks=additional_tasks
-        )
-        config.validate_tasks()
-
+        
         try:
+            # Validate and initialize configuration
+            config = FlowConfig(
+                sub_dir=sub_dir,
+                flow_prefix=flow_prefix,
+                additional_tasks=additional_tasks
+            )
+            config.validate_tasks()
+            
             await start_task(flow_prefix)
-            repos = await fetch_repositories_task(payload, batch_size)
+            
+            # Stream repositories and submit for processing
+            async for repo in fetch_repositories_task(payload):
+                # Submit to work pool for distributed processing
+                repo_subflow.submit(config, repo)
 
-            semaphore = asyncio.Semaphore(max_concurrent)
+            return "All repository processing jobs submitted successfully"
 
-            async def process_repo(repo):
-                async with semaphore:
-                    return await repo_subflow(config, repo)
-
-            # Create and execute all tasks with concurrency control
-            tasks = [process_repo(repo) for repo in repos]
-            results = await asyncio.gather(*tasks)
-
-            successful = sum(1 for r in results if r is not None)
-            return f"Processed {successful}/{len(repos)} repositories successfully"
         finally:
             await refresh_views_task(flow_prefix)
 
