@@ -54,7 +54,8 @@ def create_analysis_flow(
     async def repo_subflow(config: FlowConfig, repo: Dict):
         """Individual repository processing flow"""
         logger = get_run_logger()
-        parent_run_id = str(get_run_context().flow_run.id)
+        #parent_run_id = str(get_run_context().flow_run.id)
+        parent_run_id = str(get_run_context().task_run.flow_run_id)
         repo_dir = None
         result = {"status": "failed", "repo": repo["slug"]}
 
