@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict
 import anyio
 import asyncio
-from prefect import timeout  
+from asyncio import timeout
 
 # Task registry mapping names to import paths
 
