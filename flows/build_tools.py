@@ -1,9 +1,8 @@
-from datetime import datetime
-import asyncio
-from flows.factory2 import create_analysis_flow
+# build_tools.py
+from factory2 import create_analysis_flow
 from config.config import Config
 
-# Map task functions to their registry names
+# Map task function registry keys (example mapping)
 TASK_REGISTRY_KEYS = {
     "run_go_build_tool_task": "go",
     "run_gradlejdk_task": "gradle",
@@ -12,7 +11,7 @@ TASK_REGISTRY_KEYS = {
     "run_python_build_tool_task": "python"
 }
 
-# Convert original task list to registry keys
+# Convert the original task list to registry keys
 sub_tasks = [TASK_REGISTRY_KEYS[key] for key in [
     "run_go_build_tool_task",
     "run_gradlejdk_task",
@@ -21,7 +20,7 @@ sub_tasks = [TASK_REGISTRY_KEYS[key] for key in [
     "run_python_build_tool_task"
 ]]
 
-# Create flow with work pool configuration
+# Create the build tools flow using the factory
 build_tools_flow = create_analysis_flow(
     flow_name="build_tools_flow",
     default_sub_dir="build_tools",
@@ -30,12 +29,12 @@ build_tools_flow = create_analysis_flow(
 )
 
 if __name__ == "__main__":
-    # Structure matches your exact requirements
+    import asyncio
+    # For local testing, run the flow directly
     asyncio.run(build_tools_flow(
         payload={
-            "payload": {  # Outer payload key as requested
+            "payload": {  # Outer payload key as required
                 "host_name": [Config.GITLAB_HOSTNAME],
-                # "main_language": ["Java"]  # Uncomment to filter
             }
         }
     ))

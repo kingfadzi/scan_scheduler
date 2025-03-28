@@ -1,3 +1,4 @@
+# factory2.py
 import asyncio
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
@@ -13,7 +14,7 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 
-# Task registry including base and build tasks
+# Task registry mapping task keys to module paths
 TASK_REGISTRY = {
     "clone": "tasks.base_tasks.clone_repository_task",
     "cleanup": "tasks.base_tasks.cleanup_repo_task",
@@ -39,53 +40,50 @@ class FlowConfig(BaseModel):
         if invalid_tasks:
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
 
+# --- Dynamic Subflow ---
+# This flow must be defined at module level for deployment with .submit()
+@flow(
+    name="repo_subflow",
+    persist_result=True,
+    retries=0  # Disable retries to avoid AwaitingRetry states
+)
+async def repo_subflow(config: FlowConfig, repo: Dict):
+    """Dynamic subflow to process an individual repository."""
+    logger = get_run_logger()
+    parent_run_id = str(get_run_context().task_run.flow_run_id)
+    repo_dir = None
+    result = {"status": "failed", "repo": repo["repo_slug"]}
+    try:
+        # Clone repository
+        repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
+        # Process each configured task
+        for task_name in config.additional_tasks:
+            module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
+            module = __import__(module_path, fromlist=[fn_name])
+            task_fn = getattr(module, fn_name)
+            await task_fn(repo_dir, repo, parent_run_id)
+        result["status"] = "success"
+        return result
+    except Exception as e:
+        logger.error(f"Processing failed: {str(e)}")
+        result["error"] = str(e)
+        return result
+    finally:
+        # Always attempt cleanup and status update
+        await asyncio.gather(
+            cleanup_repo_task(repo_dir, parent_run_id),
+            update_status_task(repo, parent_run_id),
+            return_exceptions=True
+        )
+
+# --- Main Flow Factory ---
 def create_analysis_flow(
-        flow_name: str,
-        default_sub_dir: str,
-        default_flow_prefix: str,
-        default_additional_tasks: List[str] = None,
-        default_batch_size: int = 100
+    flow_name: str,
+    default_sub_dir: str,
+    default_flow_prefix: str,
+    default_additional_tasks: List[str] = None,
+    default_batch_size: int = 100
 ):
-    @flow(
-        name=f"{flow_name}-subflow",
-        persist_result=True,
-        retries=0  # Disable retries to prevent AwaitingRetry states
-    )
-    async def repo_subflow(config: FlowConfig, repo: Dict):
-        """Individual repository processing flow"""
-        logger = get_run_logger()
-        # Use task_run.flow_run_id to access the parent flow run's ID
-        parent_run_id = str(get_run_context().task_run.flow_run_id)
-        repo_dir = None
-        result = {"status": "failed", "repo": repo["repo_slug"]}
-
-        try:
-            # Clone repository
-            repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
-            
-            # Process configured tasks
-            for task_name in config.additional_tasks:
-                module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
-                module = __import__(module_path, fromlist=[fn_name])
-                task_fn = getattr(module, fn_name)
-                await task_fn(repo_dir, repo, parent_run_id)
-            
-            result["status"] = "success"
-            return result
-
-        except Exception as e:
-            logger.error(f"Processing failed: {str(e)}")
-            result["error"] = str(e)
-            return result
-
-        finally:
-            # Ensure cleanup always happens
-            await asyncio.gather(
-                cleanup_repo_task(repo_dir, parent_run_id),
-                update_status_task(repo, parent_run_id),
-                return_exceptions=True
-            )
-
     @flow(
         name=flow_name,
         description="Main flow for continuous repository processing",
@@ -97,33 +95,30 @@ def create_analysis_flow(
             flow_prefix: str = default_flow_prefix,
             additional_tasks: List[str] = default_additional_tasks or []
     ):
-        """Submit repositories for processing using dynamic subflow submission"""
         logger = get_run_logger()
-        
         try:
-            # Validate and initialize configuration
+            # Validate and initialize flow configuration
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
                 additional_tasks=additional_tasks
             )
             config.validate_tasks()
-            
             await start_task(flow_prefix)
-            
             futures = []
-            # Stream repositories and submit each one as a dynamic subflow
+            # Load the deployed dynamic subflow
+            from prefect.deployments import load_deployment
+            deployed_repo_subflow = load_deployment("repo_subflow-deployment")
+            # Stream repositories and submit each one as a dynamic subflow run
             async for repo in fetch_repositories_task(payload, default_batch_size):
-                futures.append(repo_subflow.submit(config, repo))
-            
-            # Optionally, wait for all subflows to complete and log their results
+                futures.append(
+                    deployed_repo_subflow.submit(parameters={"config": config, "repo": repo})
+                )
+            # Optionally, wait for subflows to complete and log their results
             for future in futures:
-                result = future.result()  # Blocks until the subflow run completes
+                result = future.result()  # Blocks until completion
                 logger.info(f"Subflow result: {result}")
-            
             return "All repository processing jobs submitted successfully"
-
         finally:
             await refresh_views_task(flow_prefix)
-
     return main_flow
