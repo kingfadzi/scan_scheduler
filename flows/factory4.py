@@ -17,6 +17,7 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 
+
 TASK_REGISTRY = {
     "clone": "tasks.base_tasks.clone_repository_task",
     "cleanup": "tasks.base_tasks.cleanup_repo_task",
