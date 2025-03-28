@@ -40,7 +40,7 @@ class FlowConfig(BaseModel):
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
 
 # --- Dynamic Subflow ---
-# This flow is defined at module level so it can be deployed separately.
+# This flow must be deployed separately (as "repo_subflow-deployment")
 @flow(
     name="repo_subflow",
     persist_result=True,
@@ -75,6 +75,21 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
             return_exceptions=True
         )
 
+# --- Utility Function to Submit the Dynamic Subflow ---
+async def submit_subflow(config: FlowConfig, repo: Dict):
+    """
+    Trigger a new run of the deployed dynamic subflow.
+    This uses the Prefect client to create a new flow run.
+    """
+    from prefect.client import get_client
+    client = await get_client()
+    # Trigger a flow run for the deployment named "repo_subflow-deployment"
+    flow_run_id = await client.create_flow_run(
+        deployment_name="repo_subflow-deployment",
+        parameters={"config": config, "repo": repo}
+    )
+    return flow_run_id
+
 # --- Main Flow Factory ---
 def create_analysis_flow(
     flow_name: str,
@@ -96,7 +111,7 @@ def create_analysis_flow(
     ):
         logger = get_run_logger()
         try:
-            # Validate and initialize flow configuration
+            # Validate and initialize configuration
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
@@ -105,18 +120,13 @@ def create_analysis_flow(
             config.validate_tasks()
             await start_task(flow_prefix)
             futures = []
-            # Load the deployed dynamic subflow using Deployment.load
-            from prefect.deployments import Deployment
-            deployed_repo_subflow = Deployment.load("repo_subflow-deployment")
-            # Stream repositories and submit each one as a dynamic subflow run
+            # Use the Prefect client to dynamically trigger subflow runs
             async for repo in fetch_repositories_task(payload, default_batch_size):
-                futures.append(
-                    deployed_repo_subflow.submit(parameters={"config": config, "repo": repo})
-                )
-            # Optionally, wait for all subflows to complete and log their results
-            for future in futures:
-                result = future.result()  # Blocks until completion
-                logger.info(f"Subflow result: {result}")
+                futures.append(submit_subflow(config, repo))
+            # Wait for all subflow submissions to complete
+            results = await asyncio.gather(*futures)
+            for flow_run_id in results:
+                logger.info(f"Subflow run created with id: {flow_run_id}")
             return "All repository processing jobs submitted successfully"
         finally:
             await refresh_views_task(flow_prefix)
