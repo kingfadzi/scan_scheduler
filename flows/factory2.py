@@ -29,6 +29,7 @@ TASK_REGISTRY = {
     "python": "tasks.python_tasks.run_python_build_tool_task"
 }
 
+
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
     flow_prefix: str = Field(..., pattern=r'^[a-zA-Z0-9_-]+$')
@@ -48,7 +49,7 @@ class FlowConfig(BaseModel):
 @flow(
     name="repo_subflow",
     persist_result=True,
-    retries=0  # Disable retries to prevent AwaitingRetry states
+    retries=0
 )
 async def repo_subflow(config: FlowConfig, repo: Dict):
     logger = get_run_logger()
@@ -78,6 +79,7 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
             return_exceptions=True
         )
 
+
 # --- Utility Function to Submit the Dynamic Subflow ---
 async def submit_subflow(config: FlowConfig, repo: Dict) -> str:
     logger = get_run_logger()
@@ -86,12 +88,8 @@ async def submit_subflow(config: FlowConfig, repo: Dict) -> str:
     try:
         logger.info(f"[Submit] Starting submission for {repo_slug}")
 
-        # Load your deployment to obtain the underlying Flow object.
         async with get_client() as client:
-            # Get deployment by name
             deployment = await client.read_deployment_by_name("repo_subflow/repo_subflow-deployment")
-
-            # Create flow run directly using deployment ID
             flow_run = await client.create_flow_run_from_deployment(
                 deployment.id,
                 parameters={
@@ -105,7 +103,7 @@ async def submit_subflow(config: FlowConfig, repo: Dict) -> str:
         logger.error(f"[Submit] Failed: {str(e)}", exc_info=True)
         raise
 
-# --- Main Flow Factory ---
+
 def create_analysis_flow(
     flow_name: str,
     default_sub_dir: str,
@@ -128,7 +126,6 @@ def create_analysis_flow(
         logger.info(f"[Main] Initializing {flow_name} with prefix: {flow_prefix}")
 
         try:
-            # Initialize configuration with validation
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
@@ -136,7 +133,6 @@ def create_analysis_flow(
             )
             config.validate_tasks()
 
-            # Start tracking
             await start_task(flow_prefix)
             futures = []
             repo_count = 0
