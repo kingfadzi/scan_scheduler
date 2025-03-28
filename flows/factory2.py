@@ -3,6 +3,7 @@ from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
 from typing import List, Dict
+from prefect.task_runners import ConcurrentTaskRunner
 
 from tasks.base_tasks import (
     fetch_repositories_task,
@@ -101,6 +102,7 @@ def create_analysis_flow(
 ):
     @flow(
         name=flow_name,
+        task_runner=ConcurrentTaskRunner(),
         description="Main flow for continuous repository processing",
         validate_parameters=False
     )
