@@ -66,6 +66,7 @@ async def process_repo_batch(config: FlowConfig, repos: List[Dict], parent_run_i
     tasks = [process_single_repo(config, repo, parent_run_id) for repo in repos]
     return await asyncio.gather(*tasks, return_exceptions=True)
 
+
 @task(name="process_single_repo", retries=0)
 async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
@@ -74,27 +75,32 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
     result = {"status": "failed", "repo": repo_slug}
 
     try:
-        # Parallel clone
-        repo_dir = await clone_repository_task.submit(repo, config.sub_dir, parent_run_id)
+        # Submit clone task and wait for completion
+        clone_future = await clone_repository_task.submit(repo, config.sub_dir, parent_run_id)
+        repo_dir = await clone_future.result()
 
-        # Parallel task processing
+        # Process additional tasks
         task_futures = [
             run_build_task.submit(task_name, config, repo_dir, repo, parent_run_id)
             for task_name in config.additional_tasks
         ]
-        await asyncio.gather(*task_futures)
+        await asyncio.gather(*[f.wait() for f in task_futures])
 
         result["status"] = "success"
-        logger.info(f"Successfully processed {repo_slug}")
         return result
     except Exception as e:
         logger.error(f"Failed processing {repo_slug}: {str(e)}")
         result["error"] = str(e)
         return result
     finally:
+        # Proper Prefect future handling for cleanup
+        cleanup_future = cleanup_repo_task.submit(repo_dir, parent_run_id)
+        status_future = update_status_task.submit(repo, parent_run_id)
+
+        # Wait for both cleanup tasks to complete
         await asyncio.gather(
-            cleanup_repo_task(repo_dir, parent_run_id),
-            update_status_task(repo, parent_run_id),
+            cleanup_future.wait(),
+            status_future.wait(),
             return_exceptions=True
         )
 
