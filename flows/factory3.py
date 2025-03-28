@@ -49,7 +49,7 @@ class FlowConfig(BaseModel):
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(
-        max_concurrency=5
+        concurrency_limit=5
     )
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
