@@ -1,6 +1,5 @@
 import asyncio
 import json
-from asyncio import Semaphore
 from typing import List, Dict, Optional
 
 from prefect import flow, task, get_run_logger
@@ -45,12 +44,9 @@ class FlowConfig(BaseModel):
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
         return v
 
-
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(
-        concurrency_limit=5
-    )
+    task_runner=ConcurrentTaskRunner(max_concurrency=5)
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
@@ -70,7 +66,6 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
 
-
 @task(name="process_single_repo", retries=2)
 async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
@@ -78,8 +73,7 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
     repo_dir = None
     result = {"status": "failed", "repo": repo_slug}
 
-    # Create task-level semaphore
-    task_semaphore = Semaphore(config.task_concurrency)
+    task_semaphore = asyncio.Semaphore(config.task_concurrency)
 
     async def run_task(task_name):
         async with task_semaphore:
@@ -103,7 +97,6 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
             return_exceptions=True
         )
 
-
 async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
     logger = get_run_logger()
     try:
@@ -121,7 +114,6 @@ async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
         raise
 
-
 def create_analysis_flow(
         flow_name: str,
         default_sub_dir: str,
@@ -137,9 +129,7 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with concurrency controls",
         validate_parameters=False,
-        task_runner=ConcurrentTaskRunner(
-            max_concurrency=processing_batch_concurrency
-        )
+        task_runner=ConcurrentTaskRunner(max_concurrency=processing_batch_concurrency)
     )
     async def main_flow(
             payload: Dict,
@@ -153,6 +143,10 @@ def create_analysis_flow(
             task_concurrency: int = task_concurrency
     ):
         logger = get_run_logger()
+        batch_futures = []
+        current_batch = []
+        repo_count = 0
+
         try:
             config = FlowConfig(
                 sub_dir=sub_dir,
@@ -164,9 +158,6 @@ def create_analysis_flow(
             )
 
             await start_task(flow_prefix)
-            batch_futures = []
-            current_batch = []
-            repo_count = 0
 
             async for repo in fetch_repositories_task(payload, batch_size):
                 repo_count += 1
@@ -179,18 +170,16 @@ def create_analysis_flow(
                         )
                     )
                     current_batch = []
-                    if len(batch_futures) % processing_batch_concurrency == 0:
-                        await asyncio.sleep(0)  # Yield control for concurrency limit
 
             if current_batch:
                 batch_futures.append(
                     asyncio.create_task(submit_batch_subflow(config, current_batch))
                 )
 
-                logger.info(f"Submitted {len(batch_futures)} batches containing {repo_count} repositories")
+            logger.info(f"Submitted {len(batch_futures)} batches containing {repo_count} repositories")
 
-                if batch_futures:
-                    results = await asyncio.gather(*batch_futures, return_exceptions=True)
+            if batch_futures:
+                results = await asyncio.gather(*batch_futures, return_exceptions=True)
                 success_count = sum(1 for res in results if not isinstance(res, Exception))
                 logger.info(f"Completed {success_count}/{len(results)} batches successfully")
 
