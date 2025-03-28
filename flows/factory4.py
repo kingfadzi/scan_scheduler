@@ -103,12 +103,12 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
             # Analyze results
             success_count = 0
-            for task_name, result in zip(config.additional_tasks, results):
-                if isinstance(result, Exception):
-                    logger.error(f"[{repo_slug}] [{task_name}] Failed with error: {str(result)}")
+            for task_name, task_result in zip(config.additional_tasks, results):  # Renamed variable
+                if isinstance(task_result, Exception):
+                    logger.error(f"[{repo_slug}] [{task_name}] Failed with error: {str(task_result)}")
                 else:
                     success_count += 1
-                    logger.debug(f"[{repo_slug}] [{task_name}] Returned: {str(result)[:100]}...")
+                    logger.debug(f"[{repo_slug}] [{task_name}] Returned: {str(task_result)[:100]}...")
 
             logger.info(f"[{repo_slug}] Completed {success_count}/{len(tasks)} additional tasks successfully")
 
