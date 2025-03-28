@@ -4,7 +4,6 @@ import os
 import logging
 from pathlib import Path
 
-from shared.language_required_decorator import language_required
 from shared.models import Dependency, Session
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution

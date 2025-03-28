@@ -3,7 +3,6 @@ import json
 import logging
 from sqlalchemy.dialects.postgresql import insert
 from plugins.javascript.js_utls import detect_js_build_tool
-from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils

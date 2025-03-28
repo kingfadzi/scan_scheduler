@@ -4,7 +4,6 @@ import re
 import logging
 from typing import List, Dict
 from shared.base_logger import BaseLogger
-from shared.language_required_decorator import language_required
 from shared.models import Session, Dependency
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils

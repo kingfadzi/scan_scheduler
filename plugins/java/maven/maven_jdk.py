@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-from shared.language_required_decorator import language_required
 from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
