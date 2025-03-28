@@ -17,9 +17,8 @@ DEPLOYMENT_VERSION = "3.2.1"
 
 # Define deployments as tuples of (entrypoint, deployment name, work pool name)
 DEPLOYMENTS = [
-    # Deploy the dynamic subflow from factory2.py
     ("flows/factory2.py:repo_subflow", "repo_subflow-deployment", "fundamentals-pool"),
-    # Deploy the main build tools flow from build_tools.py
+    ("flows/factory3.py:batch_repo_subflow", "batch_repo_subflow-deployment", "fundamentals-pool"),
     ("flows/build_tools.py:build_tools_flow", "build_tools_flow", "fundamentals-pool")
 ]
 
