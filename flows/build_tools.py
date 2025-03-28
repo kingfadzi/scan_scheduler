@@ -29,7 +29,7 @@ build_tools_flow = create_analysis_flow(
     # Add these new concurrency parameters
     processing_batch_concurrency=2,  # Max parallel batches
     per_batch_concurrency=10,         # Max parallel repos per batch
-    task_concurrency=3               # Max parallel tasks per repo
+    task_concurrency=5               # Max parallel tasks per repo
 )
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ TASK_REGISTRY = {
     "python": "tasks.python_tasks.run_python_build_tool_task"
 }
 
+
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
     flow_prefix: str = Field(..., pattern=r'^[a-zA-Z0-9_-]+$')
@@ -42,6 +43,7 @@ class FlowConfig(BaseModel):
         if invalid_tasks:
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
         return v
+
 
 @flow(
     name="batch_repo_subflow",
@@ -67,11 +69,13 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
 
+
 @task(
     name="process_single_repo",
     retries=2,
-    retry_delay_seconds=30,
-    task_run_count=lambda: get_run_context().task_run.flow_run.config.task_concurrency
+    concurrency_limit=lambda: (
+            get_run_context().flow_run.parameters.get('task_concurrency', 3)
+    )
 )
 async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
@@ -109,6 +113,7 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
             return_exceptions=True
         )
 
+
 async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
     logger = get_run_logger()
     try:
@@ -125,6 +130,7 @@ async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
     except Exception as e:
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
         raise
+
 
 def create_analysis_flow(
         flow_name: str,
