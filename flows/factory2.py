@@ -1,4 +1,3 @@
-# factory2.py
 import asyncio
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
@@ -41,11 +40,11 @@ class FlowConfig(BaseModel):
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
 
 # --- Dynamic Subflow ---
-# This flow must be defined at module level for deployment with .submit()
+# This flow is defined at module level so it can be deployed separately.
 @flow(
     name="repo_subflow",
     persist_result=True,
-    retries=0  # Disable retries to avoid AwaitingRetry states
+    retries=0  # Disable retries to prevent AwaitingRetry states
 )
 async def repo_subflow(config: FlowConfig, repo: Dict):
     """Dynamic subflow to process an individual repository."""
@@ -106,15 +105,15 @@ def create_analysis_flow(
             config.validate_tasks()
             await start_task(flow_prefix)
             futures = []
-            # Load the deployed dynamic subflow
-            from prefect.deployments import load_deployment
-            deployed_repo_subflow = load_deployment("repo_subflow-deployment")
+            # Load the deployed dynamic subflow using Deployment.load
+            from prefect.deployments import Deployment
+            deployed_repo_subflow = Deployment.load("repo_subflow-deployment")
             # Stream repositories and submit each one as a dynamic subflow run
             async for repo in fetch_repositories_task(payload, default_batch_size):
                 futures.append(
                     deployed_repo_subflow.submit(parameters={"config": config, "repo": repo})
                 )
-            # Optionally, wait for subflows to complete and log their results
+            # Optionally, wait for all subflows to complete and log their results
             for future in futures:
                 result = future.result()  # Blocks until completion
                 logger.info(f"Subflow result: {result}")
