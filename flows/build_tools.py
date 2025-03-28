@@ -25,12 +25,13 @@ build_tools_flow = create_analysis_flow(
     flow_name="build_tools_flow",
     default_sub_dir="build_tools",
     default_flow_prefix="BUILD_TOOLS",
-    default_additional_tasks=sub_tasks,
-    # Updated parameter names to match factory4's expectations
-    processing_batch_workers=2,  # Max parallel batches (renamed from processing_batch_concurrency)
-    per_batch_workers=10,         # Max parallel repos per batch (renamed from per_batch_concurrency)
-    task_concurrency=5            # Max parallel tasks per repo
+    default_additional_tasks=["clone", "python", "cleanup"],
+    processing_batch_size=10,
+    processing_batch_workers=2,  # Max concurrent batches
+    per_batch_workers=5,         # Max repos per batch
+    task_concurrency=3           # Max tasks per repo
 )
+
 
 if __name__ == "__main__":
     import asyncio

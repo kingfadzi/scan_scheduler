@@ -55,15 +55,18 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
     result = {"status": "failed", "repo": repo_slug}
 
     try:
-        # Clone the repository
         repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
 
-        # Process additional tasks
-        for task_name in config.additional_tasks:
-            module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
-            module = __import__(module_path, fromlist=[fn_name])
-            task_fn = getattr(module, fn_name)
-            await task_fn(repo_dir, repo, parent_run_id)
+        task_semaphore = asyncio.Semaphore(config.task_concurrency)
+
+        async def run_task(task_name):
+            async with task_semaphore:
+                module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
+                module = __import__(module_path, fromlist=[fn_name])
+                task_fn = getattr(module, fn_name)
+                return await task_fn(repo_dir, repo, parent_run_id)
+
+        await asyncio.gather(*[run_task(t) for t in config.additional_tasks])
 
         result["status"] = "success"
         return result
@@ -81,14 +84,14 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(max_workers=5),
-    persist_result=True
+    persist_result=True,
+    work_pool_name="batch-pool"
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Create subflows for each repo
     results = await asyncio.gather(
         *[process_single_repo_flow(config, repo, parent_run_id) for repo in repos],
         return_exceptions=True
@@ -98,11 +101,18 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
 
+
 async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
+    """Submit a batch of repositories for processing"""
     logger = get_run_logger()
     try:
         async with get_client() as client:
-            deployment = await client.read_deployment_by_name("batch_repo_subflow/batch_repo_subflow-deployment")
+            # Get the deployment for batch processing
+            deployment = await client.read_deployment_by_name(
+                "batch_repo_subflow/batch_repo_subflow-deployment"
+            )
+
+            # Create a flow run for this batch
             flow_run = await client.create_flow_run_from_deployment(
                 deployment.id,
                 parameters={
@@ -110,7 +120,7 @@ async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
                     "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
                 }
             )
-        return flow_run.id
+            return flow_run.id
     except Exception as e:
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
         raise
@@ -130,7 +140,8 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with concurrency controls",
         validate_parameters=False,
-        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers)
+        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers),
+        work_pool_name="batch-pool"
     )
     async def main_flow(
             payload: Dict,
