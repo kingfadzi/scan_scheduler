@@ -54,7 +54,7 @@ def create_analysis_flow(
     async def repo_subflow(config: FlowConfig, repo: Dict):
         """Individual repository processing flow"""
         logger = get_run_logger()
-        # Use task_run.flow_run_id instead of flow_run.id
+        # Use task_run.flow_run_id to access the parent flow run's ID
         parent_run_id = str(get_run_context().task_run.flow_run_id)
         repo_dir = None
         result = {"status": "failed", "repo": repo["repo_slug"]}
@@ -77,6 +77,7 @@ def create_analysis_flow(
             logger.error(f"Processing failed: {str(e)}")
             result["error"] = str(e)
             return result
+
         finally:
             # Ensure cleanup always happens
             await asyncio.gather(
@@ -96,7 +97,7 @@ def create_analysis_flow(
             flow_prefix: str = default_flow_prefix,
             additional_tasks: List[str] = default_additional_tasks or []
     ):
-        """Submit repositories for processing using work pool pattern"""
+        """Submit repositories for processing using dynamic subflow submission"""
         logger = get_run_logger()
         
         try:
@@ -111,14 +112,13 @@ def create_analysis_flow(
             await start_task(flow_prefix)
             
             futures = []
-            # Stream repositories and submit for processing as dynamic subflows
+            # Stream repositories and submit each one as a dynamic subflow
             async for repo in fetch_repositories_task(payload, default_batch_size):
-                # Submit each subflow dynamically to the work pool
                 futures.append(repo_subflow.submit(config, repo))
             
             # Optionally, wait for all subflows to complete and log their results
             for future in futures:
-                result = future.result()  # or await future.result() if needed
+                result = future.result()  # Blocks until the subflow run completes
                 logger.info(f"Subflow result: {result}")
             
             return "All repository processing jobs submitted successfully"
