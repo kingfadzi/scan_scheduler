@@ -125,6 +125,7 @@ async def submit_batch_subflow(config: FlowConfig, batch: List[Dict]) -> str:
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
         raise
 
+
 def create_analysis_flow(
         flow_name: str,
         default_sub_dir: str,

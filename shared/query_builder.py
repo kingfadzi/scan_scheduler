@@ -1,5 +1,4 @@
 def build_query(payload):
-
     if not isinstance(payload, dict):
         raise ValueError("Input must be a dictionary.")
 
@@ -11,11 +10,12 @@ def build_query(payload):
     if not isinstance(inner_payload, dict) or not inner_payload:
         raise ValueError("The provided payload does not contain any filter values.")
 
+    # Updated filter mapping to use ONLY combined_repo_metrics columns
     filter_mapping = {
-        'repo_id': 'bitbucket_repositories.repo_id',
+        'repo_id': 'combined_repo_metrics.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
         'activity_status': 'combined_repo_metrics.activity_status',
-        'status': 'bitbucket_repositories.status',
+        'status': 'combined_repo_metrics.status',
         'tc': 'combined_repo_metrics.tc',
         'main_language': 'combined_repo_metrics.main_language',
         'classification_label': 'combined_repo_metrics.classification_label',
@@ -23,28 +23,27 @@ def build_query(payload):
         'number_of_contributors': 'combined_repo_metrics.number_of_contributors'
     }
 
+    # Select only columns from combined_repo_metrics
     select_cols = [
-        "bitbucket_repositories.repo_id as repo_id",
-        "bitbucket_repositories.status as status",
-        "bitbucket_repositories.clone_url_ssh as clone_url_ssh",
-        "bitbucket_repositories.updated_on as updated_on"
+        "combined_repo_metrics.repo_id",
+        "combined_repo_metrics.status",
+        "combined_repo_metrics.clone_url_ssh",
+        "combined_repo_metrics.updated_at as updated_on"
     ]
 
+    # Add additional columns from filter mapping
     for key, col in filter_mapping.items():
-        if key not in ['repo_id', 'status']:
-            select_cols.append(f"{col} as {key}")
+        if key not in ['repo_id', 'status'] and f"combined_repo_metrics.{key}" not in select_cols:
+            select_cols.append(col)
 
     select_clause = "SELECT " + ", ".join(select_cols)
     base_query = f"""
         {select_clause}
-        FROM bitbucket_repositories
-        JOIN combined_repo_metrics 
-          ON combined_repo_metrics.repo_id = bitbucket_repositories.repo_id
+        FROM combined_repo_metrics
         WHERE 1=1
     """
 
     filters = []
-
     for key, column in filter_mapping.items():
         if key in inner_payload:
             values = inner_payload[key]
@@ -52,6 +51,7 @@ def build_query(payload):
                 raise ValueError(f"Filter for '{key}' cannot be empty.")
 
             if key == 'repo_id':
+                # Keep repo_id wildcard search
                 filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
             else:
                 if all(isinstance(v, str) for v in values):
@@ -65,9 +65,8 @@ def build_query(payload):
         raise ValueError("No valid filters provided. Query would select all rows.")
 
     final_query = base_query + " AND " + " AND ".join(filters)
-    final_query += " ORDER BY bitbucket_repositories.repo_id"
+    final_query += " ORDER BY combined_repo_metrics.repo_id"  # Updated ORDER BY
     return final_query
-
 
 if __name__ == "__main__":
     payload_example = {
