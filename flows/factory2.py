@@ -1,9 +1,12 @@
 import asyncio
+import json
+import time
+
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from pydantic import BaseModel, Field
 from typing import List, Dict
-from prefect.task_runners import ConcurrentTaskRunner
+from prefect.client import get_client
 
 from tasks.base_tasks import (
     fetch_repositories_task,
@@ -49,7 +52,8 @@ class FlowConfig(BaseModel):
 )
 async def repo_subflow(config: FlowConfig, repo: Dict):
     logger = get_run_logger()
-    parent_run_id = str(get_run_context().task_run.flow_run_id)
+    parent_run_id = str(get_run_context().flow_run.id)
+
     repo_dir = None
     result = {"status": "failed", "repo": repo.get("repo_slug", "unknown")}
     try:
@@ -75,25 +79,30 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
         )
 
 # --- Utility Function to Submit the Dynamic Subflow ---
-async def submit_subflow(config: FlowConfig, repo: Dict):
-    from prefect.client import get_client
+async def submit_subflow(config: FlowConfig, repo: Dict) -> str:
     logger = get_run_logger()
+    repo_slug = repo.get("repo_slug", "unknown")
+
     try:
-        logger.info(f"[Submit] Obtaining Prefect client for repo: {repo.get('repo_slug', 'unknown')}")
-        client = await get_client()
-        logger.info(f"[Submit] Submitting dynamic subflow for repo: {repo.get('repo_slug', 'unknown')}")
-        flow_run_id = await client.create_flow_run(
-            deployment_name="repo_subflow-deployment",
-            #parameters={"config": config.dict(), "repo": repo}
-            parameters = {
-                "config": config.dict(), 
-                "repo": json.loads(json.dumps(repo, default=str)) 
-            }
-        )
-        logger.info(f"[Submit] Subflow submitted. Flow run ID: {flow_run_id}")
-        return flow_run_id
+        logger.info(f"[Submit] Starting submission for {repo_slug}")
+
+        # Load your deployment to obtain the underlying Flow object.
+        async with get_client() as client:
+            # Get deployment by name
+            deployment = await client.read_deployment_by_name("repo_subflow/repo_subflow-deployment")
+
+            # Create flow run directly using deployment ID
+            flow_run = await client.create_flow_run_from_deployment(
+                deployment.id,
+                parameters={
+                    "config": config.dict(),
+                    "repo": json.loads(json.dumps(repo, default=str))
+                }
+            )
+        return flow_run.id
+
     except Exception as e:
-        logger.error(f"[Submit] Failed to submit subflow for {repo.get('repo_slug', 'unknown')}: {e}")
+        logger.error(f"[Submit] Failed: {str(e)}", exc_info=True)
         raise
 
 # --- Main Flow Factory ---
@@ -106,74 +115,105 @@ def create_analysis_flow(
 ):
     @flow(
         name=flow_name,
-        task_runner=ConcurrentTaskRunner(),
         description="Main flow for continuous repository processing",
         validate_parameters=False
     )
     async def main_flow(
-        payload: Dict,
-        sub_dir: str = default_sub_dir,
-        flow_prefix: str = default_flow_prefix,
-        additional_tasks: List[str] = default_additional_tasks or []
+            payload: Dict,
+            sub_dir: str = default_sub_dir,
+            flow_prefix: str = default_flow_prefix,
+            additional_tasks: List[str] = default_additional_tasks or []
     ):
         logger = get_run_logger()
+        logger.info(f"[Main] Initializing {flow_name} with prefix: {flow_prefix}")
+
         try:
-            # Validate and initialize flow configuration
+            # Initialize configuration with validation
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
                 additional_tasks=additional_tasks
             )
             config.validate_tasks()
+
+            # Start tracking
             await start_task(flow_prefix)
             futures = []
             repo_count = 0
+            batch_counter = 0
 
-            logger.info("[Main] Starting repository fetch...xxxxx")
-
-            # --- Refactored Section in Main Flow ---
+            logger.info("[Main] Starting repository fetch...")
             async for repo in fetch_repositories_task(payload, default_batch_size):
                 repo_count += 1
+                batch_counter += 1
                 repo_slug = repo.get("repo_slug", "unknown")
-                logger.info(f"[Main] Repository fetched: {repo_slug}")
+
                 try:
-                    logger.debug(f"[Main] Initializing subflow submission for {repo_slug}")
-                    future = submit_subflow(config, repo)
-                    futures.append(future)
-                    logger.debug(f"[Main] Successfully queued subflow for {repo_slug} (Total queued: {len(futures)})")
+                    logger.debug(f"[Main] Processing repo #{repo_count}: {repo_slug}")
+
+                    # Submit subflow
+                    task = asyncio.create_task(submit_subflow(config, repo))
+                    futures.append(task)
+                    logger.debug(f"[Main] Submitted subflow for {repo_slug} (Total: {len(futures)})")
+
+                    # Yield control every 5 submissions to prevent event loop starvation
+                    if batch_counter % 5 == 0:
+                        logger.debug("[Main] Yielding event loop control")
+                        await asyncio.sleep(0)
+                        batch_counter = 0
+
                 except Exception as e:
-                    # This catches rare sync errors during coroutine creation
-                    logger.error(f"[Main] FATAL - Failed to initialize subflow for {repo_slug}: {str(e)}", exc_info=True)
-                    continue  # Continue processing other repos
+                    logger.error(f"[Main] Critical error processing {repo_slug}: {str(e)}", exc_info=True)
+                    continue
 
-            # --- Enhanced Post-Submission Logging ---
-            logger.info(f"[Main] Starting submission of {len(futures)} subflows...")
-            try:
-                results = await asyncio.gather(*futures, return_exceptions=True)
-            except Exception as e:
-                logger.critical(f"[Main] Catastrophic failure during submission: {str(e)}", exc_info=True)
-                raise
+            logger.info(f"[Main] Completed repository iteration. Total fetched: {repo_count}")
 
-            # --- Detailed Result Analysis ---
-            success_count = 0
-            for idx, result in enumerate(results, 1):
-                repo_slug = "unknown"
+            # Process submitted tasks
+            if futures:
+                logger.info(f"[Main] Awaiting completion of {len(futures)} subflows...")
+                start_time = time.perf_counter()
+
                 try:
-                    if isinstance(result, Exception):
-                        # Extract repo_slug from original parameters if possible
-                        original_params = futures[idx-1].cr_frame.f_locals.get('repo', {})
-                        repo_slug = original_params.get('repo_slug', 'unknown')
-                        logger.error(f"[Main] Subflow {idx}/{len(results)} FAILED for {repo_slug}: {str(result)}", exc_info=True)
-                    else:
-                        logger.info(f"[Main] Subflow {idx}/{len(results)} SUCCESS - Flow Run ID: {result}")
-                        success_count += 1
+                    results = await asyncio.gather(*futures, return_exceptions=True)
+                    duration = time.perf_counter() - start_time
+
+                    success_count = 0
+                    for idx, result in enumerate(results, 1):
+                        if isinstance(result, Exception):
+                            logger.error(f"[Main] Subflow #{idx} failed: {str(result)}")
+                        else:
+                            logger.debug(f"[Main] Subflow #{idx} succeeded: {result}")
+                            success_count += 1
+
+                    logger.info(
+                        f"[Main] Subflow completion summary - "
+                        f"Success: {success_count}/{len(results)} "
+                        f"({duration:.2f}s)"
+                    )
+
+                except asyncio.CancelledError:
+                    logger.warning("[Main] Subflow gathering cancelled")
+                    raise
                 except Exception as e:
-                    logger.error(f"[Main] ERROR PROCESSING RESULT {idx}: {str(e)}", exc_info=True)
+                    logger.critical(f"[Main] Catastrophic failure in subflow processing: {str(e)}", exc_info=True)
+                    raise
 
-            logger.info(f"[Main] Submission complete - {success_count}/{len(results)} succeeded")
+            else:
+                logger.warning("[Main] No subflows were submitted")
 
-            return "All repository processing jobs submitted successfully"
+            return f"Processed {repo_count} repositories"
+
+        except StopAsyncIteration:
+            logger.info("[Main] Repository iteration completed normally")
+        except GeneratorExit:
+            logger.warning("[Main] Generator exited prematurely")
+            raise
+        except Exception as e:
+            logger.critical(f"[Main] Flow failed: {str(e)}", exc_info=True)
+            raise
         finally:
+            logger.info("[Main] Starting final cleanup")
             await refresh_views_task(flow_prefix)
+            logger.info("[Main] Cleanup completed")
 
     return main_flow

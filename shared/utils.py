@@ -27,87 +27,6 @@ class Utils(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
-    def create_batches(self, payload, batch_size=1000):
-        self.logger.info(f"Starting batch creation - Target batch size: {batch_size}")
-
-        all_repos = []
-        for batch in self.fetch_repositories(payload, batch_size):
-            all_repos.extend(batch)
-            self.logger.debug(
-                f"Accumulated {len(batch)} repos in current batch, "
-                f"Total so far: {len(all_repos)}"
-            )
-
-        total_repos = len(all_repos)
-        self.logger.info(f"Total repositories fetched: {total_repos}")
-
-        num_partitions = max(1, math.ceil(total_repos / batch_size))
-
-        partitions = np.array_split(all_repos, num_partitions)
-        partition_sizes = [len(p) for p in partitions]
-
-        self.logger.info(
-            f"Created {num_partitions} partitions with sizes: {partition_sizes} "
-            f"(Standard deviation: {np.std(partition_sizes):.1f})"
-        )
-
-        return partitions
-
-    def fetch_repositories(self, payload, batch_size=1000):
-
-        self.logger.info(
-            f"Initializing repository fetch - Payload: {payload.keys()}, "
-            f"Page size: {batch_size}"
-        )
-
-        session = Session()
-        offset = 0
-        total_fetched = 0
-        base_query = build_query(payload)
-
-        self.logger.debug(f"Base SQL template:\n{base_query}")
-
-        try:
-            while True:
-                final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
-                self.logger.info(
-                    f"Executing paginated query - Offset: {offset:,}, "
-                    f"Limit: {batch_size}"
-                )
-
-                start_time = time.perf_counter()
-                batch = session.query(Repository).from_statement(text(final_query)).all()
-                query_time = time.perf_counter() - start_time
-
-                batch_size_actual = len(batch)
-                total_fetched += batch_size_actual
-
-                self.logger.debug(
-                    f"Query completed in {query_time:.2f}s - "
-                    f"Returned {batch_size_actual} results\n"
-                    f"Sample results: {[r.repo_slug[:20] for r in batch[:3]]}..."
-                )
-
-                if not batch:
-                    self.logger.info("Empty result set - Ending pagination")
-                    break
-
-                detach_start = time.perf_counter()
-                for repo in batch:
-                    _ = repo['repo_slug']  # Force attribute load
-                    session.expunge(repo)
-                self.logger.debug(f"Detachment completed in {time.perf_counter() - detach_start:.2f}s")
-
-                yield batch
-                offset += batch_size
-
-        finally:
-            session.close()
-            self.logger.info(
-                f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
-                f"over {offset//batch_size} pages"
-            )
-
     def fetch_repositories_dict(self, payload, batch_size=1000):
         self.logger.info(
             f"Initializing repository fetch - Payload: {payload.keys()}, "
@@ -161,7 +80,6 @@ class Utils(BaseLogger):
                 f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
                 f"over {offset//batch_size} pages"
             )
-
 
     def refresh_views(self):
 
@@ -233,25 +151,12 @@ class Utils(BaseLogger):
 
 
     @staticmethod
-    def generate_repo_flow_run_name():
-        run_ctx = get_run_context()
-        repo_slug = run_ctx.flow_run.parameters.get("repo_slug")
-        return f"{repo_slug}"
-
-    @staticmethod
     def generate_main_flow_run_name():
         run_ctx = get_run_context()
         start_time = run_ctx.flow_run.expected_start_time
         formatted_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
         return f"{formatted_time}"
 
-    @staticmethod
-    def generate_partition_run_name():
-        from prefect.runtime import flow_run
-        params = flow_run.parameters
-        prefix = params.get("flow_prefix", "partition")
-        idx = params.get("partition_idx", 0)
-        return f"{prefix}-partition-{idx}"
 
     def detect_repo_languages(self, repo_id):
         self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
@@ -282,7 +187,6 @@ class Utils(BaseLogger):
 
     def get_repo_main_language(self, repo_id: str) -> str | None:
 
-
         session = Session()
 
         try:
@@ -296,55 +200,6 @@ class Utils(BaseLogger):
             raise
         finally:
             session.close()
-        return None
-
-    def detect_java_build_tool(self, repo_dir):
-        EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings'}
-        gradle_files = {"build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts"}
-
-        maven_pom = False
-        found_gradle_files = set()
-
-        repo_path = Path(repo_dir).resolve()
-
-        for path in repo_path.rglob('*'):
-            if any(part in EXCLUDE_DIRS for part in path.parts):
-                continue
-
-            if path.is_file():
-                if path.name == "pom.xml":
-                    maven_pom = True
-                    self.logger.debug(f"Found Maven POM at: {path.relative_to(repo_path)}")
-
-                if path.name in gradle_files:
-                    found_gradle_files.add(path.name)
-                    self.logger.debug(f"Found Gradle file at: {path.relative_to(repo_path)}")
-
-        gradle_found = len(found_gradle_files) > 0
-        conflict = maven_pom and gradle_found
-
-        if conflict:
-            self.logger.warning(
-                f"Build tool conflict detected in {repo_path.name}\n"
-                f"Maven POMs: {maven_pom}\n"
-                f"Gradle files: {', '.join(found_gradle_files)}"
-            )
-            return "Maven"
-        elif maven_pom:
-            self.logger.info(f"Detected Maven project in {repo_path.name}")
-            return "Maven"
-        elif gradle_found:
-            self.logger.info(
-                f"Detected Gradle project in {repo_path.name}\n"
-                f"Found files: {', '.join(found_gradle_files)}"
-            )
-            return "Gradle"
-
-        self.logger.debug(
-            f"No Java build system detected in {repo_path.name}\n"
-            f"Searched paths: {repo_path}\n"
-            f"Excluded directories: {', '.join(EXCLUDE_DIRS)}"
-        )
         return None
 
 
@@ -411,24 +266,42 @@ class Utils(BaseLogger):
             raise
         finally:
             session.close()
-    
-    import asyncio
+
 
     async def fetch_repositories_dict_async(self, payload, batch_size=1000):
-        loop = asyncio.get_running_loop()
-        
-        def generator_wrapper():
-            yield from self.fetch_repositories_dict(payload, batch_size)
-        
-        iterator = generator_wrapper()
-        
-        while True:
-            try:
-                batch = await loop.run_in_executor(None, next, iterator)
+
+        session = Session()
+        offset = 0
+        total_fetched = 0
+        base_query = build_query(payload)
+
+        try:
+            while True:
+                final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+
+                # Execute sync query in thread
+                batch = await asyncio.to_thread(
+                    lambda: [
+                        {c.name: getattr(r, c.name) for c in r.__table__.columns}
+                        for r in session.query(Repository)
+                        .from_statement(text(final_query))
+                        .all()
+                    ]
+                )
+
+                if not batch:
+                    break
+
                 yield batch
-            except StopIteration:
-                break
-                
+                offset += batch_size
+                total_fetched += len(batch)
+
+        except GeneratorExit:
+            pass  # Handle async generator cancellation
+        finally:
+            session.close()
+            self.logger.info(f"Fetched {total_fetched} repos across {offset//batch_size} pages")
+
 
 def main():
 
@@ -441,7 +314,7 @@ def main():
 
     utils = Utils()
 
-    partitions = utils.create_batches(
+    partitions = utils.fetch_repositories_dict_async(
         payload=example_payload,
         batch_size=10,
         num_partitions=5

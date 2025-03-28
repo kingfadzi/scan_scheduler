@@ -1,3 +1,5 @@
+import asyncio
+
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from plugins.core.cloning import CloningAnalyzer
@@ -9,10 +11,10 @@ async def fetch_repositories_task(payload: dict, batch_size):
     logger = get_run_logger()
     utils = Utils(logger=logger)
 
-    # Use async for, as fetch_repositories_dict_async is now an async generator
-    async for batch in utils.fetch_repositories_dict_async(payload, batch_size=batch_size):
+    async for batch in utils.fetch_repositories_dict_async(payload, batch_size):
         for repo in batch:
-            yield repo  # Yield each repo asynchronously
+            yield repo
+        await asyncio.sleep(0)  # Yield control after each batch
 
 
 @task(name="Start Task")
