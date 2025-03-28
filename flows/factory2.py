@@ -123,7 +123,7 @@ def create_analysis_flow(
             futures = []
             repo_count = 0
 
-            logger.info("[Main] Starting repository fetch...")
+            logger.info("[Main] Starting repository fetch...xxxxx")
 
             # --- Refactored Section in Main Flow ---
             async for repo in fetch_repositories_task(payload, default_batch_size):
