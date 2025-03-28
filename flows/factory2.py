@@ -84,7 +84,11 @@ async def submit_subflow(config: FlowConfig, repo: Dict):
         logger.info(f"[Submit] Submitting dynamic subflow for repo: {repo.get('repo_slug', 'unknown')}")
         flow_run_id = await client.create_flow_run(
             deployment_name="repo_subflow-deployment",
-            parameters={"config": config.dict(), "repo": repo}
+            #parameters={"config": config.dict(), "repo": repo}
+            parameters = {
+                "config": config.dict(), 
+                "repo": json.loads(json.dumps(repo, default=str)) 
+            }
         )
         logger.info(f"[Submit] Subflow submitted. Flow run ID: {flow_run_id}")
         return flow_run_id
