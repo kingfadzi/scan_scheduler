@@ -1,5 +1,6 @@
 import asyncio
 import json
+from asyncio import Semaphore
 from typing import List, Dict, Optional
 
 from prefect import flow, task, get_run_logger
@@ -47,9 +48,9 @@ class FlowConfig(BaseModel):
 
 @flow(
     name="batch_repo_subflow",
-    persist_result=True,
-    retries=0,
-    task_runner=ConcurrentTaskRunner
+    task_runner=ConcurrentTaskRunner(
+        max_concurrency=5
+    )
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
@@ -70,41 +71,30 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     return results
 
 
-@task(
-    name="process_single_repo",
-    retries=2,
-    concurrency_limit=lambda: (
-            get_run_context().flow_run.parameters.get('task_concurrency', 3)
-    )
-)
+@task(name="process_single_repo", retries=2)
 async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     repo_slug = repo.get("repo_slug", "unknown")
     repo_dir = None
     result = {"status": "failed", "repo": repo_slug}
 
+    # Create task-level semaphore
+    task_semaphore = Semaphore(config.task_concurrency)
+
+    async def run_task(task_name):
+        async with task_semaphore:
+            module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
+            module = __import__(module_path, fromlist=[fn_name])
+            task_fn = getattr(module, fn_name)
+            return await task_fn(repo_dir, repo, parent_run_id)
+
     try:
-        # Clone repository
         repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
-
-        # Process additional tasks with concurrency control
-        task_semaphore = asyncio.Semaphore(config.task_concurrency)
-
-        async def run_task(task_name):
-            async with task_semaphore:
-                module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
-                module = __import__(module_path, fromlist=[fn_name])
-                task_fn = getattr(module, fn_name)
-                return await task_fn(repo_dir, repo, parent_run_id)
-
         await asyncio.gather(*[run_task(t) for t in config.additional_tasks])
-
         result["status"] = "success"
-        logger.info(f"Successfully processed {repo_slug}")
         return result
     except Exception as e:
         logger.error(f"Failed processing {repo_slug}: {str(e)}")
-        result["error"] = str(e)
         return result
     finally:
         await asyncio.gather(
