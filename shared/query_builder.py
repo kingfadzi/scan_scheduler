@@ -36,7 +36,7 @@ def build_query(payload):
         if key not in ['repo_id', 'status'] and f"combined_repo_metrics.{key}" not in select_cols:
             select_cols.append(col)
 
-    select_clause = "SELECT " + ", ".join(select_cols)
+    select_clause = "SELECT DISTINCT " + ", ".join(select_cols)
     base_query = f"""
         {select_clause}
         FROM combined_repo_metrics

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import subprocess
 import threading
@@ -125,29 +126,40 @@ class CloningAnalyzer(BaseLogger):
 
 
 
-if __name__ == "__main__":
+
+async def main():
+    example_payload = {
+        "payload": {
+            "host_name": [Config.GITLAB_HOSTNAME],
+            "main_language": ["Java"]
+        }
+    }
+
+    utils = Utils()
     session = Session()
-
-    repositories = (
-        session.query(Repository)
-        .join(RepoMetrics, Repository.repo_id == RepoMetrics.repo_id)
-        .filter(RepoMetrics.activity_status == 'ACTIVE')
-        .limit(1)
-        .all()
-    )
-
     analyzer = CloningAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
-    for repo in repositories:
-        # Convert the SQLAlchemy model to a dict
-        repo_data = Utils.as_dict(repo)
-        repo_dir = None
-        try:
-            repo_dir = analyzer.clone_repository(repo_data)
-        except Exception as e:
-            analyzer.logger.error(f"Cloning failed: {e}")
-        finally:
-            if repo_dir:
-                analyzer.cleanup_repository_directory(repo_dir)
+    try:
 
-    session.close()
+        async for batch in utils.fetch_repositories_dict_async(payload=example_payload):
+            for repo in batch:
+                repo_dir = None
+                try:
+                    if not isinstance(repo, dict):
+                        raise ValueError(f"Invalid repo format: {type(repo)}")
+
+                    analyzer.logger.info(f"Processing repo: {repo.get('repo_slug', 'unknown')}")
+
+                    repo_dir = analyzer.clone_repository(repo)
+
+                except Exception as e:
+                    analyzer.logger.error(f"Cloning failed for {repo.get('repo_slug', 'unknown')}: {str(e)}")
+                finally:
+                    if repo_dir:
+                        analyzer.cleanup_repository_directory(repo_dir)
+    finally:
+        session.close()
+        analyzer.logger.info("Standalone cloning process completed")
+
+if __name__ == "__main__":
+    asyncio.run(main())
