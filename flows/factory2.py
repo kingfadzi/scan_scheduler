@@ -132,7 +132,8 @@ def create_analysis_flow(
                     logger.info(f"[Main] Attempting to submit subflow for repo: {repo_slug}")
                     futures.append(submit_subflow(config, repo))
                 except Exception as e:
-                    logger.error(f"[Main] Error while scheduling subflow for {repo_slug}: {e}")
+                    logger.error(f"[Submit] Critical error: {str(e)}", exc_info=True)  # Log full traceback
+                    raise
             logger.info(f"[Main] Finished iterating repositories. Total fetched: {repo_count}")
             if not futures:
                 logger.warning("[Main] No subflows submitted.")
