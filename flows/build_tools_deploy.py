@@ -13,13 +13,7 @@ git_storage = GitRepository(
 DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
-    ("flows/fundamentals.py:fundamental_metrics_flow", "fundamentals", "fundamentals-pool"),
-    ("flows/build_tools.py:build_tools_flow", "build_tools", "fundamentals-pool"),
-    ("flows/dependencies.py:dependencies_flow", "dependencies", "fundamentals-pool"),
-    ("flows/vulnerabilities.py:vulnerabilities_flow", "vulnerabilities", "fundamentals-pool"),
-    ("flows/standards.py:standards_assessment_flow", "standards-assessment", "fundamentals-pool"),
-    ("flows/categories.py:categories_flow", "categorize_dependencies", "fundamentals-pool"),
-    ("flows/allinone.py:allinone_flow", "allinone", "fundamentals-pool")
+    ("flows/build_tools.py:build_tools_flow", "build_tools", "fundamentals-pool")
 ]
 
 def create_deployments():
