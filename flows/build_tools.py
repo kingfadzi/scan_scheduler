@@ -26,10 +26,10 @@ build_tools_flow = create_analysis_flow(
     default_sub_dir="build_tools",
     default_flow_prefix="BUILD_TOOLS",
     default_additional_tasks=sub_tasks,
-    # Add these new concurrency parameters
-    processing_batch_concurrency=2,  # Max parallel batches
-    per_batch_concurrency=10,         # Max parallel repos per batch
-    task_concurrency=5               # Max parallel tasks per repo
+    # Updated parameter names to match factory4's expectations
+    processing_batch_workers=2,  # Max parallel batches (renamed from processing_batch_concurrency)
+    per_batch_workers=10,         # Max parallel repos per batch (renamed from per_batch_concurrency)
+    task_concurrency=5            # Max parallel tasks per repo
 )
 
 if __name__ == "__main__":
