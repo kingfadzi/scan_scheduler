@@ -39,10 +39,12 @@ class FlowConfig(BaseModel):
         if invalid_tasks:
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
 
+# --- Dynamic Subflow ---
+# This flow must be deployed separately (with the deployment name "repo_subflow-deployment")
 @flow(
     name="repo_subflow",
     persist_result=True,
-    retries=0
+    retries=0  # Disable retries to prevent AwaitingRetry states
 )
 async def repo_subflow(config: FlowConfig, repo: Dict):
     logger = get_run_logger()
@@ -71,12 +73,14 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
             return_exceptions=True
         )
 
+# --- Utility Function to Submit the Dynamic Subflow ---
 async def submit_subflow(config: FlowConfig, repo: Dict):
     from prefect.client import get_client
     logger = get_run_logger()
-    client = await get_client()
     try:
-        logger.info(f"[Submit] Submitting subflow for repo: {repo.get('repo_slug')}")
+        logger.info(f"[Submit] Obtaining Prefect client for repo: {repo.get('repo_slug', 'unknown')}")
+        client = await get_client()
+        logger.info(f"[Submit] Submitting dynamic subflow for repo: {repo.get('repo_slug', 'unknown')}")
         flow_run_id = await client.create_flow_run(
             deployment_name="repo_subflow-deployment",
             parameters={"config": config.dict(), "repo": repo}
@@ -84,9 +88,10 @@ async def submit_subflow(config: FlowConfig, repo: Dict):
         logger.info(f"[Submit] Subflow submitted. Flow run ID: {flow_run_id}")
         return flow_run_id
     except Exception as e:
-        logger.error(f"[Submit] Failed to submit subflow for {repo.get('repo_slug')}: {e}")
+        logger.error(f"[Submit] Failed to submit subflow for {repo.get('repo_slug', 'unknown')}: {e}")
         raise
 
+# --- Main Flow Factory ---
 def create_analysis_flow(
     flow_name: str,
     default_sub_dir: str,
@@ -107,6 +112,7 @@ def create_analysis_flow(
     ):
         logger = get_run_logger()
         try:
+            # Validate and initialize flow configuration
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
@@ -114,32 +120,31 @@ def create_analysis_flow(
             )
             config.validate_tasks()
             await start_task(flow_prefix)
-
             futures = []
             repo_count = 0
 
             logger.info("[Main] Starting repository fetch...")
             async for repo in fetch_repositories_task(payload, default_batch_size):
                 repo_count += 1
-                logger.info(f"[Main] Repository fetched: {repo.get('repo_slug')}")
+                repo_slug = repo.get("repo_slug", "unknown")
+                logger.info(f"[Main] Repository fetched: {repo_slug}")
                 try:
+                    logger.info(f"[Main] Attempting to submit subflow for repo: {repo_slug}")
                     futures.append(submit_subflow(config, repo))
                 except Exception as e:
-                    logger.error(f"[Main] Error while scheduling subflow: {e}")
-
-            logger.info(f"[Main] Total repositories fetched: {repo_count}")
+                    logger.error(f"[Main] Error while scheduling subflow for {repo_slug}: {e}")
+            logger.info(f"[Main] Finished iterating repositories. Total fetched: {repo_count}")
             if not futures:
                 logger.warning("[Main] No subflows submitted.")
 
             logger.info("[Main] Awaiting subflow submissions...")
             results = await asyncio.gather(*futures, return_exceptions=True)
-            for i, result in enumerate(results):
+            for i, result in enumerate(results, start=1):
                 if isinstance(result, Exception):
-                    logger.error(f"[Main] Subflow #{i+1} failed to submit: {result}")
+                    logger.error(f"[Main] Subflow #{i} failed to submit: {result}")
                 else:
-                    logger.info(f"[Main] Subflow #{i+1} submitted successfully: {result}")
-
-            return "All repository processing jobs submitted."
+                    logger.info(f"[Main] Subflow #{i} submitted successfully: {result}")
+            return "All repository processing jobs submitted successfully"
         finally:
             await refresh_views_task(flow_prefix)
 
