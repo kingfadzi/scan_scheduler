@@ -1,29 +1,36 @@
+#!/usr/bin/env python
+import os
 from prefect import flow
 from prefect.runner.storage import GitRepository
 from config.config import Config
-import os
 
+# Ensure SSH connections use relaxed host key checking
 os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 
+# Configure Git storage so that flows are loaded from your Git repository
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
-    branch=Config.FLOW_GIT_BRANCH,  # Use the correct branch
+    branch=Config.FLOW_GIT_BRANCH,  # Use the correct branch from your repo
 )
 
 DEPLOYMENT_VERSION = "3.2.1"
 
+# Define deployments as tuples of (entrypoint, deployment name, work pool name)
 DEPLOYMENTS = [
-    ("flows/build_tools.py:build_tools_flow", "build_tools", "fundamentals-pool")
+    # Deploy the dynamic subflow (repo_subflow) defined in factory2.py
+    ("factory2.py:repo_subflow", "repo_subflow-deployment", "fundamentals-pool"),
+    # Deploy the main build tools flow defined in flows/build_tools.py
+    ("flows/build_tools.py:build_tools_flow", "build_tools_flow", "fundamentals-pool")
 ]
 
 def create_deployments():
-    for entrypoint, name_suffix, pool_name in DEPLOYMENTS:
-        deployment_name = f"{name_suffix}"
+    for entrypoint, deployment_name, pool_name in DEPLOYMENTS:
+        # Load the remote flow from your Git repository using the specified entrypoint
         remote_flow = flow.from_source(
             source=git_storage,
             entrypoint=entrypoint
         )
-
+        # Deploy the flow. This registers the deployment with Prefect Cloud/Server.
         remote_flow.deploy(
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
