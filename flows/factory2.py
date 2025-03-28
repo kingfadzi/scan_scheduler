@@ -51,7 +51,7 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
     logger = get_run_logger()
     parent_run_id = str(get_run_context().task_run.flow_run_id)
     repo_dir = None
-    result = {"status": "failed", "repo": repo["repo_slug"]}
+    result = {"status": "failed", "repo": repo.get("repo_slug", "unknown")}
     try:
         # Clone repository
         repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
@@ -64,7 +64,7 @@ async def repo_subflow(config: FlowConfig, repo: Dict):
         result["status"] = "success"
         return result
     except Exception as e:
-        logger.error(f"Processing failed: {str(e)}")
+        logger.error(f"Processing failed for repo {repo.get('repo_slug', 'unknown')}: {str(e)}")
         result["error"] = str(e)
         return result
     finally:
@@ -82,13 +82,20 @@ async def submit_subflow(config: FlowConfig, repo: Dict):
     This uses the Prefect client to create a new flow run.
     """
     from prefect.client import get_client
+    logger = get_run_logger()
     client = await get_client()
-    # Trigger a flow run for the deployment named "repo_subflow-deployment"
-    flow_run_id = await client.create_flow_run(
-        deployment_name="repo_subflow-deployment",
-        parameters={"config": config, "repo": repo}
-    )
-    return flow_run_id
+    try:
+        logger.info(f"Submitting dynamic subflow for repo: {repo.get('repo_slug', 'unknown')}")
+        # Convert config to a dict for serialization
+        flow_run_id = await client.create_flow_run(
+            deployment_name="repo_subflow-deployment",
+            parameters={"config": config.dict(), "repo": repo}
+        )
+        logger.info(f"Created dynamic subflow run with ID: {flow_run_id}")
+        return flow_run_id
+    except Exception as e:
+        logger.error(f"Error creating dynamic subflow run for repo {repo.get('repo_slug', 'unknown')}: {e}")
+        raise
 
 # --- Main Flow Factory ---
 def create_analysis_flow(
@@ -111,7 +118,7 @@ def create_analysis_flow(
     ):
         logger = get_run_logger()
         try:
-            # Validate and initialize configuration
+            # Validate and initialize flow configuration
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
@@ -120,13 +127,19 @@ def create_analysis_flow(
             config.validate_tasks()
             await start_task(flow_prefix)
             futures = []
+            repo_count = 0
             # Use the Prefect client to dynamically trigger subflow runs
             async for repo in fetch_repositories_task(payload, default_batch_size):
+                repo_count += 1
+                logger.info(f"Fetched repository: {repo.get('repo_slug', 'unknown')}")
                 futures.append(submit_subflow(config, repo))
-            # Wait for all subflow submissions to complete
+            logger.info(f"Total repositories fetched: {repo_count}")
+            if not futures:
+                logger.warning("No repositories were fetched; no subflows will be triggered.")
+            # Wait for all dynamic subflow submissions to complete
             results = await asyncio.gather(*futures)
             for flow_run_id in results:
-                logger.info(f"Subflow run created with id: {flow_run_id}")
+                logger.info(f"Dynamic subflow run created with id: {flow_run_id}")
             return "All repository processing jobs submitted successfully"
         finally:
             await refresh_views_task(flow_prefix)
