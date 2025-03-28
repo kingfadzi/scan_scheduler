@@ -46,7 +46,7 @@ class FlowConfig(BaseModel):
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_concurrency=5)
+    task_runner=ConcurrentTaskRunner(max_workers=5)
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
@@ -129,7 +129,7 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with concurrency controls",
         validate_parameters=False,
-        task_runner=ConcurrentTaskRunner(max_concurrency=processing_batch_concurrency)
+        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_concurrency)
     )
     async def main_flow(
             payload: Dict,
