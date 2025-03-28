@@ -140,8 +140,7 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with concurrency controls",
         validate_parameters=False,
-        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers),
-        work_pool_name="batch-pool"
+        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers)
     )
     async def main_flow(
             payload: Dict,
