@@ -75,16 +75,15 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
     result = {"status": "failed", "repo": repo_slug}
 
     try:
-        # Submit clone task and wait for completion
-        clone_future = await clone_repository_task.submit(repo, config.sub_dir, parent_run_id)
-        repo_dir = await clone_future.result()
+        # Proper async execution with Prefect tracking
+        repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
 
-        # Process additional tasks
-        task_futures = [
-            run_build_task.submit(task_name, config, repo_dir, repo, parent_run_id)
+        # Process additional tasks in parallel
+        task_coros = [
+            run_build_task(task_name, config, repo_dir, repo, parent_run_id)
             for task_name in config.additional_tasks
         ]
-        await asyncio.gather(*[f.wait() for f in task_futures])
+        await asyncio.gather(*task_coros)
 
         result["status"] = "success"
         return result
@@ -93,14 +92,10 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
         result["error"] = str(e)
         return result
     finally:
-        # Proper Prefect future handling for cleanup
-        cleanup_future = cleanup_repo_task.submit(repo_dir, parent_run_id)
-        status_future = update_status_task.submit(repo, parent_run_id)
-
-        # Wait for both cleanup tasks to complete
+        # Correct parallel cleanup
         await asyncio.gather(
-            cleanup_future.wait(),
-            status_future.wait(),
+            cleanup_repo_task(repo_dir, parent_run_id),
+            update_status_task(repo, parent_run_id),
             return_exceptions=True
         )
 
