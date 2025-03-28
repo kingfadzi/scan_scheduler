@@ -92,10 +92,9 @@ async def process_single_repo(config: FlowConfig, repo: Dict, parent_run_id: str
         result["error"] = str(e)
         return result
     finally:
-        # Parallel cleanup
         await asyncio.gather(
-            cleanup_repo_task.submit(repo_dir, parent_run_id),
-            update_status_task.submit(repo, parent_run_id),
+            cleanup_repo_task(repo_dir, parent_run_id),
+            update_status_task(repo, parent_run_id),
             return_exceptions=True
         )
 
