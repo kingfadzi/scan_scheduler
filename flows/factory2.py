@@ -39,65 +39,54 @@ class FlowConfig(BaseModel):
         if invalid_tasks:
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
 
-# --- Dynamic Subflow ---
-# This flow must be deployed separately (as "repo_subflow-deployment")
 @flow(
     name="repo_subflow",
     persist_result=True,
-    retries=0  # Disable retries to prevent AwaitingRetry states
+    retries=0
 )
 async def repo_subflow(config: FlowConfig, repo: Dict):
-    """Dynamic subflow to process an individual repository."""
     logger = get_run_logger()
     parent_run_id = str(get_run_context().task_run.flow_run_id)
     repo_dir = None
     result = {"status": "failed", "repo": repo.get("repo_slug", "unknown")}
     try:
-        # Clone repository
+        logger.info(f"[Subflow] Starting for repo: {repo.get('repo_slug', 'unknown')}")
         repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
-        # Process each configured task
         for task_name in config.additional_tasks:
             module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
             module = __import__(module_path, fromlist=[fn_name])
             task_fn = getattr(module, fn_name)
             await task_fn(repo_dir, repo, parent_run_id)
         result["status"] = "success"
+        logger.info(f"[Subflow] Finished successfully for repo: {repo.get('repo_slug', 'unknown')}")
         return result
     except Exception as e:
-        logger.error(f"Processing failed for repo {repo.get('repo_slug', 'unknown')}: {str(e)}")
+        logger.error(f"[Subflow] Failed for repo {repo.get('repo_slug', 'unknown')}: {e}")
         result["error"] = str(e)
         return result
     finally:
-        # Always attempt cleanup and status update
         await asyncio.gather(
             cleanup_repo_task(repo_dir, parent_run_id),
             update_status_task(repo, parent_run_id),
             return_exceptions=True
         )
 
-# --- Utility Function to Submit the Dynamic Subflow ---
 async def submit_subflow(config: FlowConfig, repo: Dict):
-    """
-    Trigger a new run of the deployed dynamic subflow.
-    This uses the Prefect client to create a new flow run.
-    """
     from prefect.client import get_client
     logger = get_run_logger()
     client = await get_client()
     try:
-        logger.info(f"Submitting dynamic subflow for repo: {repo.get('repo_slug', 'unknown')}")
-        # Convert config to a dict for serialization
+        logger.info(f"[Submit] Submitting subflow for repo: {repo.get('repo_slug')}")
         flow_run_id = await client.create_flow_run(
             deployment_name="repo_subflow-deployment",
             parameters={"config": config.dict(), "repo": repo}
         )
-        logger.info(f"Created dynamic subflow run with ID: {flow_run_id}")
+        logger.info(f"[Submit] Subflow submitted. Flow run ID: {flow_run_id}")
         return flow_run_id
     except Exception as e:
-        logger.error(f"Error creating dynamic subflow run for repo {repo.get('repo_slug', 'unknown')}: {e}")
+        logger.error(f"[Submit] Failed to submit subflow for {repo.get('repo_slug')}: {e}")
         raise
 
-# --- Main Flow Factory ---
 def create_analysis_flow(
     flow_name: str,
     default_sub_dir: str,
@@ -111,14 +100,13 @@ def create_analysis_flow(
         validate_parameters=False
     )
     async def main_flow(
-            payload: Dict,
-            sub_dir: str = default_sub_dir,
-            flow_prefix: str = default_flow_prefix,
-            additional_tasks: List[str] = default_additional_tasks or []
+        payload: Dict,
+        sub_dir: str = default_sub_dir,
+        flow_prefix: str = default_flow_prefix,
+        additional_tasks: List[str] = default_additional_tasks or []
     ):
         logger = get_run_logger()
         try:
-            # Validate and initialize flow configuration
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
@@ -126,21 +114,33 @@ def create_analysis_flow(
             )
             config.validate_tasks()
             await start_task(flow_prefix)
+
             futures = []
             repo_count = 0
-            # Use the Prefect client to dynamically trigger subflow runs
+
+            logger.info("[Main] Starting repository fetch...")
             async for repo in fetch_repositories_task(payload, default_batch_size):
                 repo_count += 1
-                logger.info(f"Fetched repository: {repo.get('repo_slug', 'unknown')}")
-                futures.append(submit_subflow(config, repo))
-            logger.info(f"Total repositories fetched: {repo_count}")
+                logger.info(f"[Main] Repository fetched: {repo.get('repo_slug')}")
+                try:
+                    futures.append(submit_subflow(config, repo))
+                except Exception as e:
+                    logger.error(f"[Main] Error while scheduling subflow: {e}")
+
+            logger.info(f"[Main] Total repositories fetched: {repo_count}")
             if not futures:
-                logger.warning("No repositories were fetched; no subflows will be triggered.")
-            # Wait for all dynamic subflow submissions to complete
-            results = await asyncio.gather(*futures)
-            for flow_run_id in results:
-                logger.info(f"Dynamic subflow run created with id: {flow_run_id}")
-            return "All repository processing jobs submitted successfully"
+                logger.warning("[Main] No subflows submitted.")
+
+            logger.info("[Main] Awaiting subflow submissions...")
+            results = await asyncio.gather(*futures, return_exceptions=True)
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(f"[Main] Subflow #{i+1} failed to submit: {result}")
+                else:
+                    logger.info(f"[Main] Subflow #{i+1} submitted successfully: {result}")
+
+            return "All repository processing jobs submitted."
         finally:
             await refresh_views_task(flow_prefix)
+
     return main_flow
