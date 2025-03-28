@@ -84,8 +84,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(max_workers=5),
-    persist_result=True,
-    work_pool_name="batch-pool"
+    persist_result=True
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
