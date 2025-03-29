@@ -44,11 +44,6 @@ class FlowConfig(BaseModel):
             raise ValueError(f"Invalid tasks: {invalid_tasks}")
         return v
 
-@flow(
-    name="process_single_repo_flow",
-    persist_result=True,
-    retries=0
-)
 
 @flow(
     name="process_single_repo_flow",
