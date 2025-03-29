@@ -49,87 +49,76 @@ class FlowConfig(BaseModel):
     persist_result=True,
     retries=0
 )
+
+@flow(
+    name="process_single_repo_flow",
+    persist_result=True,
+    retries=0,
+    flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
+)
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
+    """Process individual repository with guaranteed repo identifiers"""
     logger = get_run_logger()
-    repo_slug = repo.get("repo_slug", "unknown")
+    repo_id = repo["repo_id"]  # Direct access assuming guaranteed existence
+    repo_slug = repo["repo_slug"]  # Direct access assuming guaranteed existence
     repo_dir = None
-    result = {"status": "failed", "repo": repo_slug}
+    result = {"status": "failed", "repo": repo_id}
 
     try:
         # --- Cloning Phase ---
-        logger.debug(f"[{repo_slug}] Starting cloning process")
+        logger.debug(f"[{repo_id}] Starting cloning process")
         repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
-        logger.info(f"[{repo_slug}] Successfully cloned to {repo_dir}")
+        logger.info(f"[{repo_id}] Successfully cloned to {repo_dir}")
 
         # --- Additional Tasks Execution ---
         if not config.additional_tasks:
-            logger.warning(f"[{repo_slug}] No additional tasks configured")
+            logger.warning(f"[{repo_id}] No additional tasks configured")
         else:
-            logger.info(f"[{repo_slug}] Starting {len(config.additional_tasks)} additional tasks: {config.additional_tasks}")
+            logger.info(f"[{repo_id}] Starting {len(config.additional_tasks)} tasks")
 
             task_semaphore = asyncio.Semaphore(config.task_concurrency)
-            logger.debug(f"[{repo_slug}] Created semaphore with {config.task_concurrency} slots")
+            logger.debug(f"[{repo_id}] Semaphore initialized")
 
             async def run_task(task_name):
                 try:
-                    logger.debug(f"[{repo_slug}] [{task_name}] Acquiring semaphore")
                     async with task_semaphore:
-                        logger.info(f"[{repo_slug}] [{task_name}] Starting execution")
+                        logger.info(f"[{repo_id}] [{task_name}] Starting execution")
 
                         # Dynamic task loading
-                        if task_name not in TASK_REGISTRY:
-                            raise KeyError(f"Task {task_name} not registered in TASK_REGISTRY")
-
                         module_path, fn_name = TASK_REGISTRY[task_name].rsplit('.', 1)
-                        logger.debug(f"[{repo_slug}] [{task_name}] Importing {module_path}.{fn_name}")
-
                         module = __import__(module_path, fromlist=[fn_name])
                         task_fn = getattr(module, fn_name)
 
-                        logger.debug(f"[{repo_slug}] [{task_name}] Executing task function")
                         result = await task_fn(repo_dir, repo, parent_run_id)
-
-                        logger.info(f"[{repo_slug}] [{task_name}] Completed successfully")
+                        logger.info(f"[{repo_id}] [{task_name}] Completed")
                         return result
                 except Exception as e:
-                    logger.error(f"[{repo_slug}] [{task_name}] Task failed: {str(e)}", exc_info=True)
+                    logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
                     raise
 
-            # Execute all tasks with timeout handling
             tasks = [run_task(t) for t in config.additional_tasks]
-            logger.debug(f"[{repo_slug}] Created {len(tasks)} task coroutines")
-
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Analyze results
-            success_count = 0
-            for task_name, task_result in zip(config.additional_tasks, results):  # Renamed variable
-                if isinstance(task_result, Exception):
-                    logger.error(f"[{repo_slug}] [{task_name}] Failed with error: {str(task_result)}")
-                else:
-                    success_count += 1
-                    logger.debug(f"[{repo_slug}] [{task_name}] Returned: {str(task_result)[:100]}...")
-
-            logger.info(f"[{repo_slug}] Completed {success_count}/{len(tasks)} additional tasks successfully")
+            success_count = sum(1 for r in results if not isinstance(r, Exception))
+            logger.info(f"[{repo_id}] Completed {success_count}/{len(tasks)} tasks")
 
         result["status"] = "success"
         return result
 
     except Exception as e:
-        logger.error(f"[{repo_slug}] Flow failed: {str(e)}", exc_info=True)
+        logger.error(f"[{repo_id}] Flow failed: {str(e)}")
         result["error"] = str(e)
         return result
     finally:
-        logger.debug(f"[{repo_slug}] Starting cleanup phase")
+        logger.debug(f"[{repo_id}] Starting cleanup")
         try:
             await asyncio.gather(
                 cleanup_repo_task(repo_dir, parent_run_id),
-                update_status_task(repo, parent_run_id),
-                return_exceptions=True
+                update_status_task(repo, parent_run_id)
             )
-            logger.debug(f"[{repo_slug}] Cleanup tasks completed")
         except Exception as e:
-            logger.error(f"[{repo_slug}] Cleanup failed: {str(e)}", exc_info=True)
+            logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
+            
 
 @flow(
     name="batch_repo_subflow",
