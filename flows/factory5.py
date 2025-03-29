@@ -154,10 +154,10 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
 async def submit_batch_subflow(
     config: FlowConfig, 
     batch: List[Dict], 
-    parent_start_time: str,  # Added parent timestamp
-    batch_number: int         # Added batch sequence number
+    parent_start_time: str,
+    batch_number: int
 ) -> str:
-    """Submit a batch with parent's datetime and batch number in flow name"""
+    """Submit a batch with properly formatted flow run name for Prefect 3.2.1"""
     logger = get_run_logger()
     try:
         async with get_client() as client:
@@ -165,16 +165,17 @@ async def submit_batch_subflow(
                 "batch_repo_subflow/batch_repo_subflow-deployment"
             )
 
-            # Create flow run name from parent time and batch number
+            # Generate flow run name using parent's datetime and batch number
             flow_run_name = f"{parent_start_time}_batch_{batch_number:04d}"
 
+            # Create flow run with correct parameters for Prefect 3.x
             flow_run = await client.create_flow_run_from_deployment(
-                deployment.id,
+                deployment_id=deployment.id,
                 parameters={
-                    "config": config.dict(),
+                    "config": config.model_dump(),
                     "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
                 },
-                flow_run_name=flow_run_name  # Set custom name
+                name=flow_run_name  # Correct parameter for modern Prefect
             )
             return flow_run.id
     except Exception as e:
@@ -194,7 +195,7 @@ def create_analysis_flow(
 ):
     @flow(
         name=flow_name,
-        description="Main flow with batched datetime grouping",
+        description="Main analysis flow with batched processing",
         validate_parameters=False,
         task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers)
     )
@@ -216,7 +217,7 @@ def create_analysis_flow(
         batch_counter = 1
 
         try:
-            # Get parent flow's start time once
+            # Get parent flow's creation time once
             parent_run_ctx = get_run_context()
             parent_start_time = parent_run_ctx.flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
@@ -242,15 +243,14 @@ def create_analysis_flow(
                             submit_batch_subflow(
                                 config, 
                                 current_batch.copy(),
-                                parent_time_str,  # Parent datetime
-                                batch_counter     # Sequence number
+                                parent_time_str,
+                                batch_counter
                             )
                         )
                     )
                     current_batch = []
                     batch_counter += 1
 
-            # Submit final partial batch
             if current_batch:
                 batch_futures.append(
                     asyncio.create_task(
@@ -264,26 +264,24 @@ def create_analysis_flow(
                 )
                 batch_counter += 1
 
-            logger.info(f"Submitted {len(batch_futures)} batches with prefix {parent_time_str}")
+            logger.info(f"Submitted {len(batch_futures)} batches with parent time {parent_time_str}")
 
             if batch_futures:
                 results = await asyncio.gather(*batch_futures, return_exceptions=True)
                 success_count = sum(1 for res in results if not isinstance(res, Exception))
-                logger.info(f"Completed {success_count}/{len(results)} batches")
+                logger.info(f"Completed {success_count}/{len(results)} batches successfully")
 
             return {
                 "processed_repos": repo_count,
                 "batches": len(batch_futures),
-                "batch_prefix": parent_time_str
+                "parent_run_time": parent_time_str
             }
 
         except Exception as e:
-            logger.error(f"Flow failed: {str(e)}", exc_info=True)
+            logger.error(f"Main flow failed: {str(e)}", exc_info=True)
             raise
         finally:
             await refresh_views_task(flow_prefix)
             logger.info("Main flow cleanup completed")
 
     return main_flow
-
-    
