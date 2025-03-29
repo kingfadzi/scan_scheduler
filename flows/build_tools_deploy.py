@@ -15,15 +15,30 @@ git_storage = GitRepository(
 
 DEPLOYMENT_VERSION = "3.2.1"
 
-# Define deployments as tuples of (entrypoint, deployment name, work pool name)
 DEPLOYMENTS = [
-    ("flows/factory5.py:process_single_repo_flow", "process_single_repo_flow-deoployment", "fundamentals-pool"),
-    ("flows/factory5.py:batch_repo_subflow", "batch_repo_subflow-deployment", "fundamentals-pool"),
-    ("flows/build_tools.py:build_tools_flow", "build_tools_flow", "fundamentals-pool")
+    (
+        "flows/factory5.py:process_single_repo_flow",
+        "process_single_repo_flow-deoployment",
+        "fundamentals-pool",
+        ["process_single_repo_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+    (
+        "flows/factory5.py:batch_repo_subflow",
+        "batch_repo_subflow-deployment",
+        "fundamentals-pool",
+        ["batch_repo_subflow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+    (
+        "flows/build_tools.py:build_tools_flow",
+        "build_tools_flow",
+        "fundamentals-pool",
+        ["build_tools_flow", f"v{DEPLOYMENT_VERSION}"]
+    )
 ]
 
 def create_deployments():
-    for entrypoint, deployment_name, pool_name in DEPLOYMENTS:
+    # Unpack all four values from each deployment tuple
+    for entrypoint, deployment_name, pool_name, tags in DEPLOYMENTS:
         remote_flow = flow.from_source(
             source=git_storage,
             entrypoint=entrypoint
@@ -32,7 +47,7 @@ def create_deployments():
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
             work_pool_name=pool_name,
-            tags=["security-scan", f"v{DEPLOYMENT_VERSION}"]
+            tags=tags  # Use the tags defined in the manifest
         )
         print(f"Created deployment: {deployment_name}")
 
