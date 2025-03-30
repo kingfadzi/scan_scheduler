@@ -30,7 +30,7 @@ if __name__ == "__main__":
         payload={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME],
-                # "main_language": ["Java"]  # Uncomment if needed
+                "main_language": ["Python"]  # Uncomment if needed
             }
         }
     ))

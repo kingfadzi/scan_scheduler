@@ -1,7 +1,6 @@
-import subprocess
-import venv
 import os
 import logging
+import subprocess
 from pathlib import Path
 
 from shared.models import Dependency, Session
@@ -34,7 +33,7 @@ class PythonDependencyAnalyzer(BaseLogger):
             if root_requirements.exists() and self._is_python_project(root_dir):
                 self.logger.info(f"Found requirements.txt in root directory: {root_dir}")
                 processed_dirs.append(root_dir)
-                dependencies = self._process_directory(root_dir, repo, root_dir)
+                dependencies = self._process_directory(root_dir, repo)
                 all_dependencies.extend(dependencies)
             else:
                 # Search subdirectories for requirements.txt
@@ -47,7 +46,7 @@ class PythonDependencyAnalyzer(BaseLogger):
                     if req_file.exists() and self._is_python_project(current_dir):
                         self.logger.info(f"Found requirements.txt in subdirectory: {current_dir}")
                         processed_dirs.append(current_dir)
-                        dependencies = self._process_directory(current_dir, repo, root_dir)
+                        dependencies = self._process_directory(current_dir, repo)
                         all_dependencies.extend(dependencies)
 
             # If no processed directories, attempt to generate in root
@@ -58,7 +57,7 @@ class PythonDependencyAnalyzer(BaseLogger):
                     req_file = root_dir / "requirements.txt"
                     if req_file.exists():
                         processed_dirs.append(root_dir)
-                        dependencies = self._process_directory(root_dir, repo, root_dir)
+                        dependencies = self._process_directory(root_dir, repo)
                         all_dependencies.extend(dependencies)
                     else:
                         self.logger.warning("Failed to generate requirements.txt in root directory")
@@ -82,28 +81,19 @@ class PythonDependencyAnalyzer(BaseLogger):
         has_req_file = (directory / "requirements.txt").exists()
         return has_relevant_files or has_req_file
 
-    def _process_directory(self, directory, repo, root_dir):
+    def _process_directory(self, directory, repo):
         try:
             self.logger.debug(f"Processing directory: {directory}")
-
-            env_path = directory / "venv"
-            if not env_path.exists():
-                self.logger.debug("Creating virtual environment")
-                venv.create(env_path, with_pip=True)
-
             req_file = directory / "requirements.txt"
+
             if not req_file.exists() or req_file.stat().st_size == 0:
-                if directory == root_dir:
+                if directory == Path(repo['repo_dir']):
                     self._generate_requirements(directory)
                 else:
-                    self.logger.info(f"Skipping requirements generation in {directory} (not root directory)")
-                    if not req_file.exists():
-                        req_file.touch()
+                    self.logger.info(f"Skipping empty/missing requirements.txt in {directory}")
+                    return []
 
-            self._install_requirements(directory, env_path)
-            frozen_file = self._freeze_requirements(directory, env_path)
-
-            return self._parse_dependencies(frozen_file, repo)
+            return self._parse_dependencies(req_file, repo)
 
         except Exception as e:
             self.logger.error(f"Failed to process {directory}: {e}")
@@ -122,57 +112,30 @@ class PythonDependencyAnalyzer(BaseLogger):
             self.logger.error(f"pipreqs failed in {directory}: {e.stderr.decode()}")
             (directory / "requirements.txt").touch()
 
-    def _install_requirements(self, directory, env_path):
-        req_file = directory / "requirements.txt"
-        if req_file.exists():
-            pip = env_path / "bin" / "pip"
-            try:
-                subprocess.run(
-                    [str(pip), "install", "-r", str(req_file)],
-                    cwd=directory,
-                    check=True,
-                    capture_output=True
-                )
-            except subprocess.CalledProcessError as e:
-                self.logger.error(f"Install failed in {directory}: {e.stderr.decode()}")
-
-    def _freeze_requirements(self, directory, env_path):
-        pip = env_path / "bin" / "pip"
-        try:
-            result = subprocess.run(
-                [str(pip), "freeze"],
-                cwd=directory,
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            output = directory / "requirements.frozen.txt"
-            output.write_text(result.stdout)
-            return output
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Freeze failed in {directory}: {e.stderr.decode()}")
-            raise
-
     def _parse_dependencies(self, req_file, repo):
         dependencies = []
         for line in req_file.read_text().splitlines():
-            if "==" in line:
-                try:
-                    name, version = line.split("==", 1)
-                    dependencies.append(Dependency(
-                        repo_id=repo['repo_id'],
-                        name=name.strip(),
-                        version=version.strip(),
-                        package_type="pip"
-                    ))
-                except ValueError:
-                    self.logger.warning(f"Skipping malformed dependency: {line}")
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue  # Skip comments and empty lines
+
+            # Handle common cases with version specifiers
+            parts = line.split("==", 1) if "==" in line else [line, "unknown"]
+            name = parts[0].split(">", 1)[0].split("<", 1)[0].split("~", 1)[0].strip()
+            version = parts[1].strip() if len(parts) > 1 else "unknown"
+
+            dependencies.append(Dependency(
+                repo_id=repo['repo_id'],
+                name=name,
+                version=version,
+                package_type="pip"
+            ))
         return dependencies
 
-
 class Repo:
-    def __init__(self, repo_id):
+    def __init__(self, repo_id, repo_dir):
         self.repo_id = repo_id
+        self.repo_dir = repo_dir
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -182,7 +145,7 @@ if __name__ == "__main__":
 
     analyzer = PythonDependencyAnalyzer()
     repo_directory = "/path/to/your/repository"
-    repo = Repo(repo_id="example-repo")
+    repo = Repo(repo_id="example-repo", repo_dir=repo_directory)
 
     try:
         result = analyzer.run_analysis(repo_directory, repo)
