@@ -11,7 +11,7 @@ WORK_POOL_NAME = "fundamentals-pool"
 FLOW_SEQUENCE = [
     ("fundamental_metrics_flow", "fundamental_metrics_flow"),
     ("build_tools_flow", "build_tools_flow"),
-    ("dependencies_flow", "dependencies_flow-deployment"),  # Use deployment with -deployment suffix
+    ("dependencies_flow", "dependencies_flow-deployment"),
     ("categories_flow", "categories_flow"),
     ("standards_assessment_flow", "standards_assessment_flow"),
     ("vulnerabilities_flow", "vulnerabilities_flow")

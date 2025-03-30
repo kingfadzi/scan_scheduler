@@ -1,13 +1,12 @@
 import asyncio
 import json
 from typing import List, Dict, Optional
-
+from tasks.registry.task_registry import task_registry
 from prefect import flow, task, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.client import get_client
 from pydantic import BaseModel, Field, validator
-
 from tasks.base_tasks import (
     fetch_repositories_task,
     start_task,
@@ -17,7 +16,6 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 
-from tasks.registry.task_registry import task_registry
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
@@ -77,7 +75,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
                         result = await task_fn(repo_dir, repo, parent_run_id)
                         logger.info(f"[{repo_id}] [{task_name}] Completed")
-                        #return result
                         raise
 
                 except Exception as e:

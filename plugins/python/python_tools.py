@@ -2,6 +2,7 @@ import json
 import re
 import logging
 import os
+import venv
 from pathlib import Path
 from sqlalchemy.dialects.postgresql import insert
 
@@ -18,46 +19,79 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
-    @analyze_execution(
-        session_factory=Session,
-        stage="Python Build Tool Analysis",
-        require_language=["Python", "Jupyter Notebook"]
-    )
-    def run_analysis(self, repo_dir, repo):
-        self.logger.info(f"Starting Python build tool analysis for {repo['repo_id']}")
-        results = []
+@analyze_execution(
+    session_factory=Session,
+    stage="Python Dependency Analysis",
+    require_language=["Python", "Jupyter Notebook"]
+)
+def run_analysis(self, repo_dir, repo):
+    all_dependencies = []
+    requirements_locations = []
+    root_dir = Path(repo_dir)
+    central_venv = root_dir / "venv"
 
-        if not self._validate_repo(repo):
-            return json.dumps({"status": "skipped", "reason": "Not a Python project"})
+    try:
+        self.logger.info(f"Analyzing repository: {repo_dir}")
 
-        for root, dirs, files in os.walk(repo_dir):
-            current_dir = Path(root)
-            relative_path = current_dir.relative_to(repo_dir)
+        # 1. Check root directory first
+        if self._is_python_project(root_dir):
+            self.logger.info("Found root-level Python project")
+            requirements_locations.append(root_dir)
 
-            self.logger.debug(f"Scanning directory: {relative_path}")
+        # 2. Check subdirectories if no root requirements
+        if not requirements_locations:
+            self.logger.info("Scanning subdirectories for Python projects")
+            for entry in root_dir.iterdir():
+                if entry.is_dir() and self._is_python_project(entry):
+                    requirements_locations.append(entry)
+                    self.logger.debug(f"Found subproject: {entry.name}")
 
-            build_tool = self._detect_build_tool(current_dir)
-            if not build_tool:
-                continue
+        # 3. Fallback to root if no requirements found
+        if not requirements_locations:
+            self.logger.warning("No dependency files found, generating in root")
+            requirements_locations.append(root_dir)
 
-            python_version = self._detect_python_version(current_dir, build_tool)
-            tool_version = self._detect_tool_version(current_dir, build_tool)
+        # Create central virtual environment
+        if not central_venv.exists():
+            self.logger.debug("Creating central virtual environment")
+            venv.create(central_venv, with_pip=True)
 
-            self.logger.info(f"Found {build_tool} in {relative_path}")
-            self._persist_finding(repo, build_tool, python_version, tool_version)
+        # 4. Process all found locations
+        for location in requirements_locations:
+            self.logger.info(f"Processing: {location.relative_to(root_dir)}")
+            dependencies = self._process_location(location, repo, central_venv)
+            all_dependencies.extend(dependencies)
 
-            results.append({
-                "directory": str(relative_path),
-                "build_tool": build_tool,
-                "tool_version": tool_version,
-                "python_version": python_version
-            })
+        # 5. Persist results
+        self.logger.debug(f"Persisting {len(all_dependencies)} dependencies")
+        self.utils.persist_dependencies(all_dependencies)
 
-        return json.dumps({
-            "repo_id": repo['repo_id'],
-            "findings": results,
-            "total_findings": len(results)
-        }, indent=2)
+        msg = (f"Found {len(all_dependencies)} dependencies "
+               f"across {len(requirements_locations)} locations")
+        self.logger.info(msg)
+        return msg
+
+    except Exception as e:
+        self.logger.exception(f"Analysis failed: {e}")
+        raise
+
+    def _process_directory(self, directory, repo, is_root=False):
+
+        env_path = directory.parent / "venv" if not is_root else directory / "venv"
+
+        if not env_path.exists():
+            self.logger.debug(f"Creating central venv at: {env_path}")
+            venv.create(env_path, with_pip=True)
+
+        req_file = directory / "requirements.txt"
+        if not req_file.exists() and is_root:  # Only generate in root
+            self._generate_requirements(directory)
+
+        self._install_requirements(directory, env_path)
+        frozen_file = self._freeze_requirements(directory, env_path)
+
+        return self._parse_dependencies(frozen_file, repo)
+
 
     def _validate_repo(self, repo):
         repo_languages = self.utils.detect_repo_languages(repo['repo_id'])

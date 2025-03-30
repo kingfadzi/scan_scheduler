@@ -25,7 +25,7 @@ dependencies_flow = create_analysis_flow(
 
 
 if __name__ == "__main__":
-    # Run the flow with async context
+
     asyncio.run(dependencies_flow(
         payload={
             "payload": {
