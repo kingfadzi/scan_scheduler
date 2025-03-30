@@ -43,7 +43,7 @@ DEPLOYMENTS = [
     (
         "flows/fundamentals.py:fundamental_metrics_flow",
         "fundamental_metrics_flow",
-        WORK_POOL_NAME,
+        "fundamentals-pool",
         ["fundamental_metrics_flow", f"v{DEPLOYMENT_VERSION}"]
     )
 ]
