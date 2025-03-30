@@ -75,7 +75,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
                         result = await task_fn(repo_dir, repo, parent_run_id)
                         logger.info(f"[{repo_id}] [{task_name}] Completed")
-                        raise
 
                 except Exception as e:
                     logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
