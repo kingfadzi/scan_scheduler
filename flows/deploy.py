@@ -17,13 +17,13 @@ DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
     (
-        "flows/factory6.py:process_single_repo_flow",
+        "flows/factory.py:process_single_repo_flow",
         "process_single_repo_flow-deoployment",
         "fundamentals-pool",
         ["process_single_repo_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
     (
-        "flows/factory6.py:batch_repo_subflow",
+        "flows/factory.py:batch_repo_subflow",
         "batch_repo_subflow-deployment",
         "fundamentals-pool",
         ["batch_repo_subflow", f"v{DEPLOYMENT_VERSION}"]
@@ -67,7 +67,7 @@ DEPLOYMENTS = [
 ]
 
 def create_deployments():
-  
+
     for entrypoint, deployment_name, pool_name, tags in DEPLOYMENTS:
         remote_flow = flow.from_source(
             source=git_storage,
@@ -77,7 +77,7 @@ def create_deployments():
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
             work_pool_name=pool_name,
-            tags=tags 
+            tags=tags
         )
         print(f"Created deployment: {deployment_name}")
 
