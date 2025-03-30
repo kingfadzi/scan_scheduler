@@ -12,7 +12,7 @@ async def run_gradle_dependency_task(repo_dir, repo, run_id):
     try:
         logger.info(f"Starting Gradle Dependency analysis for repository: {repo['repo_id']}")
         analyzer = GradleDependencyAnalyzer(logger=logger, run_id=run_id)
-        await analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
         logger.info(f"Completed Gradle Dependency analysis for repository: {repo['repo_id']}")
     except Exception as e:
         logger.error(f"Gradle dependency analysis failed: {str(e)}", exc_info=True)
@@ -24,7 +24,7 @@ async def run_gradlejdk_task(repo_dir, repo, run_id):
     try:
         logger.info(f"Starting Gradle JDK analysis for repository: {repo['repo_id']}")
         analyzer = GradlejdkAnalyzer(logger=logger, run_id=run_id)
-        await analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
         logger.info(f"Completed Gradle JDK analysis for repository: {repo['repo_id']}")
     except Exception as e:
         logger.error(f"Gradle JDK analysis failed: {str(e)}", exc_info=True)
@@ -36,7 +36,7 @@ async def run_maven_dependency_task(repo_dir, repo, run_id):
     try:
         logger.info(f"Starting Maven Dependency analysis for repository: {repo['repo_id']}")
         analyzer = MavenDependencyAnalyzer(logger=logger, run_id=run_id)
-        await analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
         logger.info(f"Completed Maven Dependency analysis for repository: {repo['repo_id']}")
     except Exception as e:
         logger.error(f"Maven dependency analysis failed: {str(e)}", exc_info=True)
@@ -48,7 +48,7 @@ async def run_mavenjdk_task(repo_dir, repo, run_id):
     try:
         logger.info(f"Starting Maven JDK analysis for repository: {repo['repo_id']}")
         analyzer = MavenJdkAnalyzer(logger=logger, run_id=run_id)
-        await analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
         logger.info(f"Completed Maven JDK analysis for repository: {repo['repo_id']}")
     except Exception as e:
         logger.error(f"Maven JDK analysis failed: {str(e)}", exc_info=True)
