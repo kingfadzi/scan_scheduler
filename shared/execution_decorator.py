@@ -44,9 +44,10 @@ def analyze_execution(session_factory, stage=None, require_language=None):
 
                     if not actual_lang or actual_lang not in expected_langs:
                         logger.debug(
-                            f"Skipping {stage} for {repo_id} - "
-                            f"Language '{actual_lang or 'none'}' not in required set: {expected_langs}"
+                            f"Skipping {stage} for {repo_id} - not a {', '.join(expected_langs)} repository "
+                            f"[detected: {actual_lang or 'no language'}]"
                         )
+
                         return None
 
                 start_time = time.time()
