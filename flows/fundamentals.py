@@ -2,12 +2,12 @@ from config.config import Config
 from tasks.registry import task_registry
 import asyncio
 from datetime import datetime
-from flows.factory6 import create_analysis_flow
+from flows.factory import create_analysis_flow
 
 VALID_METRICS_TASKS = [
     "core.lizard",
     "core.cloc",
-    "core.goenry", 
+    "core.goenry",
     "core.gitlog"
 ]
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     asyncio.run(fundamental_metrics_flow(
         payload={
             "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME]            
+                "host_name": [Config.GITLAB_HOSTNAME]
             }
         }
     ))

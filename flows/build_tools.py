@@ -1,6 +1,6 @@
-from factory6 import create_analysis_flow
+from factory import create_analysis_flow
 from config.config import Config
-from tasks.registry import task_registry 
+from tasks.registry import task_registry
 
 VALID_BUILD_TASKS = [
     "languages.go.build",

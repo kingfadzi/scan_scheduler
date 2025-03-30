@@ -8,7 +8,6 @@ import asyncio
 DEPLOYMENT_VERSION = "3.2.1"
 WORK_POOL_NAME = "fundamentals-pool"
 
-# List of flow deployments in execution order with correct deployment names
 FLOW_SEQUENCE = [
     ("fundamental_metrics_flow", "fundamental_metrics_flow"),
     ("build_tools_flow", "build_tools_flow"),
@@ -19,7 +18,7 @@ FLOW_SEQUENCE = [
 ]
 
 async def get_deployment_id(flow_name: str, deployment_name: str) -> str:
-    """Get deployment ID by flow and deployment name"""
+
     async with get_client() as client:
         deployment = await client.read_deployment_by_name(
             f"{flow_name}/{deployment_name}"
@@ -27,12 +26,12 @@ async def get_deployment_id(flow_name: str, deployment_name: str) -> str:
         return str(deployment.id)
 
 async def create_chain_automation(source: tuple, target: tuple) -> Automation:
-    """Create automation between two flows"""
+
     source_flow, _ = source
     target_flow, target_deployment = target
-    
+
     deployment_id = await get_deployment_id(target_flow, target_deployment)
-    
+
     return Automation(
         name=f"{source_flow}-to-{target_flow}",
         trigger=EventTrigger(
@@ -53,12 +52,12 @@ async def create_chain_automation(source: tuple, target: tuple) -> Automation:
     )
 
 async def main():
-    # Create automations for each consecutive pair
+
     automations = []
     for i in range(len(FLOW_SEQUENCE)-1):
         source = FLOW_SEQUENCE[i]
         target = FLOW_SEQUENCE[i+1]
-        
+
         automation = await create_chain_automation(source, target)
         await automation.create()
         automations.append(automation)
