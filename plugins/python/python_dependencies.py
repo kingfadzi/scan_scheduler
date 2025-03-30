@@ -29,23 +29,39 @@ class PythonDependencyAnalyzer(BaseLogger):
         try:
             self.logger.info(f"Processing repository at: {repo_dir}")
 
-            for root, dirs, files in os.walk(repo_dir):
-                current_dir = Path(root)
-                if current_dir == root_dir:
-                    continue
+            # Check root directory first
+            root_requirements = root_dir / "requirements.txt"
+            if root_requirements.exists() and self._is_python_project(root_dir):
+                self.logger.info(f"Found requirements.txt in root directory: {root_dir}")
+                processed_dirs.append(root_dir)
+                dependencies = self._process_directory(root_dir, repo, root_dir)
+                all_dependencies.extend(dependencies)
+            else:
+                # Search subdirectories for requirements.txt
+                for current_dir, _, _ in os.walk(repo_dir):
+                    current_dir = Path(current_dir)
+                    if current_dir == root_dir:
+                        continue  # Skip root directory already checked
 
-                if self._is_python_project(current_dir):
-                    self.logger.info(f"Found Python/Jupyter project in: {current_dir}")
-                    processed_dirs.append(current_dir)
-                    dependencies = self._process_directory(current_dir, repo)
-                    all_dependencies.extend(dependencies)
+                    req_file = current_dir / "requirements.txt"
+                    if req_file.exists() and self._is_python_project(current_dir):
+                        self.logger.info(f"Found requirements.txt in subdirectory: {current_dir}")
+                        processed_dirs.append(current_dir)
+                        dependencies = self._process_directory(current_dir, repo, root_dir)
+                        all_dependencies.extend(dependencies)
 
-
+            # If no processed directories, attempt to generate in root
             if not processed_dirs:
                 if self._is_python_project(root_dir):
-                    self.logger.info("Processing root directory as fallback")
-                    dependencies = self._process_directory(root_dir, repo)
-                    all_dependencies.extend(dependencies)
+                    self.logger.info("No requirements.txt found. Generating in root directory.")
+                    self._generate_requirements(root_dir)
+                    req_file = root_dir / "requirements.txt"
+                    if req_file.exists():
+                        processed_dirs.append(root_dir)
+                        dependencies = self._process_directory(root_dir, repo, root_dir)
+                        all_dependencies.extend(dependencies)
+                    else:
+                        self.logger.warning("Failed to generate requirements.txt in root directory")
                 else:
                     self.logger.warning("No Python/Jupyter projects found in repository")
                     return "No Python/Jupyter projects found"
@@ -66,7 +82,7 @@ class PythonDependencyAnalyzer(BaseLogger):
         has_req_file = (directory / "requirements.txt").exists()
         return has_relevant_files or has_req_file
 
-    def _process_directory(self, directory, repo):
+    def _process_directory(self, directory, repo, root_dir):
         try:
             self.logger.debug(f"Processing directory: {directory}")
 
@@ -77,7 +93,12 @@ class PythonDependencyAnalyzer(BaseLogger):
 
             req_file = directory / "requirements.txt"
             if not req_file.exists() or req_file.stat().st_size == 0:
-                self._generate_requirements(directory)
+                if directory == root_dir:
+                    self._generate_requirements(directory)
+                else:
+                    self.logger.info(f"Skipping requirements generation in {directory} (not root directory)")
+                    if not req_file.exists():
+                        req_file.touch()
 
             self._install_requirements(directory, env_path)
             frozen_file = self._freeze_requirements(directory, env_path)
