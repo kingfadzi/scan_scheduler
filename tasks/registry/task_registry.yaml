@@ -17,6 +17,7 @@ core:
   cloc: tasks.core_tasks.run_cloc_task
   category: tasks.core_tasks.run_catgeory_analysis_task
   gitlog: tasks.core_tasks.run_gitlog_task
+  goenry: tasks.core_tasks.run_goenry_task
 
 languages:
   go:
