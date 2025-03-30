@@ -110,29 +110,6 @@ class CheckovResult(Base):
         UniqueConstraint("repo_id", "resource", "check_name", name="checkov_result_uc"),
     )
 
-class CheckovSarifResult(Base):
-    __tablename__ = "checkov_sarif_results"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    repo_id = Column(String, nullable=False)
-    rule_id = Column(Text)
-    rule_name = Column(Text)
-    severity = Column(Text)
-    file_path = Column(Text)
-    start_line = Column(Integer)
-    end_line = Column(Integer)
-    message = Column(Text)
-
-class DependencyCheckResult(Base):
-    __tablename__ = "dependency_check_results"
-    id = Column(Integer, primary_key=True, autoincrement=True)  # Auto-incrementing primary key
-    repo_id = Column(String, nullable=False)  # Repository ID (foreign key or unique reference)
-    cve = Column(String, nullable=False)  # Common Vulnerabilities and Exposures ID
-    description = Column(Text, nullable=True)  # Detailed description of the vulnerability
-    severity = Column(String, nullable=True)  # Severity level (e.g., High, Medium, Low)
-    vulnerable_software = Column(String, nullable=True)  # List of vulnerable software versions
-    __table_args__ = (
-        UniqueConstraint("repo_id", "cve", name="dependency_check_result_uc"),  # Unique constraint on repo_id and cve
-    )
 
 class GrypeResult(Base):
     __tablename__ = "grype_results"
@@ -169,36 +146,6 @@ class CheckovSummary(Base):
         UniqueConstraint("repo_id", "check_type", name="uq_repo_check"),
     )
 
-class CheckovFiles(Base):
-    __tablename__ = "checkov_files"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    repo_id = Column(String, nullable=False)
-    check_type = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
-    file_abs_path = Column(String, nullable=True)
-    resource_count = Column(Integer, nullable=False, default=0)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "check_type", "file_path", name="uq_repo_check_file"),
-    )
-
-class CheckovChecks(Base):
-    __tablename__ = "checkov_checks"
-    id = Column(Integer, primary_key=True)
-    repo_id = Column(String, nullable=False)
-    file_path = Column(Text, nullable=False)
-    check_type = Column(String, nullable=False)
-    check_id = Column(String, nullable=False)
-    check_name = Column(String)
-    result = Column(String)
-    severity = Column(String)
-    resource = Column(Text)
-    guideline = Column(Text)
-    start_line = Column(Integer)
-    end_line = Column(Integer)
-
-    __table_args__ = (
-        UniqueConstraint("repo_id", "file_path", "check_type", "check_id", name="uq_repo_check_id"),
-    )
 
 class TrivyVulnerability(Base):
     __tablename__ = "trivy_vulnerability"
@@ -272,32 +219,6 @@ class ComponentMapping(Base):
     project_key = Column(String)
     repo_slug = Column(String)
 
-class Ruleset(Base):
-    __tablename__ = 'kantra_rulesets'
-    name = Column(String, primary_key=True)
-    description = Column(Text, nullable=True)
-
-class Violation(Base):
-    __tablename__ = "kantra_violations"
-    id = Column(Integer, primary_key=True)
-    repo_id = Column(String)
-    ruleset_name = Column(String)
-    rule_name = Column(String)
-    description = Column(String)
-    category = Column(String)
-    effort = Column(Integer)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "ruleset_name", "rule_name", "description", name="uq_repo_rule_desc"),
-    )
-
-class Label(Base):
-    __tablename__ = 'kantra_labels'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    key = Column(String, nullable=False)
-    value = Column(String, nullable=False)
-    __table_args__ = (
-        UniqueConstraint("key", "value", name="unique_key_value_pair"),
-    )
 
 class CombinedRepoMetrics(Base):
     __tablename__ = "combined_repo_metrics"
@@ -306,10 +227,6 @@ class CombinedRepoMetrics(Base):
     activity_status = Column(String, nullable=False)
     classification_label = Column(String, nullable=True)
 
-class ViolationLabel(Base):
-    __tablename__ = "kantra_violation_labels"
-    violation_id = Column(Integer, primary_key=True)
-    label_id = Column(Integer, primary_key=True)
 
 
 class Dependency(Base):
