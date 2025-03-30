@@ -14,15 +14,18 @@ class TaskRegistry:
     
     def _flatten_structure(self) -> Dict[str, str]:
         flat = {}
-        for category, items in self.registry.items():
-            if isinstance(items, dict):
-                for key, value in items.items():
-                    if isinstance(value, dict):
-                        for sub_key, path in value.items():
-                            flat[f"{key}.{sub_key}"] = path
-                    else:
-                        flat[key] = value
+        # Core tasks
+        for task_name, path in self.registry['core'].items():
+            flat[task_name] = path
+        
+        # Language tasks
+        for category in ['languages']:  # Explicitly process languages
+            for lang, tasks in self.registry[category].items():
+                for task_name, path in tasks.items():
+                    flat_key = f"{category}.{lang}.{task_name}"
+                    flat[flat_key] = path
         return flat
+
     
     def validate_task(self, task_key: str) -> bool:
         return task_key in self.flat_map  # Add this method
