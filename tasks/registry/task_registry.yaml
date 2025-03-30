@@ -21,17 +21,17 @@ core:
 languages:
   go:
     build: tasks.go_tasks.run_go_build_tool_task
-    dependencies: tasks.go_tasks.run_go_dependencies_task
+    dependencies: tasks.go_tasks.run_go_dependency_task
   java:
     gradle:
       build: tasks.java_tasks.run_gradlejdk_task
-      dependencies: tasks.java_tasks.run_gradle_dependencies_task
+      dependencies: tasks.java_tasks.run_gradle_dependency_task
     maven:
       build: tasks.java_tasks.run_mavenjdk_task
-      dependencies: tasks.java_tasks.run_maven_dependencies_task
+      dependencies: tasks.java_tasks.run_maven_dependency_task
   javascript:
     build: tasks.javascript_tasks.run_javascript_build_tool_task
-    dependencies: tasks.javascript_tasks.run_javascript_dependencies_task
+    dependencies: tasks.javascript_tasks.run_javascript_dependency_task
   python:
     build: tasks.python_tasks.run_python_build_tool_task
-    dependencies: tasks.python_tasks.run_python_dependencies_task
+    dependencies: tasks.python_tasks.run_python_dependency_task
