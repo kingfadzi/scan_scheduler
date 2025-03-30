@@ -1,6 +1,6 @@
 from datetime import datetime
 import asyncio
-from flows.factory import create_analysis_flow
+from flows.factory6 import create_analysis_flow
 from config.config import Config
 from tasks.registry import task_registry 
 
@@ -22,6 +22,7 @@ dependencies_flow = create_analysis_flow(
     per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
     task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
 )
+
 
 if __name__ == "__main__":
     # Run the flow with async context
