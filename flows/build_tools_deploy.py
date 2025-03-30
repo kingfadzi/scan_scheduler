@@ -45,6 +45,24 @@ DEPLOYMENTS = [
         "fundamental_metrics_flow",
         "fundamentals-pool",
         ["fundamental_metrics_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+     (
+        "flows/standards.py:standards_assessment_flow",
+        "standards_assessment_flow",
+        "fundamentals-pool",
+        ["standards_assessment_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+     (
+        "flows/vulnerabilities.py:vulnerabilities_flow",
+        "vulnerabilities_flow",
+        "fundamentals-pool",
+        ["vulnerabilities_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+     (
+        "flows/categories.py:categories_flow",
+        "categories_flow",
+        "fundamentals-pool",
+        ["categories_flow", f"v{DEPLOYMENT_VERSION}"]
     )
 ]
 
