@@ -140,8 +140,9 @@ async def submit_batch_subflow(
             deployment = await client.read_deployment_by_name(
                 "batch_repo_subflow/batch_repo_subflow-deployment"
             )
-
-            flow_run_name = f"{parent_start_time}_batch_{batch_number:04d}"
+            
+            flow_run_name = (f"{config.flow_prefix}_"
+                             f"{parent_start_time}_batch_{batch_number:04d}")
             flow_run = await client.create_flow_run_from_deployment(
                 deployment_id=deployment.id,
                 parameters={
