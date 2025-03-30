@@ -107,7 +107,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
-# The following flows remain unchanged except for removed TASK_REGISTRY reference
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(max_workers=5),

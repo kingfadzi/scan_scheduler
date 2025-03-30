@@ -1,80 +1,60 @@
-import asyncio
-import aiohttp
-from prefect import flow, get_client
-from prefect.deployments import run_deployment
-from config.config import Config
-from shared.utils import Utils
+from prefect.automations import Automation
+from prefect.events.schemas.automations import EventTrigger
+from prefect.events.actions import RunDeployment
 
-DEPLOYMENTS = [
-    "fundamental-metrics-flow/fundamentals",
-    "build_tools_flow/build_tools",
-    "dependencies_flow/dependencies",
-    "standards-assessment-flow/standards-assessment",
-    "vulnerabilities-flow/vulnerabilities"
+DEPLOYMENT_VERSION = "3.2.1"
+
+AUTOMATIONS = [
+    {
+        "name": "metrics-to-build-tools",
+        "source": "fundamental_metrics_flow",
+        "target": "build_tools_flow"
+    },
+    {
+        "name": "build-to-dependencies",
+        "source": "build_tools_flow",
+        "target": "dependencies_flow"
+    },
+    {
+        "name": "dependencies-to-categories",
+        "source": "dependencies_flow",
+        "target": "categories_flow"
+    },
+    {
+        "name": "categories-to-standards",
+        "source": "categories_flow",
+        "target": "standards_assessment_flow"
+    },
+    {
+        "name": "standards-to-vulnerabilities",
+        "source": "standards_assessment_flow",
+        "target": "vulnerabilities_flow"
+    }
 ]
 
-example_payload = {
-    "payload": {
-        "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-        "activity_status": ["ACTIVE"]
-    }
-}
-
-
-async def wait_for_flow_completion(flow_run_id):
-
-    client = get_client()
-
-    while True:
-        try:
-            flow_run = await client.read_flow_run(flow_run_id)
-            status = flow_run.state_name
-
-            print(f"Flow run {flow_run_id} status: {status}")
-
-            if status in ["Completed", "Failed", "Cancelled"]:
-                if status != "Completed":
-                    raise RuntimeError(f"Flow {flow_run_id} failed with status: {status}")
-                return status
-
-        except aiohttp.ClientError as e:
-            print(f"Error while polling flow {flow_run_id}: {e}")
-
-        await asyncio.sleep(5)  # Poll every 5 seconds
-
-async def run_deployment_with_retries(deployment_name, payload, retries=3):
-
-    for attempt in range(retries):
-        try:
-            print(f"Attempt {attempt + 1}: Triggering deployment {deployment_name}...")
-            flow_run_metadata = await run_deployment(name=deployment_name, parameters=payload)
-            return flow_run_metadata.id
-
-        except Exception as e:
-            print(f"Error triggering {deployment_name}: {e}")
-            if attempt < retries - 1:
-                print("Retrying...")
-                await asyncio.sleep(5)  # Backoff before retrying
-            else:
-                raise RuntimeError(f"Deployment {deployment_name} failed after {retries} attempts.")
-
-@flow(name="Flow Orchestrator", flow_run_name=Utils.generate_main_flow_run_name)
-async def flow_orchestrator():
-
-    client = get_client()
-
-    for deployment_name in DEPLOYMENTS:
-        flow_run_id = await run_deployment_with_retries(deployment_name, example_payload)
-
-        print(f"Triggered deployment {deployment_name}, waiting for completion (Flow Run ID: {flow_run_id})")
-
-        await wait_for_flow_completion(flow_run_id)
+def create_automations():
+    automations = []
+    for config in AUTOMATIONS:
+        automation = Automation(
+            name=config["name"],
+            trigger=EventTrigger(
+                expect={"prefect.flow-run.Completed"},
+                match_related={
+                    "prefect.resource.name": config["source"],
+                    "prefect.resource.role": "flow"
+                },
+                posture="Reactive",
+                threshold=1
+            ),
+            actions=[
+                RunDeployment(
+                    parameters={"payload": "{{ event.payload }}"},
+                    deployment_name=f"{config['target']}/{config['target']}",
+                )
+            ]
+        ).create()
+        automations.append(automation)
+    return automations
 
 if __name__ == "__main__":
-    print("Starting Flow Orchestrator...")
-    try:
-        asyncio.run(flow_orchestrator())
-        print("All flows completed successfully.")
-    except Exception as e:
-        print(f"Orchestration failed: {e}")
-        exit(1)
+    create_automations()
