@@ -39,6 +39,12 @@ DEPLOYMENTS = [
         "dependencies_flow-deployment",
         "fundamentals-pool",
         ["dependencies_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+    (
+        "flows/dependencies.py:dependencies_flow",
+        "dependencies_flow-deployment",
+        WORK_POOL_NAME,
+        ["dependencies_flow", f"v{DEPLOYMENT_VERSION}"]
     )
 ]
 

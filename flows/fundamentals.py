@@ -1,30 +1,32 @@
 from config.config import Config
+from tasks.registry import task_registry
+import asyncio
 from datetime import datetime
 from flows.factory import create_analysis_flow
-from tasks.core_tasks import run_lizard_task, run_cloc_task, run_goenry_task, run_gitlog_task
 
-sub_tasks = [
-    run_lizard_task,
-    run_cloc_task,
-    run_goenry_task,
-    run_gitlog_task
+VALID_METRICS_TASKS = [
+    "core.lizard",
+    "core.cloc",
+    "core.goenry", 
+    "core.gitlog"
 ]
 
 fundamental_metrics_flow = create_analysis_flow(
     flow_name="fundamental_metrics_flow",
-    flow_run_name=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-    default_sub_tasks=sub_tasks,
-    default_sub_dir="fundamental_metric",
+    default_sub_dir="fundamental_metrics",
     default_flow_prefix="METRICS",
-    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
+    default_additional_tasks=VALID_METRICS_TASKS,
+    processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
+    processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
+    per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
+    task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
 )
 
-
 if __name__ == "__main__":
-    fundamental_metrics_flow({
-        "payload": {
-            "host_name": [Config.GITLAB_HOSTNAME],
-            "main_language": ["Java"]
+    asyncio.run(fundamental_metrics_flow(
+        payload={
+            "payload": {
+                "host_name": [Config.GITLAB_HOSTNAME]            
+            }
         }
-    })
+    ))
