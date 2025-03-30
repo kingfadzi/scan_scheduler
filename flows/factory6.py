@@ -17,7 +17,7 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 
-from tasks.registry import task_registry  # Updated import
+from tasks.registry.task_registry import task_registry
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)

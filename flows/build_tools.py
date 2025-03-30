@@ -1,7 +1,7 @@
 # build_tools.py
 from factory6 import create_analysis_flow
 from config.config import Config
-from tasks.registry import task_registry  # Import the registry
+from tasks.registry.task_registry import task_registry
 
 # Get valid task keys from the registry directly
 VALID_BUILD_TASKS = [
