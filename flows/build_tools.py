@@ -1,19 +1,18 @@
 # build_tools.py
 from factory6 import create_analysis_flow
 from config.config import Config
-from tasks.registry.task_registry import task_registry
+from tasks.registry import task_registry  # Correct import path
 
-# Get valid task keys from the registry directly
-# build_tools.py
+# Valid task keys based on registry structure
 VALID_BUILD_TASKS = [
     "languages.go.build",
-    "languages.java.gradle",
-    "languages.java.maven",
-    "languages.js.build",
+    "languages.java.gradle.build",
+    "languages.java.maven.build",
+    "languages.javascript.build",
     "languages.python.build"
 ]
 
-# Create flow with corrected task keys
+# Create the build tools flow
 build_tools_flow = create_analysis_flow(
     flow_name="build_tools_flow",
     default_sub_dir="build_tools",
@@ -25,13 +24,12 @@ build_tools_flow = create_analysis_flow(
     task_concurrency=3
 )
 
-
 if __name__ == "__main__":
     import asyncio
-    # For local testing, run the flow directly
+    # Local test payload
     asyncio.run(build_tools_flow(
         payload={
-            "payload": {  # Outer payload key as required
+            "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME],
             }
         }
