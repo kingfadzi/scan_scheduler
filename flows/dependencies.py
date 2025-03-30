@@ -1,36 +1,35 @@
 from datetime import datetime
-
+import asyncio
 from flows.factory import create_analysis_flow
-
 from config.config import Config
-from tasks.go_tasks import run_go_dependency_task
-from tasks.java_tasks import run_gradle_dependency_task, run_maven_dependency_task
-from tasks.javascript_tasks import run_javascript_dependency_task
-from tasks.python_tasks import run_python_dependency_task
+from tasks.registry import task_registry 
 
-sub_tasks = [
-    run_go_dependency_task,
-    run_gradle_dependency_task,
-    run_maven_dependency_task,
-    run_javascript_dependency_task,
-    run_python_dependency_task
+VALID_DEPENDENCY_TASKS = [
+    "languages.go.dependencies",
+    "languages.java.gradle.dependencies",
+    "languages.java.maven.dependencies",
+    "languages.javascript.dependencies",
+    "languages.python.dependencies"
 ]
 
 dependencies_flow = create_analysis_flow(
     flow_name="dependencies_flow",
-    flow_run_name=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-    default_sub_tasks=sub_tasks,
     default_sub_dir="dependencies",
     default_flow_prefix="DEPENDENCIES",
-    default_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_concurrency=Config.DEFAULT_CONCURRENCY_LIMIT
+    default_additional_tasks=VALID_DEPENDENCY_TASKS,
+    processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
+    processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
+    per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
+    task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
 )
 
-
 if __name__ == "__main__":
-    dependencies_flow({
-        "payload": {
-            "host_name": [Config.GITLAB_HOSTNAME],
-            #"main_language": ["Java"]
+    # Run the flow with async context
+    asyncio.run(dependencies_flow(
+        payload={
+            "payload": {
+                "host_name": [Config.GITLAB_HOSTNAME],
+                # "main_language": ["Java"]  # Uncomment if needed
+            }
         }
-    })
+    ))

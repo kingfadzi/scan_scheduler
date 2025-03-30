@@ -7,7 +7,7 @@ from config.config import Config
 # Allow Git to bypass strict host key checking
 os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 
-# Define Git-backed storage so flows are loaded from your repository
+# Define Git-backed storage so flows are loaded from git repository
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
     branch=Config.FLOW_GIT_BRANCH,  # Use the desired branch
@@ -33,11 +33,17 @@ DEPLOYMENTS = [
         "build_tools_flow",
         "fundamentals-pool",
         ["build_tools_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+    (
+        "flows/dependencies.py:dependencies_flow",
+        "dependencies_flow-deployment",
+        "fundamentals-pool",
+        ["dependencies_flow", f"v{DEPLOYMENT_VERSION}"]
     )
 ]
 
 def create_deployments():
-    # Unpack all four values from each deployment tuple
+  
     for entrypoint, deployment_name, pool_name, tags in DEPLOYMENTS:
         remote_flow = flow.from_source(
             source=git_storage,
@@ -47,7 +53,7 @@ def create_deployments():
             name=deployment_name,
             version=DEPLOYMENT_VERSION,
             work_pool_name=pool_name,
-            tags=tags  # Use the tags defined in the manifest
+            tags=tags 
         )
         print(f"Created deployment: {deployment_name}")
 
