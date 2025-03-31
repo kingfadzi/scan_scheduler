@@ -115,7 +115,36 @@ async def process_single_repo_task(config: FlowConfig, repo: Dict) -> Dict:
 
 SUBPROCESS_SEMAPHORE = asyncio.Semaphore(5)  # Adjust this number as needed
 
+@flow(
+    name="batch_repo_subflow",
+    task_runner=ConcurrentTaskRunner(),  # Keep runner but add our own semaphore
+    persist_result=True
+)
+async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
+    logger = get_run_logger()
+    parent_run_id = str(get_run_context().flow_run.id)
+    logger.info(f"Starting batch processing of {len(repos)} repositories")
 
+    async def process_with_concurrency(repo: Dict):
+        async with SUBPROCESS_SEMAPHORE:
+            logger.debug(f"Acquired semaphore for {repo['repo_id']}")
+            try:
+                # Directly await the task instead of using submit()
+                return await process_single_repo_task.fn(
+                    config=config,
+                    repo=repo,
+                    parent_run_id=parent_run_id
+                )
+            finally:
+                logger.debug(f"Releasing semaphore for {repo['repo_id']}")
+
+    # Create all coroutines but let the semaphore control execution
+    tasks = [process_with_concurrency(repo) for repo in repos]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
+    return results
 
 async def submit_batch_subflow(
         config: FlowConfig,
