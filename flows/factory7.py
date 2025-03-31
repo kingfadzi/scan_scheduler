@@ -15,7 +15,7 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-
+from prefect.utilities.annotations import unmapped
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
@@ -107,11 +107,12 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
-
 @task
-async def process_single_repo_task(config: FlowConfig, repo: Dict) -> Dict:
-    return await process_single_repo_flow(config, repo, config.parent_run_id)
-
+async def safe_process_repo(config, repo, parent_run_id):
+    try:
+        return await process_single_repo_flow(config, repo, parent_run_id)
+    except Exception as e:
+        return e
 
 @flow(
     name="batch_repo_subflow",
@@ -123,11 +124,16 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    results = await asyncio.gather(
-        *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
-        return_exceptions=True
+    # Map the safe task over all repos
+    results = await safe_process_repo.map(
+        config=unmapped(config),
+        repo=repos,
+        parent_run_id=unmapped(parent_run_id)
     )
 
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
+    return results
     success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
