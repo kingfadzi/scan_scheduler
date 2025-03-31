@@ -47,7 +47,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
     try:
         # --- Cloning Phase ---
         logger.debug(f"[{repo_id}] Starting cloning process")
-        repo_dir = await clone_repository_task.submit(repo, config.sub_dir, parent_run_id)
+        repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
         logger.info(f"[{repo_id}] Successfully cloned to {repo_dir}")
 
         # --- Additional Tasks Execution ---
@@ -168,7 +168,7 @@ def create_analysis_flow(
                 task_concurrency=task_concurrency
             )
 
-            await start_task.submit(flow_prefix=default_flow_prefix)
+            await start_task(flow_prefix=default_flow_prefix)
 
             # Stream and batch repositories
             async for repo in fetch_repositories_task.submit(payload, default_batch_size):
