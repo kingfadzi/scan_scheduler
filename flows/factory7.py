@@ -131,9 +131,9 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Launch each repository processing as a task, controlled by the batch's runner.
+    # Directly await the tasks to ensure they run in the same event loop.
     results = await asyncio.gather(
-        *[process_single_repo_task.submit(config, repo).result() for repo in repos],
+        *[process_single_repo_task(config, repo) for repo in repos],
         return_exceptions=True
     )
 
@@ -200,7 +200,6 @@ def create_analysis_flow(
                 current_batch.append(repo)
                 if len(current_batch) >= processing_batch_size:
                     logger.info(f"Submitting batch {batch_counter} with {len(current_batch)} repositories")
-                    # Now call the subflow without needing to pass parent_run_id separately.
                     batch_result = await batch_repo_subflow(config, current_batch.copy())
                     logger.info(f"Batch {batch_counter} result: {batch_result}")
                     current_batch = []
