@@ -87,7 +87,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             results = await asyncio.gather(*tasks, return_exceptions=False)
             success_count = sum(1 for r in results if not isinstance(r, Exception))
             logger.info(f"[{repo_id}] Completed {success_count}/{len(tasks)} tasks")
-
             if success_count < len(tasks):
                 raise RuntimeError(f"{len(tasks)-success_count} tasks failed")
 
@@ -126,12 +125,11 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict], parent_run_i
     """
     Processes a batch of repositories.
     The parent_run_id is passed in from the main flow to avoid needing to access
-    the flow run context from within a subflow.
+    the flow run context from within this subflow.
     """
     logger = get_run_logger()
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Launch each repository processing as a task, controlled by the batch's runner.
     results = await asyncio.gather(
         *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
         return_exceptions=True
@@ -176,7 +174,6 @@ def create_analysis_flow(
         current_batch = []
 
         try:
-            # Get the parent flow run from the current context.
             parent_flow_run = get_parent_flow_run()
             parent_run_id = str(parent_flow_run.id)
             parent_start_time = parent_flow_run.start_time
@@ -198,14 +195,15 @@ def create_analysis_flow(
                 current_batch.append(repo)
                 if len(current_batch) >= processing_batch_size:
                     logger.info(f"Submitting batch {batch_counter} with {len(current_batch)} repositories")
-                    batch_result = await batch_repo_subflow(config, current_batch.copy(), parent_run_id)
+                    # Use .call() to run the subflow in the same event loop as the parent flow.
+                    batch_result = batch_repo_subflow.call(config, current_batch.copy(), parent_run_id)
                     logger.info(f"Batch {batch_counter} result: {batch_result}")
                     current_batch = []
                     batch_counter += 1
 
             if current_batch:
                 logger.info(f"Submitting final batch {batch_counter} with {len(current_batch)} repositories")
-                batch_result = await batch_repo_subflow(config, current_batch, parent_run_id)
+                batch_result = batch_repo_subflow.call(config, current_batch, parent_run_id)
                 logger.info(f"Batch {batch_counter} result: {batch_result}")
                 batch_counter += 1
 
