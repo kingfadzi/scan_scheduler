@@ -124,7 +124,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     results = await asyncio.gather(
-        *[process_single_repo_task(config, repo, parent_run_id) for repo in repos],
+        *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
         return_exceptions=True
     )
 
