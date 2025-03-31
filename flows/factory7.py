@@ -15,8 +15,7 @@ from tasks.base_tasks import (
     update_status_task,
     refresh_views_task
 )
-from prefect.utilities.annotations import unmapped
-from prefect.states import State
+
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
@@ -36,14 +35,13 @@ class FlowConfig(BaseModel):
             )
         return v
 
-
 @flow(
     name="process_single_repo_flow",
     persist_result=True,
     retries=0,
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
-def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
+async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     repo_id = repo["repo_id"]
     repo_slug = repo["repo_slug"]
@@ -53,7 +51,7 @@ def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str)
     try:
         # --- Cloning Phase ---
         logger.debug(f"[{repo_id}] Starting cloning process")
-        repo_dir = clone_repository_task(repo, config.sub_dir, parent_run_id)
+        repo_dir = await clone_repository_task(repo, config.sub_dir, parent_run_id)
         logger.info(f"[{repo_id}] Successfully cloned to {repo_dir}")
 
         # --- Additional Tasks Execution ---
@@ -62,38 +60,34 @@ def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str)
         else:
             logger.info(f"[{repo_id}] Starting {len(config.additional_tasks)} tasks")
 
-            from concurrent.futures import ThreadPoolExecutor
+            task_semaphore = asyncio.Semaphore(config.task_concurrency)
+            logger.debug(f"[{repo_id}] Semaphore initialized")
 
-            def run_task(task_name):
+            async def run_task(task_name):
                 try:
-                    logger.info(f"[{repo_id}] [{task_name}] Starting execution")
+                    async with task_semaphore:
+                        logger.info(f"[{repo_id}] [{task_name}] Starting execution")
 
-                    task_path = task_registry.get_task_path(task_name)
-                    module_path, fn_name = task_path.rsplit('.', 1)
-                    module = __import__(module_path, fromlist=[fn_name])
-                    task_fn = getattr(module, fn_name)
+                        task_path = task_registry.get_task_path(task_name)
+                        module_path, fn_name = task_path.rsplit('.', 1)
+                        module = __import__(module_path, fromlist=[fn_name])
+                        task_fn = getattr(module, fn_name)
 
-                    result = task_fn(repo_dir, repo, parent_run_id)
-                    logger.info(f"[{repo_id}] [{task_name}] Completed")
-                    return result
+                        result = await task_fn(repo_dir, repo, parent_run_id)
+                        logger.info(f"[{repo_id}] [{task_name}] Completed")
+
                 except Exception as e:
                     logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
                     raise
 
-            with ThreadPoolExecutor(max_workers=config.task_concurrency) as executor:
-                futures = [executor.submit(run_task, t) for t in config.additional_tasks]
-                results = []
-                for future in futures:
-                    try:
-                        results.append(future.result())
-                    except Exception as e:
-                        results.append(e)
+            tasks = [run_task(t) for t in config.additional_tasks]
+            results = await asyncio.gather(*tasks, return_exceptions=False)
 
             success_count = sum(1 for r in results if not isinstance(r, Exception))
-            logger.info(f"[{repo_id}] Completed {success_count}/{len(results)} tasks")
+            logger.info(f"[{repo_id}] Completed {success_count}/{len(tasks)} tasks")
 
-            if success_count < len(results):
-                raise RuntimeError(f"{len(results)-success_count} tasks failed")
+            if success_count < len(tasks):
+                raise RuntimeError(f"{len(tasks)-success_count} tasks failed")
 
         result["status"] = "success"
         return result
@@ -105,19 +99,12 @@ def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str)
     finally:
         logger.debug(f"[{repo_id}] Starting cleanup")
         try:
-            cleanup_repo_task(repo_dir, parent_run_id)
-            update_status_task(repo, parent_run_id)
+            await asyncio.gather(
+                cleanup_repo_task(repo_dir, parent_run_id),
+                update_status_task(repo, parent_run_id)
+            )
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
-
-
-@task
-def safe_process_repo(config, repo, parent_run_id):
-    try:
-        result = process_single_repo_flow(config, repo, parent_run_id)
-        return {"status": "success", **result}
-    except Exception as e:
-        return {"status": "error", "exception": str(e)}
 
 @flow(
     name="batch_repo_subflow",
@@ -129,30 +116,23 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Create mapped tasks
-    states: List[State] = safe_process_repo.map(
-        config=unmapped(config),
-        repo=repos,
-        parent_run_id=unmapped(parent_run_id),
-        return_state=True
+    results = await asyncio.gather(
+        *[safe_process_repo(config, repo, parent_run_id) for repo in repos],
+        return_exceptions=True
     )
 
-    # Process results
-    successful = []
-    for state in states:
-        if state.is_completed():
-            try:
-                result = state.result()
-                if result is not None:
-                    successful.append(result)
-            except Exception as e:
-                logger.error(f"Failed to retrieve result: {str(e)}")
-        else:
-            error_msg = state.message[:200] if state.message else "Unknown error"
-            logger.warning(f"Failed processing: {error_msg}")
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
+    return results
 
-    logger.info(f"Processing complete. Total successful: {len(successful)}/{len(repos)}")
-    return successful
+
+@task(task_run_name="{repo[repo_slug]}", retries=1)
+async def safe_process_repo(config, repo, parent_run_id):
+    try:
+        result = await process_single_repo_flow(config, repo, parent_run_id)
+        return {"status": "success", **result}
+    except Exception as e:
+        return {"status": "error", "exception": str(e), "repo": repo['name']}
 
 async def submit_batch_subflow(
         config: FlowConfig,
