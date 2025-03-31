@@ -111,9 +111,8 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 @task
 async def safe_process_repo(config, repo, parent_run_id):
     try:
-        # Assuming process_single_repo_flow is an async function
         result = await process_single_repo_flow(config, repo, parent_run_id)
-        return result
+        return {"status": "success", **result}
     except Exception as e:
         return {"status": "error", "exception": str(e)}
 
@@ -127,20 +126,25 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Map tasks without immediate await
-    future_results = safe_process_repo.map(
+    # Create mapped tasks
+    future_list = safe_process_repo.map(
         config=unmapped(config),
         repo=repos,
         parent_run_id=unmapped(parent_run_id)
     )
 
-    # Get results after all tasks complete
-    results = [r for r in future_results]
+    # Collect results properly
+    results = []
+    for future in future_list:
+        try:
+            result = await future
+            results.append(result)
+        except Exception as e:
+            results.append({"status": "error", "exception": str(e)})
 
     success_count = sum(1 for r in results if r.get("status") == "success")
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
-
 
 async def submit_batch_subflow(
         config: FlowConfig,
