@@ -120,17 +120,30 @@ async def process_single_repo_task(config: FlowConfig, repo: Dict) -> Dict:
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
-    parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    results = await asyncio.gather(
-        *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
-        return_exceptions=True
-    )
+    # Helper: break the repos list into chunks of size n (here, 5)
+    def chunker(lst, n):
+        for i in range(0, len(lst), n):
+            yield lst[i:i+n]
 
-    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    results = []
+    # Process repos in chunks of 5.
+    for chunk in chunker(repos, 5):
+        # Submit tasks for the current chunk and await their completion.
+        chunk_results = await asyncio.gather(
+            *[process_single_repo_task.submit(config, repo).result() for repo in chunk],
+            return_exceptions=True
+        )
+        results.extend(chunk_results)
+        logger.info(f"Processed a chunk of {len(chunk)} repositories")
+
+    success_count = sum(
+        1 for r in results if not isinstance(r, Exception) and r.get("status") == "success"
+    )
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
+
 
 async def submit_batch_subflow(
         config: FlowConfig,
