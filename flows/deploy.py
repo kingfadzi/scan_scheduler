@@ -17,13 +17,13 @@ DEPLOYMENT_VERSION = "3.2.1"
 
 DEPLOYMENTS = [
     (
-        "flows/factory.py:process_single_repo_flow",
+        "flows/factory7.py:process_single_repo_flow",
         "process_single_repo_flow-deoployment",
         "fundamentals-pool",
         ["process_single_repo_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
     (
-        "flows/factory.py:batch_repo_subflow",
+        "flows/factory7.py:batch_repo_subflow",
         "batch_repo_subflow-deployment",
         "fundamentals-pool",
         ["batch_repo_subflow", f"v{DEPLOYMENT_VERSION}"]
