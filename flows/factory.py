@@ -116,20 +116,40 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    results = await asyncio.gather(
-        *[process_single_repo_flow(config, repo, parent_run_id) for repo in repos],
-        return_exceptions=True
-    )
+    batch_size = config.per_batch_workers
 
-    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
-    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
+    results = []
+    for batch_num, start_idx in enumerate(range(0, len(repos), batch_size), 1):
+        batch = repos[start_idx:start_idx + batch_size]
+        logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
+
+        batch_results = await asyncio.gather(
+            *[safe_process_repo(config, repo, parent_run_id) for repo in batch],
+            return_exceptions=True
+        )
+        results.extend(batch_results)
+
+        success = sum(1 for r in batch_results if not isinstance(r, Exception) and r.get("status") == "success")
+        logger.info(f"Batch {batch_num} complete - Success: {success}/{len(batch)}")
+
+    overall_success = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    logger.info(f"All batches processed. Total Success: {overall_success}/{len(repos)}")
     return results
 
+
+@task(task_run_name="{repo[repo_slug]}", retries=1)
+async def safe_process_repo(config, repo, parent_run_id):
+    try:
+        result = await process_single_repo_flow(config, repo, parent_run_id)
+        return {"status": "success", **result}
+    except Exception as e:
+        return {"status": "error", "exception": str(e), "repo": repo['name']}
+
 async def submit_batch_subflow(
-    config: FlowConfig,
-    batch: List[Dict],
-    parent_start_time: str,
-    batch_number: int
+        config: FlowConfig,
+        batch: List[Dict],
+        parent_start_time: str,
+        batch_number: int
 ) -> str:
 
     logger = get_run_logger()
