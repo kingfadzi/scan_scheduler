@@ -125,7 +125,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     # Map the safe task over all repos
-    results = await safe_process_repo.map(
+    results = safe_process_repo.map(
         config=unmapped(config),
         repo=repos,
         parent_run_id=unmapped(parent_run_id)
