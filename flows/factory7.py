@@ -133,7 +133,8 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     states: List[State] = safe_process_repo.map(
         config=unmapped(config),
         repo=repos,
-        parent_run_id=unmapped(parent_run_id)
+        parent_run_id=unmapped(parent_run_id),
+        return_state=True
     )
 
     # Process results
