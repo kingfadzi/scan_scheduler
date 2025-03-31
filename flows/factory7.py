@@ -108,10 +108,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
-from prefect import flow, task, get_run_logger, get_run_context, unmapped
-from prefect.task_runners import ConcurrentTaskRunner
-from typing import List, Dict
-
 @task
 async def safe_process_repo(config, repo, parent_run_id):
     try:
