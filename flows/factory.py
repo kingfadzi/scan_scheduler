@@ -5,6 +5,7 @@ from tasks.registry.task_registry import task_registry
 from prefect import flow, task, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
+from prefect.client import get_client
 from pydantic import BaseModel, Field, validator
 from tasks.base_tasks import (
     fetch_repositories_task,
@@ -34,7 +35,6 @@ class FlowConfig(BaseModel):
             )
         return v
 
-
 @flow(
     name="process_single_repo_flow",
     persist_result=True,
@@ -44,6 +44,7 @@ class FlowConfig(BaseModel):
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     repo_id = repo["repo_id"]
+    repo_slug = repo["repo_slug"]
     repo_dir = None
     result = {"status": "failed", "repo": repo_id}
 
@@ -58,6 +59,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             logger.warning(f"[{repo_id}] No additional tasks configured")
         else:
             logger.info(f"[{repo_id}] Starting {len(config.additional_tasks)} tasks")
+
             task_semaphore = asyncio.Semaphore(config.task_concurrency)
             logger.debug(f"[{repo_id}] Semaphore initialized")
 
@@ -65,21 +67,25 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
                 try:
                     async with task_semaphore:
                         logger.info(f"[{repo_id}] [{task_name}] Starting execution")
+
                         task_path = task_registry.get_task_path(task_name)
                         module_path, fn_name = task_path.rsplit('.', 1)
                         module = __import__(module_path, fromlist=[fn_name])
                         task_fn = getattr(module, fn_name)
-                        res = await task_fn(repo_dir, repo, parent_run_id)
+
+                        result = await task_fn(repo_dir, repo, parent_run_id)
                         logger.info(f"[{repo_id}] [{task_name}] Completed")
-                        return res
+
                 except Exception as e:
                     logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
                     raise
 
             tasks = [run_task(t) for t in config.additional_tasks]
             results = await asyncio.gather(*tasks, return_exceptions=False)
+
             success_count = sum(1 for r in results if not isinstance(r, Exception))
             logger.info(f"[{repo_id}] Completed {success_count}/{len(tasks)} tasks")
+
             if success_count < len(tasks):
                 raise RuntimeError(f"{len(tasks)-success_count} tasks failed")
 
@@ -90,7 +96,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         logger.error(f"[{repo_id}] Flow failed: {str(e)}")
         result["error"] = str(e)
         return result
-
     finally:
         logger.debug(f"[{repo_id}] Starting cleanup")
         try:
@@ -101,43 +106,53 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
-
-@task
-async def process_single_repo_task(config: FlowConfig, repo: Dict, parent_run_id: str) -> Dict:
-    """
-    Wraps the single repository flow as a Prefect task so that its concurrency
-    can be managed by the batch's ConcurrentTaskRunner.
-    """
-    return await process_single_repo_flow(config, repo, parent_run_id)
-
-
 @flow(
     name="batch_repo_subflow",
-    persist_result=True,
-    task_runner=ConcurrentTaskRunner(max_workers=5)
+    task_runner=ConcurrentTaskRunner(max_workers=5),
+    persist_result=True
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
-    """
-    Processes a batch of repositories sequentially as a separate flow.
-    Inside this batch, the processing of each repository is executed concurrently
-    (and controlled via process_single_repo_task).
-    """
     logger = get_run_logger()
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Launch each repository processing as a task
     results = await asyncio.gather(
-        *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
+        *[process_single_repo_flow(config, repo, parent_run_id) for repo in repos],
         return_exceptions=True
     )
 
-    success_count = sum(
-        1 for r in results if not isinstance(r, Exception) and r.get("status") == "success"
-    )
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
 
+async def submit_batch_subflow(
+    config: FlowConfig,
+    batch: List[Dict],
+    parent_start_time: str,
+    batch_number: int
+) -> str:
+
+    logger = get_run_logger()
+    try:
+        async with get_client() as client:
+            deployment = await client.read_deployment_by_name(
+                "batch_repo_subflow/batch_repo_subflow-deployment"
+            )
+
+            flow_run_name = (f"{config.flow_prefix}_"
+                             f"{parent_start_time}_batch_{batch_number:04d}")
+            flow_run = await client.create_flow_run_from_deployment(
+                deployment_id=deployment.id,
+                parameters={
+                    "config": config.model_dump(),
+                    "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
+                },
+                name=flow_run_name
+            )
+            return flow_run.id
+    except Exception as e:
+        logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
+        raise
 
 def create_analysis_flow(
         flow_name: str,
@@ -154,8 +169,7 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with batched processing",
         validate_parameters=False,
-        # Note: We are not submitting batches concurrently.
-        # Each batch is processed sequentially while the repositories inside the batch run concurrently.
+        task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers)
     )
     async def main_flow(
             payload: Dict,
@@ -169,9 +183,10 @@ def create_analysis_flow(
             task_concurrency: int = task_concurrency
     ):
         logger = get_run_logger()
+        batch_futures = []
+        current_batch = []
         repo_count = 0
         batch_counter = 1
-        current_batch = []
 
         try:
             parent_run_ctx = get_run_context()
@@ -192,30 +207,50 @@ def create_analysis_flow(
             async for repo in fetch_repositories_task(payload, batch_size):
                 repo_count += 1
                 current_batch.append(repo)
+
                 if len(current_batch) >= processing_batch_size:
-                    logger.info(f"Submitting batch {batch_counter} with {len(current_batch)} repositories")
-                    batch_result = await batch_repo_subflow(config, current_batch.copy())
-                    logger.info(f"Batch {batch_counter} result: {batch_result}")
+                    batch_futures.append(
+                        asyncio.create_task(
+                            submit_batch_subflow(
+                                config,
+                                current_batch.copy(),
+                                parent_time_str,
+                                batch_counter
+                            )
+                        )
+                    )
                     current_batch = []
                     batch_counter += 1
 
             if current_batch:
-                logger.info(f"Submitting final batch {batch_counter} with {len(current_batch)} repositories")
-                batch_result = await batch_repo_subflow(config, current_batch)
-                logger.info(f"Batch {batch_counter} result: {batch_result}")
+                batch_futures.append(
+                    asyncio.create_task(
+                        submit_batch_subflow(
+                            config,
+                            current_batch,
+                            parent_time_str,
+                            batch_counter
+                        )
+                    )
+                )
                 batch_counter += 1
 
-            logger.info(f"Completed processing {repo_count} repositories in {batch_counter - 1} batches with parent time {parent_time_str}")
+            logger.info(f"Submitted {len(batch_futures)} batches with parent time {parent_time_str}")
+
+            if batch_futures:
+                results = await asyncio.gather(*batch_futures, return_exceptions=True)
+                success_count = sum(1 for res in results if not isinstance(res, Exception))
+                logger.info(f"Completed {success_count}/{len(results)} batches successfully")
+
             return {
                 "processed_repos": repo_count,
-                "batches": batch_counter - 1,
+                "batches": len(batch_futures),
                 "parent_run_time": parent_time_str
             }
 
         except Exception as e:
             logger.error(f"Main flow failed: {str(e)}", exc_info=True)
             raise
-
         finally:
             await refresh_views_task(flow_prefix)
             logger.info("Main flow cleanup completed")
