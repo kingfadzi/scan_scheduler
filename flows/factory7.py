@@ -109,9 +109,9 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
 @task
-def safe_process_repo(config, repo, parent_run_id):
+async def safe_process_repo(config, repo, parent_run_id):
     try:
-        return process_single_repo_flow(config, repo, parent_run_id)
+        return await process_single_repo_flow(config, repo, parent_run_id)
     except Exception as e:
         return e
 
@@ -125,29 +125,19 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Map the safe task over all repos
-    states: List[State] = safe_process_repo.map(
+    # Get list of futures from mapped task
+    futures = safe_process_repo.map(
         config=unmapped(config),
         repo=repos,
         parent_run_id=unmapped(parent_run_id)
     )
 
-    # Process results
-    successful = []
-    for state in states:
-        if state.is_completed():
-            try:
-                result = state.result()
-                if result is not None:
-                    successful.append(result)
-            except Exception as e:
-                logger.error(f"Failed to retrieve result: {str(e)}")
-        else:
-            error_msg = state.message[:200] if state.message else "Unknown error"
-            logger.warning(f"Failed processing: {error_msg}")
+    # Explicitly await all results
+    results = await asyncio.gather(*futures)
 
-    logger.info(f"Processing complete. Total successful: {len(successful)}/{len(repos)}")
-    return successful
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
+    return results
 
 
 async def submit_batch_subflow(
