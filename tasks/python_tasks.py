@@ -3,6 +3,7 @@ from prefect.cache_policies import NO_CACHE
 from plugins.python.python_dependencies import PythonDependencyAnalyzer
 from plugins.python.python_tools import PythonBuildToolAnalyzer
 
+
 @task(name="Run Python Dependency Analysis Task", cache_policy=NO_CACHE)
 async def run_python_dependency_task(repo_dir, repo, run_id):
     logger = get_run_logger()
@@ -14,6 +15,7 @@ async def run_python_dependency_task(repo_dir, repo, run_id):
     except Exception as exc:
         logger.exception("Error during Python Dependency analysis")
         raise exc
+
 
 @task(name="Run Python Build Tool Analysis Task", cache_policy=NO_CACHE)
 async def run_python_build_tool_task(repo_dir, repo, run_id):

@@ -1,6 +1,6 @@
 from datetime import datetime
 import asyncio
-from flows.factory import create_analysis_flow
+from flows.factory7 import create_analysis_flow
 from config.config import Config
 from tasks.registry import task_registry
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         payload={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME],
-                "main_language": ["Python"]  # Uncomment if needed
+               # "main_language": ["Python"]  # Uncomment if needed
             }
         }
     ))

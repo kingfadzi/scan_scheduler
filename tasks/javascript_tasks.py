@@ -3,6 +3,7 @@ from prefect.cache_policies import NO_CACHE
 from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
 from plugins.javascript.javascript_tools import JavaScriptBuildToolAnalyzer
 
+
 @task(name="Run JavaScript Dependency Analysis Task", cache_policy=NO_CACHE)
 async def run_javascript_dependency_task(repo_dir, repo, run_id):
     logger = get_run_logger()
@@ -14,6 +15,7 @@ async def run_javascript_dependency_task(repo_dir, repo, run_id):
     except Exception as exc:
         logger.exception("Error during JavaScript Dependency analysis")
         raise exc
+
 
 @task(name="Run JavaScript Build Tool Analysis Task", cache_policy=NO_CACHE)
 async def run_javascript_build_tool_task(repo_dir, repo, run_id):
