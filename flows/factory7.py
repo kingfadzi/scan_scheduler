@@ -53,7 +53,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         # --- Additional Tasks Execution ---
         if config.additional_tasks:
             task_futures = [
-                execute_additional_task.submit(
+                execute_additional_task(
                     repo_dir,
                     repo,
                     parent_run_id,
@@ -80,8 +80,8 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
     finally:
         logger.debug(f"[{repo_id}] Starting cleanup")
         await asyncio.gather(
-            cleanup_repo_task.submit(repo_dir, parent_run_id),
-            update_status_task.submit(repo, parent_run_id),
+            cleanup_repo_task(repo_dir, parent_run_id),
+            update_status_task(repo, parent_run_id),
             return_exceptions=True
         )
 
@@ -171,13 +171,13 @@ def create_analysis_flow(
             await start_task(flow_prefix=default_flow_prefix)
 
             # Stream and batch repositories
-            async for repo in fetch_repositories_task.submit(payload, default_batch_size):
+            async for repo in fetch_repositories_task(payload, default_batch_size):
                 repo_count += 1
                 current_batch.append(repo)
 
                 if len(current_batch) >= processing_batch_size:
                     batch_futures.append(
-                        process_batch_task.submit(
+                        process_batch_task(
                             config,
                             current_batch.copy(),
                             batch_counter,
@@ -190,7 +190,7 @@ def create_analysis_flow(
             # Submit final batch
             if current_batch:
                 batch_futures.append(
-                    process_batch_task.submit(
+                    process_batch_task(
                         config,
                         current_batch,
                         batch_counter,
