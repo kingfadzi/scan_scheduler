@@ -1,6 +1,6 @@
 from datetime import datetime
 import asyncio
-from flows.factory7 import create_analysis_flow
+from flows.factory import create_analysis_flow
 from config.config import Config
 from tasks.registry import task_registry
 
