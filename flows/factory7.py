@@ -16,6 +16,7 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 from prefect.utilities.annotations import unmapped
+from prefect.states import State
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
@@ -125,18 +126,29 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     # Map the safe task over all repos
-    results = safe_process_repo.map(
+    states: List[State] = safe_process_repo.map(
         config=unmapped(config),
         repo=repos,
         parent_run_id=unmapped(parent_run_id)
     )
 
-    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
-    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
-    return results
-    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
-    logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
-    return results
+    # Process results
+    successful = []
+    for state in states:
+        if state.is_completed():
+            try:
+                result = state.result()
+                if result is not None:
+                    successful.append(result)
+            except Exception as e:
+                logger.error(f"Failed to retrieve result: {str(e)}")
+        else:
+            error_msg = state.message[:200] if state.message else "Unknown error"
+            logger.warning(f"Failed processing: {error_msg}")
+
+    logger.info(f"Processing complete. Total successful: {len(successful)}/{len(repos)}")
+    return successful
+
 
 async def submit_batch_subflow(
         config: FlowConfig,
