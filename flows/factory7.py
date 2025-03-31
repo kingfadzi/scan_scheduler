@@ -35,12 +35,12 @@ class FlowConfig(BaseModel):
     name="process_single_repo_flow",
     persist_result=True,
     retries=0,
-    flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
+    flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"],
+    task_runner=ConcurrentTaskRunner(max_workers=3)  # Task-level concurrency
 )
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     repo_id = repo["repo_id"]
-    repo_slug = repo["repo_slug"]
     repo_dir = None
     result = {"status": "failed", "repo": repo_id}
 
@@ -52,16 +52,16 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
         # --- Additional Tasks Execution ---
         if config.additional_tasks:
-            task_futures = []
-            for task_name in config.additional_tasks:
-                future = execute_additional_task.submit(
+            task_futures = [
+                execute_additional_task.submit(
                     repo_dir,
                     repo,
                     parent_run_id,
                     task_name,
                     config.task_concurrency
                 )
-                task_futures.append(future)
+                for task_name in config.additional_tasks
+            ]
 
             task_results = await asyncio.gather(*task_futures, return_exceptions=True)
             success_count = sum(1 for r in task_results if not isinstance(r, Exception))
@@ -108,11 +108,6 @@ async def execute_additional_task(repo_dir, repo, parent_id, task_name, concurre
         logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
         raise
 
-@task(name="process_batch_task")
-async def process_batch_task(config: FlowConfig, batch: List[Dict], batch_number: int, parent_run_id: str):
-    """Task wrapper for batch processing"""
-    return await batch_repo_subflow(config, batch, parent_run_id, batch_number)
-
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(max_workers=5),
@@ -130,6 +125,11 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict], parent_run_i
     success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
     logger.info(f"Batch {batch_number} complete - Success: {success_count}/{len(repos)}")
     return results
+
+@task(name="process_batch_task")
+async def process_batch_task(config: FlowConfig, batch: List[Dict], batch_number: int, parent_run_id: str):
+    """Task wrapper for batch processing"""
+    return await batch_repo_subflow(config, batch, parent_run_id, batch_number)
 
 def create_analysis_flow(
         flow_name: str,
@@ -168,10 +168,10 @@ def create_analysis_flow(
                 task_concurrency=task_concurrency
             )
 
-            await start_task(flow_prefix=default_flow_prefix)
+            await start_task.submit(flow_prefix=default_flow_prefix)
 
             # Stream and batch repositories
-            async for repo in fetch_repositories_task(payload, default_batch_size):
+            async for repo in fetch_repositories_task.submit(payload, default_batch_size):
                 repo_count += 1
                 current_batch.append(repo)
 
@@ -217,7 +217,7 @@ def create_analysis_flow(
             logger.error(f"Main flow failed: {str(e)}", exc_info=True)
             raise
         finally:
-            await refresh_views_task(flow_prefix=default_flow_prefix)
+            await refresh_views_task.submit(flow_prefix=default_flow_prefix)
             logger.info("Main flow cleanup completed")
 
     return main_flow
