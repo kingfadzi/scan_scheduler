@@ -113,39 +113,38 @@ async def process_single_repo_task(config: FlowConfig, repo: Dict) -> Dict:
     return await process_single_repo_flow(config, repo, config.parent_run_id)
 
 
+SUBPROCESS_SEMAPHORE = asyncio.Semaphore(5)  # Adjust this number as needed
+
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers=5),
+    task_runner=ConcurrentTaskRunner(),  # Keep runner but add our own semaphore
     persist_result=True
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
+    parent_run_id = str(get_run_context().flow_run.id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    # Helper: break the repos list into chunks (of size 5)
-    def chunker(lst, n):
-        for i in range(0, len(lst), n):
-            yield lst[i:i+n]
+    async def process_with_concurrency(repo: Dict):
+        async with SUBPROCESS_SEMAPHORE:
+            logger.debug(f"Acquired semaphore for {repo['repo_id']}")
+            try:
+                # Directly await the task instead of using submit()
+                return await process_single_repo_task.fn(
+                    config=config,
+                    repo=repo,
+                    parent_run_id=parent_run_id
+                )
+            finally:
+                logger.debug(f"Releasing semaphore for {repo['repo_id']}")
 
-    results = []
-    chunk_index = 1
-    for chunk in chunker(repos, 5):
-        logger.info(f"Starting chunk {chunk_index} with {len(chunk)} repositories")
-        # Submit and await each chunk sequentially
-        chunk_results = await asyncio.gather(
-            *[process_single_repo_task.submit(config, repo).result() for repo in chunk],
-            return_exceptions=True
-        )
-        logger.info(f"Finished chunk {chunk_index} with results: {chunk_results}")
-        results.extend(chunk_results)
-        chunk_index += 1
+    # Create all coroutines but let the semaphore control execution
+    tasks = [process_with_concurrency(repo) for repo in repos]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    success_count = sum(
-        1 for r in results if not isinstance(r, Exception) and r.get("status") == "success"
-    )
+    success_count = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
     logger.info(f"Batch complete - Success: {success_count}/{len(repos)}")
     return results
-
 
 async def submit_batch_subflow(
         config: FlowConfig,
