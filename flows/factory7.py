@@ -31,6 +31,7 @@ class FlowConfig(BaseModel):
     processing_batch_workers: int = Field(2, gt=0)
     per_batch_workers: int = Field(5, gt=0)
     task_concurrency: int = Field(3, gt=0)
+    parent_run_id: Optional[str] = None  # New field to hold the parent's run ID
 
     @validator('additional_tasks')
     def validate_tasks(cls, v):
@@ -87,7 +88,6 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             results = await asyncio.gather(*tasks, return_exceptions=False)
             success_count = sum(1 for r in results if not isinstance(r, Exception))
             logger.info(f"[{repo_id}] Completed {success_count}/{len(tasks)} tasks")
-
             if success_count < len(tasks):
                 raise RuntimeError(f"{len(tasks)-success_count} tasks failed")
 
@@ -110,30 +110,30 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
 @task
-async def process_single_repo_task(config: FlowConfig, repo: Dict, parent_run_id: str) -> Dict:
+async def process_single_repo_task(config: FlowConfig, repo: Dict) -> Dict:
     """
     Wraps the single repository flow as a Prefect task so that its concurrency
     can be managed by the batch's ConcurrentTaskRunner.
     """
-    return await process_single_repo_flow(config, repo, parent_run_id)
+    # Use the parent_run_id from the config.
+    return await process_single_repo_flow(config, repo, config.parent_run_id)
 
 @flow(
     name="batch_repo_subflow",
     persist_result=True,
     task_runner=ConcurrentTaskRunner(max_workers=5)
 )
-async def batch_repo_subflow(config: FlowConfig, repos: List[Dict], parent_run_id: str):
+async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     """
     Processes a batch of repositories.
-    The parent_run_id is passed in from the main flow to avoid needing to access
-    the flow run context from within a subflow.
+    The parent's run ID is now included in the config.
     """
     logger = get_run_logger()
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     # Launch each repository processing as a task, controlled by the batch's runner.
     results = await asyncio.gather(
-        *[process_single_repo_task.submit(config, repo, parent_run_id).result() for repo in repos],
+        *[process_single_repo_task.submit(config, repo).result() for repo in repos],
         return_exceptions=True
     )
 
@@ -182,13 +182,15 @@ def create_analysis_flow(
             parent_start_time = parent_flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
 
+            # Create the configuration with the parent's run ID included.
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,
                 additional_tasks=additional_tasks,
                 processing_batch_workers=processing_batch_workers,
                 per_batch_workers=per_batch_workers,
-                task_concurrency=task_concurrency
+                task_concurrency=task_concurrency,
+                parent_run_id=parent_run_id
             )
 
             await start_task(flow_prefix)
@@ -198,14 +200,15 @@ def create_analysis_flow(
                 current_batch.append(repo)
                 if len(current_batch) >= processing_batch_size:
                     logger.info(f"Submitting batch {batch_counter} with {len(current_batch)} repositories")
-                    batch_result = await batch_repo_subflow(config, current_batch.copy(), parent_run_id)
+                    # Now call the subflow without needing to pass parent_run_id separately.
+                    batch_result = await batch_repo_subflow(config, current_batch.copy())
                     logger.info(f"Batch {batch_counter} result: {batch_result}")
                     current_batch = []
                     batch_counter += 1
 
             if current_batch:
                 logger.info(f"Submitting final batch {batch_counter} with {len(current_batch)} repositories")
-                batch_result = await batch_repo_subflow(config, current_batch, parent_run_id)
+                batch_result = await batch_repo_subflow(config, current_batch)
                 logger.info(f"Batch {batch_counter} result: {batch_result}")
                 batch_counter += 1
 
