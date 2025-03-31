@@ -171,7 +171,7 @@ def create_analysis_flow(
                 task_concurrency=task_concurrency
             )
 
-            await start_task.submit(flow_prefix)
+            await start_task(flow_prefix)
 
             # Stream and batch repositories
             async for repo in fetch_repositories_task(payload, batch_size):
