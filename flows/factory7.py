@@ -109,9 +109,9 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
 @task
-async def safe_process_repo(config, repo, parent_run_id):
+def safe_process_repo(config, repo, parent_run_id):
     try:
-        return await process_single_repo_flow(config, repo, parent_run_id)
+        return process_single_repo_flow(config, repo, parent_run_id)
     except Exception as e:
         return e
 
