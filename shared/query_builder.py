@@ -10,7 +10,6 @@ def build_query(payload):
     if not isinstance(inner_payload, dict) or not inner_payload:
         raise ValueError("The provided payload does not contain any filter values.")
 
-    # Updated filter mapping to use ONLY combined_repo_metrics columns
     filter_mapping = {
         'repo_id': 'combined_repo_metrics.repo_id',
         'host_name': 'combined_repo_metrics.host_name',
@@ -23,7 +22,6 @@ def build_query(payload):
         'number_of_contributors': 'combined_repo_metrics.number_of_contributors'
     }
 
-    # Select only columns from combined_repo_metrics
     select_cols = [
         "combined_repo_metrics.repo_id",
         "combined_repo_metrics.status",
@@ -31,7 +29,6 @@ def build_query(payload):
         "combined_repo_metrics.updated_at as updated_on"
     ]
 
-    # Add additional columns from filter mapping
     for key, col in filter_mapping.items():
         if key not in ['repo_id', 'status'] and f"combined_repo_metrics.{key}" not in select_cols:
             select_cols.append(col)
@@ -51,8 +48,7 @@ def build_query(payload):
                 raise ValueError(f"Filter for '{key}' cannot be empty.")
 
             if key == 'repo_id':
-                # Keep repo_id wildcard search
-                filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
+                 filters.append(f"LOWER({column}) LIKE LOWER('%{values[0]}%')")
             else:
                 if all(isinstance(v, str) for v in values):
                     formatted_values = ", ".join(f"LOWER('{v.lower()}')" for v in values)
@@ -65,7 +61,7 @@ def build_query(payload):
         raise ValueError("No valid filters provided. Query would select all rows.")
 
     final_query = base_query + " AND " + " AND ".join(filters)
-    final_query += " ORDER BY combined_repo_metrics.repo_id"  # Updated ORDER BY
+    final_query += " ORDER BY combined_repo_metrics.repo_id"
     return final_query
 
 if __name__ == "__main__":

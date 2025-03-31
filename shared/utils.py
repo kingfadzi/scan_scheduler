@@ -279,7 +279,6 @@ class Utils(BaseLogger):
             while True:
                 final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
 
-                # Execute sync query in thread
                 batch = await asyncio.to_thread(
                     lambda: [
                         {c.name: getattr(r, c.name) for c in r.__table__.columns}

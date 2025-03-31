@@ -1,4 +1,3 @@
-# tasks/registry/registry.py
 import yaml
 from pathlib import Path
 from typing import Dict, Any
