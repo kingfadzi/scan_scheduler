@@ -19,61 +19,61 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.version_pattern = re.compile(r"==(\d+\.\d+\.\d+|\d+\.\d+)")
         self.utils = Utils(logger=logger)
 
-@analyze_execution(
-    session_factory=Session,
-    stage="Python Dependency Analysis",
-    require_language=["Python", "Jupyter Notebook"]
-)
-def run_analysis(self, repo_dir, repo):
-    all_dependencies = []
-    requirements_locations = []
-    root_dir = Path(repo_dir)
-    central_venv = root_dir / "venv"
-
-    try:
-        self.logger.info(f"Analyzing repository: {repo_dir}")
-
-        # 1. Check root directory first
-        if self._is_python_project(root_dir):
-            self.logger.info("Found root-level Python project")
-            requirements_locations.append(root_dir)
-
-        # 2. Check subdirectories if no root requirements
-        if not requirements_locations:
-            self.logger.info("Scanning subdirectories for Python projects")
-            for entry in root_dir.iterdir():
-                if entry.is_dir() and self._is_python_project(entry):
-                    requirements_locations.append(entry)
-                    self.logger.debug(f"Found subproject: {entry.name}")
-
-        # 3. Fallback to root if no requirements found
-        if not requirements_locations:
-            self.logger.warning("No dependency files found, generating in root")
-            requirements_locations.append(root_dir)
-
-        # Create central virtual environment
-        if not central_venv.exists():
-            self.logger.debug("Creating central virtual environment")
-            venv.create(central_venv, with_pip=True)
-
-        # 4. Process all found locations
-        for location in requirements_locations:
-            self.logger.info(f"Processing: {location.relative_to(root_dir)}")
-            dependencies = self._process_location(location, repo, central_venv)
-            all_dependencies.extend(dependencies)
-
-        # 5. Persist results
-        self.logger.debug(f"Persisting {len(all_dependencies)} dependencies")
-        self.utils.persist_dependencies(all_dependencies)
-
-        msg = (f"Found {len(all_dependencies)} dependencies "
-               f"across {len(requirements_locations)} locations")
-        self.logger.info(msg)
-        return msg
-
-    except Exception as e:
-        self.logger.exception(f"Analysis failed: {e}")
-        raise
+    @analyze_execution(
+        session_factory=Session,
+        stage="Python Dependency Analysis",
+        require_language=["Python", "Jupyter Notebook"]
+    )
+    def run_analysis(self, repo_dir, repo):
+        all_dependencies = []
+        requirements_locations = []
+        root_dir = Path(repo_dir)
+        central_venv = root_dir / "venv"
+    
+        try:
+            self.logger.info(f"Analyzing repository: {repo_dir}")
+    
+            # 1. Check root directory first
+            if self._is_python_project(root_dir):
+                self.logger.info("Found root-level Python project")
+                requirements_locations.append(root_dir)
+    
+            # 2. Check subdirectories if no root requirements
+            if not requirements_locations:
+                self.logger.info("Scanning subdirectories for Python projects")
+                for entry in root_dir.iterdir():
+                    if entry.is_dir() and self._is_python_project(entry):
+                        requirements_locations.append(entry)
+                        self.logger.debug(f"Found subproject: {entry.name}")
+    
+            # 3. Fallback to root if no requirements found
+            if not requirements_locations:
+                self.logger.warning("No dependency files found, generating in root")
+                requirements_locations.append(root_dir)
+    
+            # Create central virtual environment
+            if not central_venv.exists():
+                self.logger.debug("Creating central virtual environment")
+                venv.create(central_venv, with_pip=True)
+    
+            # 4. Process all found locations
+            for location in requirements_locations:
+                self.logger.info(f"Processing: {location.relative_to(root_dir)}")
+                dependencies = self._process_location(location, repo, central_venv)
+                all_dependencies.extend(dependencies)
+    
+            # 5. Persist results
+            self.logger.debug(f"Persisting {len(all_dependencies)} dependencies")
+            self.utils.persist_dependencies(all_dependencies)
+    
+            msg = (f"Found {len(all_dependencies)} dependencies "
+                   f"across {len(requirements_locations)} locations")
+            self.logger.info(msg)
+            return msg
+    
+        except Exception as e:
+            self.logger.exception(f"Analysis failed: {e}")
+            raise
 
     def _process_directory(self, directory, repo, is_root=False):
 
