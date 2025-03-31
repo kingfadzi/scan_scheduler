@@ -15,6 +15,17 @@ from tasks.base_tasks import (
     refresh_views_task
 )
 
+# Helper to get the parent flow run context safely
+def get_parent_flow_run():
+    ctx = get_run_context()
+    # Prefer a direct flow_run attribute if available.
+    if hasattr(ctx, "flow_run"):
+        return ctx.flow_run
+    # If not, try to get it from the task_run's parent.
+    elif hasattr(ctx, "task_run") and hasattr(ctx.task_run, "parent"):
+        return ctx.task_run.parent
+    else:
+        raise AttributeError("Flow run context is not available")
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)
@@ -123,7 +134,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     (and controlled via process_single_repo_task).
     """
     logger = get_run_logger()
-    parent_run_id = str(get_run_context().flow_run.id)
+    parent_run_id = str(get_parent_flow_run().id)
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     # Launch each repository processing as a task
@@ -154,7 +165,6 @@ def create_analysis_flow(
         name=flow_name,
         description="Main analysis flow with batched processing",
         validate_parameters=False,
-        # Note: We are not submitting batches concurrently.
         # Each batch is processed sequentially while the repositories inside the batch run concurrently.
     )
     async def main_flow(
@@ -174,8 +184,8 @@ def create_analysis_flow(
         current_batch = []
 
         try:
-            parent_run_ctx = get_run_context()
-            parent_start_time = parent_run_ctx.flow_run.start_time
+            parent_flow_run = get_parent_flow_run()
+            parent_start_time = parent_flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
 
             config = FlowConfig(
