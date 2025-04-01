@@ -72,7 +72,8 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
     except Exception as e:
         logger.error(f"[{repo_id}] Flow failed: {str(e)}")
         result["error"] = str(e)
-        return result
+        #return result
+        raise
 
     finally:
         logger.debug(f"[{repo_id}] Starting cleanup")
@@ -86,8 +87,11 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
 @task(task_run_name="{repo[repo_slug]}", retries=1)
 async def safe_process_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
-    try:
-        result = await process_single_repo_flow(config, repo, parent_run_id)
-        return {"status": "success", **result}
-    except Exception as e:
-        return {"status": "error", "exception": str(e), "repo": repo['repo_id']}
+    result = await process_single_repo_flow(config, repo, parent_run_id)
+
+    if result.get("status") != "success":
+        raise RuntimeError(
+            f"Processing failed for repo {repo['repo_id']}: {result.get('error', 'unknown error')}"
+        )
+
+    return {"status": "success", **result}
