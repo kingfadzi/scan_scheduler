@@ -109,7 +109,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers=5),
+    task_runner=ConcurrentTaskRunner(max_workers="{config.per_batch_workers}"),
     persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
@@ -145,7 +145,7 @@ async def safe_process_repo(config, repo, parent_run_id):
         result = await process_single_repo_flow(config, repo, parent_run_id)
         return {"status": "success", **result}
     except Exception as e:
-        return {"status": "error", "exception": str(e), "repo": repo['name']}
+        return {"status": "error", "exception": str(e), "repo": repo['repo_id']}
 
 async def submit_batch_subflow(
         config: FlowConfig,
