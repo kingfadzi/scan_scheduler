@@ -9,7 +9,7 @@ from flows.flow_factory.single_repo_flow import safe_process_repo
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers=lambda: config.per_batch_workers),  # Dynamic worker count
+    task_runner=ConcurrentTaskRunner(max_workers=lambda: config.per_batch_workers),
     persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):

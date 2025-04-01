@@ -1,10 +1,16 @@
+from prefect import flow, task, get_run_logger, get_run_context
 import asyncio
 from typing import Dict
-from prefect import flow, task, get_run_logger
-from prefect.context import get_run_context
-from flows.flow_factory.config import FlowConfig
+from config import FlowConfig
 from tasks.base_tasks import clone_repository_task, cleanup_repo_task, update_status_task
 from tasks.registry.task_registry import task_registry
+
+METRIC_TASKS = [
+    "core.lizard",
+    "core.cloc",
+    "core.goenry",
+    "core.gitlog"
+]
 
 @flow(
     name="process_single_repo_flow",
@@ -29,16 +35,33 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
             async def run_task(task_name):
                 async with sem:
-                    logger.info(f"[{repo_id}] [{task_name}] Starting execution")
-                    task_path = task_registry.get_task_path(task_name)
-                    module_path, fn_name = task_path.rsplit('.', 1)
-                    module = __import__(module_path, fromlist=[fn_name])
-                    task_fn = getattr(module, fn_name)
-                    await task_fn(repo_dir, repo, parent_run_id)
-                    logger.info(f"[{repo_id}] [{task_name}] Completed")
+                    try:
+                        logger.info(f"[{repo_id}] [{task_name}] Starting execution")
+                        task_path = task_registry.get_task_path(task_name)
+                        module_path, fn_name = task_path.rsplit('.', 1)
+                        module = __import__(module_path, fromlist=[fn_name])
+                        task_fn = getattr(module, fn_name)
+                        future = task_fn.submit(repo_dir, repo, parent_run_id)
+                        result = await future.result()
+                        logger.info(f"[{repo_id}] [{task_name}] Completed")
+                        return result
+                    except Exception as e:
+                        logger.error(f"[{repo_id}] [{task_name}] Failed: {str(e)}")
+                        raise
 
-            tasks = [run_task(name) for name in config.additional_tasks]
-            await asyncio.gather(*tasks)
+            priority_tasks = []
+            other_tasks = []
+            for task_name in config.additional_tasks:
+                if task_name in METRIC_TASKS:
+                    priority_tasks.append(task_name)
+                else:
+                    other_tasks.append(task_name)
+
+            # Run priority metric tasks first (any order)
+            await asyncio.gather(*(run_task(t) for t in priority_tasks))
+            # Then run remaining tasks (any order)
+            await asyncio.gather(*(run_task(t) for t in other_tasks))
+
         else:
             logger.warning(f"[{repo_id}] No additional tasks configured")
 
