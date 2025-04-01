@@ -34,7 +34,7 @@ ALL_TASKS = [
 ]
 
 uber_flow = create_analysis_flow(
-    flow_name="fundamental_metrics_flow",
+    flow_name="uber_flow",
     default_sub_dir="uber",
     default_flow_prefix="UBER",
     default_additional_tasks=ALL_TASKS,
