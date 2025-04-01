@@ -2,6 +2,8 @@ import subprocess
 import os
 import json
 from sqlalchemy.dialects.postgresql import insert
+
+from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, GrypeResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
@@ -15,8 +17,15 @@ class GrypeAnalyzer(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
-    def run_analysis(self, repo_dir, repo, run_id=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
+
+        syft_analyzer = SyftAnalyzer(
+            logger=self.logger,
+            run_id=self.run_id
+        )
+
+        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
 
         sbom_file_path = os.path.join(repo_dir, "sbom.json")
         grype_file_path = os.path.join(repo_dir, "grype-results.json")

@@ -22,12 +22,9 @@ ALL_TASKS = [
     "languages.javascript.dependencies",
     "languages.python.dependencies",
 
-    "core.category",
-
     "core.checkov",
     "core.semgrep",
 
-    "core.syft",
     "core.trivy",
     "core.grype",
     "core.xeol"

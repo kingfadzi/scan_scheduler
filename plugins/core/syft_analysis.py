@@ -12,7 +12,7 @@ class SyftAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
 
-    @analyze_execution(session_factory=Session, stage="Syft Analysis")
+    #@analyze_execution(session_factory=Session, stage="Syft Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Syft analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
         if not os.path.exists(repo_dir):
@@ -56,6 +56,9 @@ class SyftAnalyzer(BaseLogger):
             self.logger.warning(message)
 
         return message
+
+    def generate_sbom(self, repo_dir, repo):
+        return self.run_analysis(repo_dir, repo)
 
 if __name__ == "__main__":
     repo_slug = "nosql-injection-vulnapp"

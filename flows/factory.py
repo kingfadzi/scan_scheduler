@@ -24,6 +24,7 @@ class FlowConfig(BaseModel):
     processing_batch_workers: int = Field(2, gt=0)
     per_batch_workers: int = Field(5, gt=0)
     task_concurrency: int = Field(3, gt=0)
+    parent_run_id: str = Field(..., pattern=r'^[a-zA-Z0-9_-]+$')
 
     @validator('additional_tasks')
     def validate_tasks(cls, v):
@@ -113,7 +114,8 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
-    parent_run_id = str(get_run_context().flow_run.id)
+    parent_run_id = config.parent_run_id
+
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     batch_size = config.per_batch_workers
@@ -211,6 +213,7 @@ def create_analysis_flow(
 
         try:
             parent_run_ctx = get_run_context()
+            parent_run_id = str(get_run_context().flow_run.id)
             parent_start_time = parent_run_ctx.flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
 
@@ -220,7 +223,8 @@ def create_analysis_flow(
                 additional_tasks=additional_tasks,
                 processing_batch_workers=processing_batch_workers,
                 per_batch_workers=per_batch_workers,
-                task_concurrency=task_concurrency
+                task_concurrency=task_concurrency,
+                parent_run_id=parent_run_id
             )
 
             logger.debug(

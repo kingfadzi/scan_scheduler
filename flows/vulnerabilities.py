@@ -6,7 +6,6 @@ from flows.factory import create_analysis_flow
 
 
 VALID_VULN_TASKS = [
-    "core.syft",
     "core.trivy",
     "core.grype",
     "core.xeol"

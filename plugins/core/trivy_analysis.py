@@ -4,6 +4,8 @@ import logging
 import subprocess
 import shutil
 from sqlalchemy.dialects.postgresql import insert
+
+from plugins.core.syft_analysis import SyftAnalyzer
 from shared.execution_decorator import analyze_execution
 from shared.models import Session, TrivyVulnerability
 from config.config import Config
@@ -18,6 +20,13 @@ class TrivyAnalyzer(BaseLogger):
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Trivy analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
+
+        syft_analyzer = SyftAnalyzer(
+            logger=self.logger,
+            run_id=self.run_id
+        )
+
+        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"

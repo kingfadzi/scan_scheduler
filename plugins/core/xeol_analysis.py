@@ -2,6 +2,8 @@ import subprocess
 import os
 import json
 from sqlalchemy.dialects.postgresql import insert
+
+from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, XeolResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
@@ -19,6 +21,13 @@ class XeolAnalyzer(BaseLogger):
 
         self.logger.info(f"Repo slug: {repo['repo_slug']}.")
         self.logger.info(f"Starting Xeol analysis for repo_id: {repo['repo_id']}.")
+
+        syft_analyzer = SyftAnalyzer(
+            logger=self.logger,
+            run_id=self.run_id
+        )
+
+        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
