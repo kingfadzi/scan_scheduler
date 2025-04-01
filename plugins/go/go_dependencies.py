@@ -1,105 +1,80 @@
 import os
+import re
 import logging
-import subprocess
 
-from shared.models import Dependency,Session
+from shared.models import Dependency, Session
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 
-
 class GoDependencyAnalyzer(BaseLogger):
-
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+        self.utils = Utils(logger=self.logger)  # Centralized initialization
+        self.dep_regex = re.compile(
+            r'^\s*require\s+(?:\(\s*)?([\w\.\/-]+)\s+([\w\.\/-]+)',
+            re.MULTILINE
+        )
 
     @analyze_execution(
-      session_factory=Session,
-      stage="Go Dependency Analysis",
-      require_language="go"
+        session_factory=Session,
+        stage="Go Dependency Analysis",
+        require_language="go"
     )
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Processing repository at: {repo_dir}")
-        utils = Utils()
+        all_deps = []
+
+        for root, _, files in os.walk(repo_dir):
+            if "go.mod" in files:
+                module_dir = root
+                self.logger.info(f"Analyzing module in: {module_dir}")
+                deps = self.parse_go_mod(module_dir, repo)
+                all_deps.extend(deps)
+
+        self.utils.persist_dependencies(all_deps)  # Use instance utility
+        return f"{len(all_deps)} dependencies found."
+
+    def parse_go_mod(self, module_dir, repo):
+        """Parse go.mod using regex patterns"""
         deps = []
-
-        go_mod = os.path.join(repo_dir, "go.mod")
-        go_sum = os.path.join(repo_dir, "go.sum")
-
-        if not os.path.isfile(go_mod):
-            self.logger.error("No go.mod file found. Skipping repository.")
-            return "0 dependencies found."
-
-        if not os.path.isfile(go_sum):
-            self.logger.info("Generating go.sum using 'go mod tidy'.")
-            try:
-                subprocess.run(["go", "mod", "tidy"], cwd=repo_dir, check=True, capture_output=True, text=True)
-            except subprocess.CalledProcessError as e:
-                self.logger.error(f"'go mod tidy' failed: {e}")
-                self.logger.debug(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-                return "0 dependencies found."
-
-        if not os.path.isfile(go_sum):
-            self.logger.error("go.sum file was not generated after running 'go mod tidy'.")
-            return "0 dependencies found."
+        go_mod_path = os.path.join(module_dir, "go.mod")
+        
+        if not os.path.exists(go_mod_path):
+            return deps
 
         try:
-            deps = self.parse_go_modules(repo_dir, repo)
-            utils.persist_dependencies(deps)
-            return f"{len(deps)} dependencies found."
-        except Exception as e:
-            self.logger.error(f"Failed to parse Go modules: {str(e)}")
-            return "0 dependencies found."
-
-    def parse_go_modules(self, repo_dir, repo):
-        try:
-            result = subprocess.run(
-                ["go", "list", "-m", "all"],
-                cwd=repo_dir,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=30
-            )
-            dependencies = []
-            lines = result.stdout.strip().split("\n")
-
-            for line in lines[1:]:
-                parts = line.split()
-                module = parts[0]
-                version = parts[1] if len(parts) > 1 else "unknown"
-                dependencies.append(
-                    Dependency(
+            with open(go_mod_path, 'r') as f:
+                content = f.read()
+                matches = self.dep_regex.findall(content)
+                
+                for module, version in matches:
+                    clean_version = version.split('//')[0].strip()
+                    deps.append(Dependency(
                         repo_id=repo['repo_id'],
                         name=module,
-                        version=version,
+                        version=clean_version,
                         package_type="go"
-                    )
-                )
-            return dependencies
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to list Go modules: {e}")
-            self.logger.error(f"Stdout: {e.stdout}\nStderr: {e.stderr}")
-        return []
-
-class Repo:
-    def __init__(self, repo_id):
-        self.repo_id = repo_id
-
+                    ))
+                
+        except Exception as e:
+            self.logger.error(f"Failed to parse {go_mod_path}: {str(e)}")
+        
+        return deps
+        
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    helper = GoDependencyAnalyzer()
-    repo_directory = "/Users/fadzi/tools/go_projetcs/ovaa"
-    repo = Repo(repo_id="go_project")
+    analyzer = GoDependencyAnalyzer()
+    repo_path = "/Users/fadzi/tools/go_projetcs/ovaa"
+    repo_data = {"repo_id": "go_project"}
 
     try:
-        dependencies = helper.run_analysis(repo_directory, repo)
-        for dep in dependencies:
-            print(f"Dependency: {dep.name} - {dep.version} (Repo ID: {dep.repo_id})")
+        result = analyzer.run_analysis(repo_path, repo_data)
+        print(result)
     except Exception as e:
-        print(f"An error occurred while processing the repository: {e}")
+        print(f"Analysis failed: {e}")
