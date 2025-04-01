@@ -1,6 +1,7 @@
 import asyncio
 from typing import List, Dict
-from prefect import flow, get_run_logger, get_run_context
+from prefect import flow, get_run_logger
+from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
 from flows.flow_factory.config import FlowConfig
 from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_task
