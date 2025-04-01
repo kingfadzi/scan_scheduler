@@ -15,7 +15,6 @@ async def fetch_repositories_task(payload: dict, batch_size):
         async for batch in utils.fetch_repositories_dict_async(payload, batch_size):
             logger.info("Fetched a batch with %d repositories", len(batch))
             for repo in batch:
-                logger.debug("Yielding repository: %s", repo)
                 yield repo
             logger.info("Finished processing current batch")
             await asyncio.sleep(0)
