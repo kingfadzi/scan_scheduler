@@ -37,7 +37,7 @@ class FlowConfig(BaseModel):
 
 @flow(
     name="process_single_repo_flow",
-    persist_result=True,
+    persist_result=False,
     retries=0,
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
@@ -109,7 +109,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 @flow(
     name="batch_repo_subflow",
     task_runner=ConcurrentTaskRunner(max_workers=5),
-    persist_result=True
+    persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
@@ -174,6 +174,7 @@ async def submit_batch_subflow(
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
         raise
 
+
 def create_analysis_flow(
         flow_name: str,
         default_sub_dir: str,
@@ -222,6 +223,13 @@ def create_analysis_flow(
                 task_concurrency=task_concurrency
             )
 
+            logger.debug(
+                "Initializing flow with config:\n"
+                f"Subdir: {sub_dir}\nBatch size: {processing_batch_size}\n"
+                f"Workers: {processing_batch_workers}/{per_batch_workers}\n"
+                f"Additional tasks: {additional_tasks}"
+            )
+
             await start_task(flow_prefix)
 
             async for repo in fetch_repositories_task(payload, batch_size):
@@ -229,6 +237,7 @@ def create_analysis_flow(
                 current_batch.append(repo)
 
                 if len(current_batch) >= processing_batch_size:
+                    logger.debug(f"Queueing batch {batch_counter} ({len(current_batch)} repos)")
                     batch_futures.append(
                         asyncio.create_task(
                             submit_batch_subflow(
@@ -243,6 +252,12 @@ def create_analysis_flow(
                     batch_counter += 1
 
             if current_batch:
+
+                logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
+                batch_futures.append(...)
+
+                logger.info(f"Submitted {len(batch_futures)} batches")
+
                 batch_futures.append(
                     asyncio.create_task(
                         submit_batch_subflow(

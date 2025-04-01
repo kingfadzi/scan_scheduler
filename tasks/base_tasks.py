@@ -10,14 +10,20 @@ from shared.utils import Utils
 async def fetch_repositories_task(payload: dict, batch_size):
     logger = get_run_logger()
     utils = Utils(logger=logger)
+    logger.info("Starting fetch_repositories_task with payload: %s and batch_size: %s", payload, batch_size)
     try:
         async for batch in utils.fetch_repositories_dict_async(payload, batch_size):
+            logger.info("Fetched a batch with %d repositories", len(batch))
             for repo in batch:
+                logger.debug("Yielding repository: %s", repo)
                 yield repo
+            logger.info("Finished processing current batch")
             await asyncio.sleep(0)
     except Exception as exc:
         logger.exception("Error during fetching repositories")
         raise exc
+    finally:
+        logger.info("Completed fetch_repositories_task")
 
 
 @task(name="Start Task")

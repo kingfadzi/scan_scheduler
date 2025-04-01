@@ -63,6 +63,12 @@ DEPLOYMENTS = [
         "categories_flow",
         "fundamentals-pool",
         ["categories_flow", f"v{DEPLOYMENT_VERSION}"]
+    ),
+    (
+        "flows/uber.py:uber_flow",
+        "uber_flow",
+        "fundamentals-pool",
+        ["uber_flow", f"v{DEPLOYMENT_VERSION}"]
     )
 ]
 
