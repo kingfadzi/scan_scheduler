@@ -109,7 +109,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers="{config.per_batch_workers}"),
+    task_runner=ConcurrentTaskRunner(max_workers=5),
     persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
