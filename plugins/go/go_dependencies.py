@@ -69,7 +69,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    analyzer = GoDependencyAnalyzer()
+    analyzer = GoDependencyAnalyzer(run_id="STANDALONE_RUN_001")
     repo_path = "/Users/fadzi/tools/go_projetcs/ovaa"
     repo_data = {"repo_id": "go_project"}
 
