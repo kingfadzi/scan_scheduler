@@ -91,7 +91,7 @@ class LizardAnalyzer(BaseLogger):
 
             with open(analysis_file_path, 'r') as f:
                 file_contents = f.read()
-            self.logger.debug(f"File contents:\n{file_contents}")
+            #self.logger.debug(f"File contents:\n{file_contents}")
 
             valid_lines = []
             for line in file_contents.split('\n'):
