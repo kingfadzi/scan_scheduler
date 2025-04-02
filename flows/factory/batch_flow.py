@@ -21,18 +21,21 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger.info(f"Starting batch processing of {len(repos)} repositories")
 
     batch_size = config.per_batch_workers
-
     results = []
+
     for batch_num, start_idx in enumerate(range(0, len(repos), batch_size), 1):
         batch = repos[start_idx:start_idx + batch_size]
         logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
 
+        # Submit tasks and await results
+        futures = [safe_process_repo.submit(config, repo, parent_run_id) for repo in batch]
+
         batch_results = await asyncio.gather(
-            *[safe_process_repo(config, repo, parent_run_id) for repo in batch],
+            *[future.result() for future in futures],
             return_exceptions=True
         )
-        results.extend(batch_results)
 
+        results.extend(batch_results)
         success = sum(1 for r in batch_results if not isinstance(r, Exception) and r.get("status") == "success")
         logger.info(f"Batch {batch_num} complete - Success: {success}/{len(batch)}")
 
