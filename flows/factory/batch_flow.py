@@ -19,7 +19,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
     logger.info(f"Starting processing of {len(repos)} repositories")
 
-    batch_results = await safe_process_repo.map(
+    batch_results = safe_process_repo.map(
         unmapped(config),
         repos,
         unmapped(config.parent_run_id)
