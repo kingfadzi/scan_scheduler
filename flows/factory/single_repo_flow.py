@@ -23,11 +23,11 @@ METRIC_TASKS = [
     retries=0,
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
-async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
+def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     logger.info(f"Starting processing for repo: {repo.get('repo_id')}")
     # Simulate a delay
-    await asyncio.sleep(2)
+    #await asyncio.sleep(2)
     logger.info(f"Finished processing for repo: {repo.get('repo_id')}")
 
 @flow(
