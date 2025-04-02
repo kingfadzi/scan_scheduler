@@ -28,20 +28,34 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         batch = repos[start_idx:start_idx + batch_size]
         logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
 
-        # Use task.map with unmapped static arguments
-        batch_results = await safe_process_repo.map(
+        # Use map with proper unmapped arguments
+        batch_results = safe_process_repo.map(
             unmapped(config),
             batch,
             unmapped(parent_run_id)
         )
 
-        results.extend(batch_results)
-        success = sum(1 for r in batch_results if r.get("status") == "success")
+        # Explicitly wait for completion
+        await batch_results.wait()
+
+        # Process results with exception handling
+        processed = []
+        for future in batch_results:
+            try:
+                result = future.result()
+                processed.append(result)
+            except Exception as e:
+                logger.error(f"Task failed: {str(e)}")
+                processed.append({"status": "error", "detail": str(e)})
+
+        results.extend(processed)
+        success = sum(1 for r in processed if r.get("status") == "success")
         logger.info(f"Batch {batch_num} complete - Success: {success}/{len(batch)}")
 
     overall_success = sum(1 for r in results if r.get("status") == "success")
     logger.info(f"All batches processed. Total Success: {overall_success}/{len(repos)}")
     return results
+
 
 
 
