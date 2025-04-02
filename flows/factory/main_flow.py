@@ -7,6 +7,7 @@ from flows.factory.flow_config import FlowConfig
 from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_task
 from flows.factory.batch_flow import submit_batch_subflow
 
+
 def create_analysis_flow(
     flow_name: str,
     default_sub_dir: str,

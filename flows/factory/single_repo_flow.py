@@ -13,6 +13,7 @@ METRIC_TASKS = [
     "core.gitlog"
 ]
 
+
 @flow(
     name="process_single_repo_flow",
     persist_result=False,
@@ -58,9 +59,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
                 else:
                     other_tasks.append(task_name)
 
-            # Run priority metric tasks first (any order)
             await asyncio.gather(*(run_task(t) for t in priority_tasks))
-            # Then run remaining tasks (any order)
             await asyncio.gather(*(run_task(t) for t in other_tasks))
 
         else:
@@ -84,6 +83,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             )
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
+
 
 @task(task_run_name="{repo[repo_slug]}", retries=1)
 async def safe_process_repo(config: FlowConfig, repo: Dict, parent_run_id: str):
