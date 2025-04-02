@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Optional
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
@@ -9,15 +9,15 @@ from flows.factory.batch_flow import submit_batch_subflow
 
 
 def create_analysis_flow(
-    flow_name: str,
-    default_sub_dir: str,
-    default_flow_prefix: str,
-    default_additional_tasks: List[str] = None,
-    default_batch_size: int = 100,
-    processing_batch_size: int = 10,
-    processing_batch_workers: int = 2,
-    per_batch_workers: int = 5,
-    task_concurrency: int = 3
+        flow_name: str,
+        default_sub_dir: str,
+        default_flow_prefix: str,
+        default_additional_tasks: Optional[List[str]] = None,
+        default_batch_size: int = 100,
+        processing_batch_size: int = 10,
+        processing_batch_workers: int = 2,
+        per_batch_workers: int = 5,
+        task_concurrency: int = 3
 ):
     @flow(
         name=flow_name,
@@ -26,15 +26,15 @@ def create_analysis_flow(
         task_runner=ConcurrentTaskRunner(max_workers=processing_batch_workers)
     )
     async def main_flow(
-        payload: Dict,
-        sub_dir: str = default_sub_dir,
-        flow_prefix: str = default_flow_prefix,
-        additional_tasks: List[str] = default_additional_tasks or [],
-        batch_size: int = default_batch_size,
-        processing_batch_size: int = processing_batch_size,
-        processing_batch_workers: int = processing_batch_workers,
-        per_batch_workers: int = per_batch_workers,
-        task_concurrency: int = task_concurrency
+            payload: Dict,
+            sub_dir: str = default_sub_dir,
+            flow_prefix: str = default_flow_prefix,
+            additional_tasks: List[str] = default_additional_tasks or [],
+            batch_size: int = default_batch_size,
+            processing_batch_size: int = processing_batch_size,
+            processing_batch_workers: int = processing_batch_workers,
+            per_batch_workers: int = per_batch_workers,
+            task_concurrency: int = task_concurrency
     ):
         logger = get_run_logger()
         batch_futures = []
@@ -43,9 +43,9 @@ def create_analysis_flow(
         batch_counter = 1
 
         try:
-            ctx = get_run_context()
-            parent_run_id = str(ctx.flow_run.id)
-            parent_start_time = ctx.flow_run.start_time
+            parent_run_ctx = get_run_context()
+            parent_run_id = str(get_run_context().flow_run.id)
+            parent_start_time = parent_run_ctx.flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
 
             config = FlowConfig(
@@ -58,6 +58,13 @@ def create_analysis_flow(
                 parent_run_id=parent_run_id
             )
 
+            logger.debug(
+                "Initializing flow with config:\n"
+                f"Subdir: {sub_dir}\nBatch size: {processing_batch_size}\n"
+                f"Workers: {processing_batch_workers}/{per_batch_workers}\n"
+                f"Additional tasks: {additional_tasks}"
+            )
+
             await start_task(flow_prefix)
 
             async for repo in fetch_repositories_task(payload, batch_size):
@@ -65,16 +72,40 @@ def create_analysis_flow(
                 current_batch.append(repo)
 
                 if len(current_batch) >= processing_batch_size:
-                    batch_futures.append(asyncio.create_task(
-                        submit_batch_subflow(config, current_batch.copy(), parent_time_str, batch_counter)
-                    ))
+                    logger.debug(f"Queueing batch {batch_counter} ({len(current_batch)} repos)")
+                    batch_futures.append(
+                        asyncio.create_task(
+                            submit_batch_subflow(
+                                config,
+                                current_batch.copy(),
+                                parent_time_str,
+                                batch_counter
+                            )
+                        )
+                    )
                     current_batch = []
                     batch_counter += 1
 
             if current_batch:
-                batch_futures.append(asyncio.create_task(
-                    submit_batch_subflow(config, current_batch, parent_time_str, batch_counter)
-                ))
+
+                logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
+                batch_futures.append(...)
+
+                logger.info(f"Submitted {len(batch_futures)} batches")
+
+                batch_futures.append(
+                    asyncio.create_task(
+                        submit_batch_subflow(
+                            config,
+                            current_batch,
+                            parent_time_str,
+                            batch_counter
+                        )
+                    )
+                )
+                batch_counter += 1
+
+            logger.info(f"Submitted {len(batch_futures)} batches with parent time {parent_time_str}")
 
             if batch_futures:
                 results = await asyncio.gather(*batch_futures, return_exceptions=True)
@@ -87,6 +118,9 @@ def create_analysis_flow(
                 "parent_run_time": parent_time_str
             }
 
+        except Exception as e:
+            logger.error(f"Main flow failed: {str(e)}", exc_info=True)
+            raise
         finally:
             await refresh_views_task(flow_prefix)
             logger.info("Main flow cleanup completed")
