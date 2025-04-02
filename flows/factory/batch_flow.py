@@ -28,7 +28,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     results = []
     for future in batch_results:
         try:
-            result = await future
+            result = future.result()
             results.append(result)
         except Exception as e:
             results.append({"status": "error", "detail": str(e)})
