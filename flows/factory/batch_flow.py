@@ -41,18 +41,29 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     return results
 
 
-async def submit_batch_subflow(config: FlowConfig, batch: List[Dict], parent_time_str: str, batch_number: int) -> str:
+async def submit_batch_subflow(
+        config: FlowConfig,
+        batch: List[Dict],
+        parent_start_time: str,
+        batch_number: int
+) -> str:
+
     logger = get_run_logger()
     try:
         async with get_client() as client:
-            deployment = await client.read_deployment_by_name("batch_repo_subflow/batch_repo_subflow-deployment")
+            deployment = await client.read_deployment_by_name(
+                "batch_repo_subflow/batch_repo_subflow-deployment"
+            )
+
+            flow_run_name = (f"{config.flow_prefix}_"
+                             f"{parent_start_time}_batch_{batch_number:04d}")
             flow_run = await client.create_flow_run_from_deployment(
                 deployment_id=deployment.id,
                 parameters={
                     "config": config.model_dump(),
                     "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
                 },
-                name=f"{config.flow_prefix}_{parent_time_str}_batch_{batch_number:04d}"
+                name=flow_run_name
             )
             return flow_run.id
     except Exception as e:
