@@ -1,3 +1,5 @@
+import traceback
+
 from prefect import flow, task, get_run_logger
 from prefect.context import get_run_context
 import asyncio
@@ -88,11 +90,41 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
 
-@task(task_run_name="{repo[repo_slug]}", retries=1)
 async def safe_process_repo(config, repo, parent_run_id):
+    logger = get_run_logger()
+    ctx = get_run_context()
+
     try:
+        logger.debug(
+            f"Starting processing for repo {repo['repo_id']} "
+            f"(Task Run ID: {ctx.task_run.id})"
+        )
+
         result = await process_single_repo_flow(config, repo, parent_run_id)
+
+        logger.info(
+            f"Successfully processed repo {repo['repo_slug']} "
+            f"(Task Run ID: {ctx.task_run.id})"
+        )
         return {"status": "success", **result}
+
     except Exception as e:
-        raise
-        #return {"status": "error", "exception": str(e), "repo": repo['repo_id']}
+        error_info = {
+            "exception_type": type(e).__name__,
+            "exception_message": str(e),
+            "repo_id": repo['repo_id'],
+            "task_run_id": str(ctx.task_run.id),
+            "traceback": traceback.format_exc()
+        }
+
+        logger.error(
+            "Failed to process repository",
+            extra={"error_details": error_info}
+        )
+
+        # Return structured error information
+        return {
+            "status": "error",
+            "error": error_info,
+            "repo": repo['repo_id']
+        }
