@@ -19,26 +19,21 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
     logger.info(f"Starting processing of {len(repos)} repositories")
 
-    # Process all repos in a single map operation
-    results = await safe_process_repo.map(
+    batch_results = await safe_process_repo.map(
         unmapped(config),
         repos,
         unmapped(config.parent_run_id)
     )
 
-    # Handle results and exceptions
-    processed = []
-    for future in results:
+    results = []
+    for future in batch_results:
         try:
             result = await future
-            processed.append(result)
+            results.append(result)
         except Exception as e:
-            logger.error(f"Task failed: {str(e)}")
-            processed.append({"status": "error", "detail": str(e)})
+            results.append({"status": "error", "detail": str(e)})
 
-    success_count = sum(1 for r in processed if r.get("status") == "success")
-    logger.info(f"Processing complete - Success: {success_count}/{len(repos)}")
-    return processed
+    return results
 
 
 
