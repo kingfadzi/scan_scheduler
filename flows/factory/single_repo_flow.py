@@ -20,6 +20,7 @@ METRIC_TASKS = [
     name="process_single_repo_flow",
     persist_result=False,
     retries=0,
+    on_completion=[cleanup_repo_task, update_status_task],
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
@@ -78,17 +79,7 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         result["error"] = str(e)
         raise
         #return result
-    finally:
-        logger.debug(f"[{repo_id}] Starting cleanup")
-        try:
-
-            await cleanup_repo_task(repo_dir, parent_run_id)
-            await update_status_task(repo, parent_run_id)
-
-
-        except Exception as e:
-            logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
-
+    
 
 @task(task_run_name="{repo[repo_slug]}", retries=1)
 async def safe_process_repo(config, repo, parent_run_id):
