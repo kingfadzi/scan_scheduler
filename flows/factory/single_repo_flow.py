@@ -87,9 +87,9 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
 
 
 @task(task_run_name="{repo[repo_slug]}", retries=1)
-def safe_process_repo(config, repo, parent_run_id):
+async def safe_process_repo(config, repo, parent_run_id):
     try:
-        result = process_single_repo_flow(config, repo, parent_run_id)
+        result = await process_single_repo_flow(config, repo, parent_run_id)
         return {"status": "success", **result}
     except Exception as e:
         return {"status": "error", "exception": str(e), "repo": repo['repo_id']}
