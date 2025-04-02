@@ -14,11 +14,10 @@ from flows.factory.single_repo_flow import safe_process_repo
     task_runner=ConcurrentTaskRunner(max_workers=Config.DEFAULT_PER_BATCH_WORKERS),
     persist_result=False
 )
-def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):  # Removed `async`
+async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
-    logger.info(f"Processing {len(repos)} repos with {Config.DEFAULT_PER_BATCH_WORKERS} workers")
+    logger.info(f"Processing {len(repos)} repos with {config.per_batch_workers} workers")
 
-    # Submit tasks to Prefect's thread pool
     tasks = [
         safe_process_repo.submit(
             config=config,
@@ -28,10 +27,8 @@ def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):  # Removed `async
         for repo in repos
     ]
 
-    # Collect results directly from Prefect futures
-    results = [task.result() for task in tasks]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # Process results
     success_count = sum(
         1 for r in results
         if not isinstance(r, Exception) and r.get("status") == "success"
