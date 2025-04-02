@@ -2,7 +2,7 @@ from config.config import Config
 from tasks.registry import task_registry
 import asyncio
 from datetime import datetime
-from flows.factory import create_analysis_flow
+from flows.factory.main_flow import create_analysis_flow
 
 VALID_SECURITY_TASKS = [
     "core.checkov",

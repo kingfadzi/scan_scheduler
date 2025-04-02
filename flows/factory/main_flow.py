@@ -3,9 +3,9 @@ from typing import List, Dict
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
-from flows.flow_factory.config import FlowConfig
+from flows.factory.config import FlowConfig
 from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_task
-from flows.flow_factory.batch_flow import submit_batch_subflow
+from flows.factory.batch_flow import submit_batch_subflow
 
 def create_analysis_flow(
     flow_name: str,

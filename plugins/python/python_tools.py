@@ -29,48 +29,42 @@ class PythonBuildToolAnalyzer(BaseLogger):
         requirements_locations = []
         root_dir = Path(repo_dir)
         central_venv = root_dir / "venv"
-    
+
         try:
             self.logger.info(f"Analyzing repository: {repo_dir}")
-    
-            # 1. Check root directory first
+
             if self._is_python_project(root_dir):
                 self.logger.info("Found root-level Python project")
                 requirements_locations.append(root_dir)
-    
-            # 2. Check subdirectories if no root requirements
+
             if not requirements_locations:
                 self.logger.info("Scanning subdirectories for Python projects")
                 for entry in root_dir.iterdir():
                     if entry.is_dir() and self._is_python_project(entry):
                         requirements_locations.append(entry)
                         self.logger.debug(f"Found subproject: {entry.name}")
-    
-            # 3. Fallback to root if no requirements found
+
             if not requirements_locations:
                 self.logger.warning("No dependency files found, generating in root")
                 requirements_locations.append(root_dir)
-    
-            # Create central virtual environment
+
             if not central_venv.exists():
                 self.logger.debug("Creating central virtual environment")
                 venv.create(central_venv, with_pip=True)
-    
-            # 4. Process all found locations
+
             for location in requirements_locations:
                 self.logger.info(f"Processing: {location.relative_to(root_dir)}")
                 dependencies = self._process_location(location, repo, central_venv)
                 all_dependencies.extend(dependencies)
-    
-            # 5. Persist results
+
             self.logger.debug(f"Persisting {len(all_dependencies)} dependencies")
             self.utils.persist_dependencies(all_dependencies)
-    
+
             msg = (f"Found {len(all_dependencies)} dependencies "
                    f"across {len(requirements_locations)} locations")
             self.logger.info(msg)
             return msg
-    
+
         except Exception as e:
             self.logger.exception(f"Analysis failed: {e}")
             raise
@@ -84,7 +78,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
             venv.create(env_path, with_pip=True)
 
         req_file = directory / "requirements.txt"
-        if not req_file.exists() and is_root:  # Only generate in root
+        if not req_file.exists() and is_root:
             self._generate_requirements(directory)
 
         self._install_requirements(directory, env_path)
@@ -96,6 +90,27 @@ class PythonBuildToolAnalyzer(BaseLogger):
     def _validate_repo(self, repo):
         repo_languages = self.utils.detect_repo_languages(repo['repo_id'])
         return 'Python' in repo_languages
+
+    def _is_python_project(self, directory):
+
+        project_files = {
+            'requirements.txt',
+            'pyproject.toml',
+            'setup.py',
+            'Pipfile',
+            'poetry.lock'
+        }
+
+        if self._detect_build_tool(directory):
+            return True
+
+        if any((directory / f).exists() for f in project_files):
+            return True
+
+        return any(
+            entry.is_file() and entry.suffix == '.py'
+            for entry in directory.iterdir()
+        )
 
     def _detect_build_tool(self, directory):
         tool_detectors = [

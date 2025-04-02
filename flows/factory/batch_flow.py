@@ -4,8 +4,8 @@ from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.client import get_client
 import json
-from flows.flow_factory.config import FlowConfig
-from flows.flow_factory.single_repo_flow import safe_process_repo
+from flows.factory.config import FlowConfig
+from flows.factory.single_repo_flow import safe_process_repo
 
 @flow(
     name="batch_repo_subflow",
@@ -31,10 +31,10 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         1 for r in results
         if not isinstance(r, Exception) and r.get("status") == "success"
     )
-    
+
     logger.info(f"Completed {len(repos)} repos | Success: {success_count}")
     return results
-    
+
 
 async def submit_batch_subflow(config: FlowConfig, batch: List[Dict], parent_time_str: str, batch_number: int) -> str:
     logger = get_run_logger()
