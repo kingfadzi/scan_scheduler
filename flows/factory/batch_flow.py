@@ -31,7 +31,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         # Use map with proper unmapped arguments
         batch_results = safe_process_repo.map(
             unmapped(config),
-            batch,
+            unmapped(batch),
             unmapped(parent_run_id)
         )
 
