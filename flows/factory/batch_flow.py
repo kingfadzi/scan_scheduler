@@ -27,11 +27,12 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         batch = repos[start_idx:start_idx + batch_size]
         logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
 
-        # Submit tasks and await results
+        # Submit tasks correctly using .submit()
         futures = [safe_process_repo.submit(config, repo, parent_run_id) for repo in batch]
 
+        # Await futures directly without .result() calls
         batch_results = await asyncio.gather(
-            *[future.result() for future in futures],
+            *futures,
             return_exceptions=True
         )
 
