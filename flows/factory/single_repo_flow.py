@@ -79,10 +79,11 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
     finally:
         logger.debug(f"[{repo_id}] Starting cleanup")
         try:
-            await asyncio.gather(
-                cleanup_repo_task(repo_dir, parent_run_id),
-                update_status_task(repo, parent_run_id)
-            )
+
+            await cleanup_repo_task(repo_dir, parent_run_id)
+            await update_status_task(repo, parent_run_id)
+
+
         except Exception as e:
             logger.error(f"[{repo_id}] Cleanup error: {str(e)}")
 
