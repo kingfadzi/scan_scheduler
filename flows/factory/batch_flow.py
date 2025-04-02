@@ -11,7 +11,7 @@ from flows.factory.single_repo_flow import safe_process_repo
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers=lambda: Config.DEFAULT_PER_BATCH_WORKERS),
+    task_runner=ConcurrentTaskRunner(max_workers=Config.DEFAULT_PER_BATCH_WORKERS),
     persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
