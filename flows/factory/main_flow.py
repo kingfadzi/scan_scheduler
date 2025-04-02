@@ -89,7 +89,7 @@ def create_analysis_flow(
             if current_batch:
 
                 logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
-                batch_futures.append(...)
+                #batch_futures.append(...)
 
                 logger.info(f"Submitted {len(batch_futures)} batches")
 
