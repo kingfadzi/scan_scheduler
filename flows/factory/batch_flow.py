@@ -4,6 +4,7 @@ from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.client import get_client
 import json
+from prefect.utilities.annotations import unmapped
 
 from config.config import Config
 from flows.factory.flow_config import FlowConfig
@@ -27,22 +28,21 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         batch = repos[start_idx:start_idx + batch_size]
         logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
 
-        # Submit tasks correctly using .submit()
-        futures = [safe_process_repo.submit(config, repo, parent_run_id) for repo in batch]
-
-        # Await futures directly without .result() calls
-        batch_results = await asyncio.gather(
-            *futures,
-            return_exceptions=True
+        # Use task.map with unmapped static arguments
+        batch_results = await safe_process_repo.map(
+            unmapped(config),
+            batch,
+            unmapped(parent_run_id)
         )
 
         results.extend(batch_results)
-        success = sum(1 for r in batch_results if not isinstance(r, Exception) and r.get("status") == "success")
+        success = sum(1 for r in batch_results if r.get("status") == "success")
         logger.info(f"Batch {batch_num} complete - Success: {success}/{len(batch)}")
 
-    overall_success = sum(1 for r in results if not isinstance(r, Exception) and r.get("status") == "success")
+    overall_success = sum(1 for r in results if r.get("status") == "success")
     logger.info(f"All batches processed. Total Success: {overall_success}/{len(repos)}")
     return results
+
 
 
 async def submit_batch_subflow(
