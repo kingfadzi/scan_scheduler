@@ -106,7 +106,7 @@ async def safe_process_repo(config, repo, parent_run_id):
         logger.debug(f"Configuration received: {config}")
         logger.debug(f"Repository details: {repo}")
         
-        result = await process_single_repo_flow(config, repo, parent_run_id)
+        result = process_single_repo_flow(config, repo, parent_run_id)
         
         logger.info(f"Finished processing repo: {repo.get('repo_slug')} with result: {result}")
         return {"status": "success", **result}
