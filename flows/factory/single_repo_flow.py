@@ -2,7 +2,7 @@ from prefect import flow, task, get_run_logger
 from prefect.context import get_run_context
 import asyncio
 from typing import Dict
-from flows.factory.config import FlowConfig
+from flows.factory.flow_config import FlowConfig
 from tasks.base_tasks import clone_repository_task, cleanup_repo_task, update_status_task
 from tasks.registry.task_registry import task_registry
 

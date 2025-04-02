@@ -4,17 +4,19 @@ from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.client import get_client
 import json
-from flows.factory.config import FlowConfig
+
+from config.config import Config
+from flows.factory.flow_config import FlowConfig
 from flows.factory.single_repo_flow import safe_process_repo
 
 @flow(
     name="batch_repo_subflow",
-    task_runner=ConcurrentTaskRunner(max_workers=lambda: config.per_batch_workers),
+    task_runner=ConcurrentTaskRunner(max_workers=lambda: Config.DEFAULT_PER_BATCH_WORKERS),
     persist_result=False
 )
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
-    logger.info(f"Processing {len(repos)} repos with {config.per_batch_workers} workers")
+    logger.info(f"Processing {len(repos)} repos with {Config.DEFAULT_PER_BATCH_WORKERS} workers")
 
     tasks = [
         safe_process_repo.submit(

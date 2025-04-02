@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 from prefect import flow
 from prefect.runner.storage import GitRepository
