@@ -102,7 +102,7 @@ class LizardAnalyzer(BaseLogger):
                 self.logger.warn("No valid data lines found in the file.")
                 return
 
-            self.logger.debug(f"Valid lines extracted:\n" + "\n".join(valid_lines))
+            #self.logger.debug(f"Valid lines extracted:\n" + "\n".join(valid_lines))
 
             csv_file = io.StringIO("\n".join(valid_lines))
             reader = csv.DictReader(csv_file, fieldnames=[
