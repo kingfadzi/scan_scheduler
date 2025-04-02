@@ -14,27 +14,42 @@ from flows.factory.single_repo_flow import safe_process_repo
     task_runner=ConcurrentTaskRunner(max_workers=Config.DEFAULT_PER_BATCH_WORKERS),
     persist_result=False
 )
-async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
+def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
     logger = get_run_logger()
-    logger.info(f"Processing {len(repos)} repos with {config.per_batch_workers} workers")
+    parent_run_id = config.parent_run_id
+    logger.info(f"Starting batch processing of {len(repos)} repositories")
 
-    tasks = [
-        safe_process_repo.submit(
-            config=config,
-            repo=repo,
-            parent_run_id=config.parent_run_id
+    results = []
+    for batch_num, start_idx in enumerate(range(0, len(repos), config.per_batch_workers), 1):
+        batch = repos[start_idx:start_idx + config.per_batch_workers]
+        logger.info(f"Processing batch {batch_num} with {len(batch)} repos")
+
+        # Submit tasks to Prefect's thread pool
+        futures = [
+            safe_process_repo.submit(
+                config=config,
+                repo=repo,
+                parent_run_id=parent_run_id
+            )
+            for repo in batch
+        ]
+
+        # Collect results from Prefect futures (auto-waits for completion)
+        batch_results = [future.result() for future in futures]
+
+        # Process batch results
+        success = sum(
+            1 for r in batch_results
+            if not isinstance(r, Exception) and r.get("status") == "success"
         )
-        for repo in repos
-    ]
+        logger.info(f"Batch {batch_num} complete - Success: {success}/{len(batch)}")
+        results.extend(batch_results)
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    success_count = sum(
+    overall_success = sum(
         1 for r in results
         if not isinstance(r, Exception) and r.get("status") == "success"
     )
-
-    logger.info(f"Completed {len(repos)} repos | Success: {success_count}")
+    logger.info(f"All batches processed. Total Success: {overall_success}/{len(repos)}")
     return results
 
 
