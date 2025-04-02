@@ -21,7 +21,6 @@ METRIC_TASKS = [
     name="process_single_repo_flow",
     persist_result=False,
     retries=0,
-    on_completion=[cleanup_repo_task, update_status_task],
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
@@ -96,12 +95,20 @@ async def __process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_
         #return result
     
 
+import traceback
+
 @task(task_run_name="{repo[repo_slug]}", retries=1)
 async def safe_process_repo(config, repo, parent_run_id):
     logger = get_run_logger()
     ctx = get_run_context()
     try:
+        logger.info(f"Starting safe_process_repo for repo: {repo.get('repo_slug')} with parent_run_id: {parent_run_id}")
+        logger.debug(f"Configuration received: {config}")
+        logger.debug(f"Repository details: {repo}")
+        
         result = await process_single_repo_flow(config, repo, parent_run_id)
+        
+        logger.info(f"Finished processing repo: {repo.get('repo_slug')} with result: {result}")
         return {"status": "success", **result}
     except Exception as original_exc:
         error_info = {
