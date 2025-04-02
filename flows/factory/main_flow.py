@@ -1,11 +1,12 @@
 import asyncio
+import json
 from typing import List, Dict, Optional
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
 from flows.factory.flow_config import FlowConfig
 from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_task
-from flows.factory.batch_flow import submit_batch_subflow
+from prefect.client import get_client
 
 
 def create_analysis_flow(
@@ -89,7 +90,6 @@ def create_analysis_flow(
             if current_batch:
 
                 logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
-                #batch_futures.append(...)
 
                 logger.info(f"Submitted {len(batch_futures)} batches")
 
@@ -126,3 +126,34 @@ def create_analysis_flow(
             logger.info("Main flow cleanup completed")
 
     return main_flow
+
+
+async def submit_batch_subflow(
+        config: FlowConfig,
+        batch: List[Dict],
+        parent_start_time: str,
+        batch_number: int
+) -> str:
+
+    logger = get_run_logger()
+    try:
+        async with get_client() as client:
+            deployment = await client.read_deployment_by_name(
+                "batch_repo_subflow/batch_repo_subflow-deployment"
+            )
+
+            flow_run_name = (f"{config.flow_prefix}_"
+                             f"{parent_start_time}_batch_{batch_number:04d}")
+
+            flow_run = await client.create_flow_run_from_deployment(
+                deployment_id=deployment.id,
+                parameters={
+                    "config": config.model_dump(),
+                    "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
+                },
+                name=flow_run_name
+            )
+            return flow_run.id
+    except Exception as e:
+        logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
+        raise

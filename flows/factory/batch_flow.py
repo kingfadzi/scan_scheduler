@@ -2,7 +2,7 @@ import asyncio
 from typing import List, Dict
 from prefect import flow, get_run_logger
 from prefect.task_runners import ConcurrentTaskRunner
-from prefect.client import get_client
+
 import json
 from prefect.utilities.annotations import unmapped
 
@@ -31,9 +31,9 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         # Use map with proper unmapped arguments
         batch_results = await safe_process_repo.map(
             unmapped(config),
-            repos,
+            batch,
             unmapped(parent_run_id)
-)
+        )
 
         # Process results with exception handling
         processed = []
@@ -56,31 +56,4 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
 
 
 
-async def submit_batch_subflow(
-        config: FlowConfig,
-        batch: List[Dict],
-        parent_start_time: str,
-        batch_number: int
-) -> str:
 
-    logger = get_run_logger()
-    try:
-        async with get_client() as client:
-            deployment = await client.read_deployment_by_name(
-                "batch_repo_subflow/batch_repo_subflow-deployment"
-            )
-
-            flow_run_name = (f"{config.flow_prefix}_"
-                             f"{parent_start_time}_batch_{batch_number:04d}")
-            flow_run = await client.create_flow_run_from_deployment(
-                deployment_id=deployment.id,
-                parameters={
-                    "config": config.model_dump(),
-                    "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
-                },
-                name=flow_run_name
-            )
-            return flow_run.id
-    except Exception as e:
-        logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
-        raise
