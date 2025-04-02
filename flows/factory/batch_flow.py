@@ -36,7 +36,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict]):
         )
 
         # Explicitly wait for completion
-        await batch_results.wait()
+        #await batch_results.wait()
 
         # Process results with exception handling
         processed = []
