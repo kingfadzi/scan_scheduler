@@ -22,7 +22,10 @@ def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
     try:
         repo = flow_run.parameters["repo"]
         parent_run_id = flow_run.parameters["parent_run_id"]
-        repo_dir = repo["repo_dir"]
+        repo_dir = state.result.get("repo_dir") if state and state.result else None
+        if not repo_dir:
+            logger.error("repo_dir was not set in the flow result.")
+            return
 
         bound_cleanup = partial(
             cleanup_repo_task.fn,
@@ -43,11 +46,10 @@ def status_update_hook_adapter(flow=None, flow_run=None, state=None):
     try:
         repo = flow_run.parameters["repo"]
         parent_run_id = flow_run.parameters["parent_run_id"]
-        repo_dir = repo["repo_dir"]
 
         bound_update = partial(
             update_status_task.fn,
-            repo_dir=repo_dir,
+            repo=repo,
             run_id=parent_run_id,
             status="completed",
             metadata={"phase": "cleanup"}
@@ -116,8 +118,8 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
             if success_count < len(tasks):
                 raise RuntimeError(f"{len(tasks)-success_count} tasks failed")
 
-        result["status"] = "success"
-        return result
+            result = {"status": "completed", "repo": repo_id, "repo_dir": repo_dir}
+            return result
 
     except Exception as e:
         logger.error(f"[{repo_id}] Flow failed: {str(e)}")
