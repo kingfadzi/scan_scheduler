@@ -15,14 +15,14 @@ from prefect.task_runners import ConcurrentTaskRunner
 import asyncio
 
 
-
 @task
 async def run_subflow_async_task(config: FlowConfig, repo: dict, parent_run_id: str):
     logger = get_run_logger()
     repo_id = repo.get("repo_id", "unknown")
     logger.info(f"Starting subflow for repo: {repo_id}")
     try:
-        subflow_future = asyncio.create_task(process_single_repo_flow(config, repo, parent_run_id))
+        # Wrap the async subflow call in an asyncio task
+        subflow_future = asyncio.create_task(__process_single_repo_flow(config, repo, parent_run_id))
         result = await subflow_future
         logger.info(f"Completed subflow for repo: {repo_id}")
         return result
@@ -35,11 +35,15 @@ async def batch_repo_subflow(config: FlowConfig, repos: list[dict], parent_run_i
     logger = get_run_logger()
     logger.info(f"Starting batch_repo_subflow for {len(repos)} repositories.")
     
-    results = await run_subflow_async_task.map(
+    # Map the async task over the repos. This returns a PrefectFutureList.
+    mapped_futures = run_subflow_async_task.map(
         config=[config] * len(repos),
         repo=repos,
         parent_run_id=[parent_run_id] * len(repos)
     )
+    # Convert the PrefectFutureList into a plain list of futures.
+    futures_list = [future for future in mapped_futures]
+    results = await asyncio.gather(*futures_list, return_exceptions=True)
     
     logger.info("Completed batch_repo_subflow")
     return results
