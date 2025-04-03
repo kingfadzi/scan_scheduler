@@ -22,7 +22,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: List[Dict], parent_run_i
     for repo in repos:
         repo_id = repo.get("repo_id", "unknown")
         logger.info(f"Submitting subflow for repo: {repo_id}")
-        futures.append(process_single_repo_flow.submit(config, repo, parent_run_id))
+        futures.append(process_single_repo_flow.submit(config, repo, config.parent_run_id))
     try:
         results = await asyncio.gather(*futures, return_exceptions=True)
     except Exception as e:
