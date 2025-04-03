@@ -18,10 +18,10 @@ METRIC_TASKS = [
 
 @task(name='Clean Up Repository Task', cache_policy=NO_CACHE)
 def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
-    ctx = get_run_context()
+    logger = get_run_logger()
     try:
-        repo = ctx.flow_run.parameters["repo"]
-        parent_run_id = ctx.flow_run.parameters["parent_run_id"]
+        repo = flow_run.parameters["repo"]
+        parent_run_id = flow_run.parameters["parent_run_id"]
         repo_dir = repo["repo_dir"]
 
         bound_cleanup = partial(
@@ -32,17 +32,17 @@ def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
 
         return bound_cleanup()
     except KeyError as e:
-        ctx.logger.error(f"Missing parameter in cleanup: {str(e)}")
+        logger.error(f"Missing parameter in cleanup: {str(e)}")
     except Exception as e:
-        ctx.logger.exception("Cleanup hook failed unexpectedly")
+        logger.exception("Cleanup hook failed unexpectedly")
 
 
 @task(name='Update Data Status Task', cache_policy=NO_CACHE)
 def status_update_hook_adapter(flow=None, flow_run=None, state=None):
-    ctx = get_run_context()
+    logger = get_run_logger()
     try:
-        repo = ctx.flow_run.parameters["repo"]
-        parent_run_id = ctx.flow_run.parameters["parent_run_id"]
+        repo = flow_run.parameters["repo"]
+        parent_run_id = flow_run.parameters["parent_run_id"]
         repo_dir = repo["repo_dir"]
 
         bound_update = partial(
@@ -53,11 +53,11 @@ def status_update_hook_adapter(flow=None, flow_run=None, state=None):
             metadata={"phase": "cleanup"}
         )
 
-        return bound_update()  # Call the underlying function directly
+        return bound_update()
     except KeyError as e:
-        ctx.logger.error(f"Missing parameter in status update: {str(e)}")
+        logger.error(f"Missing parameter in status update: {str(e)}")
     except Exception as e:
-        ctx.logger.exception("Status update hook failed unexpectedly")
+        logger.exception("Status update hook failed unexpectedly")
         raise
 
 
