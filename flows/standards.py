@@ -25,8 +25,9 @@ if __name__ == "__main__":
     asyncio.run(standards_assessment_flow(
         payload={
             "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME],
-                "main_language": ["Java"]
+                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
+                "activity_status": ['ACTIVE'],
+                # "main_language": ["Python"]  # Uncomment if needed
             }
         }
     ))

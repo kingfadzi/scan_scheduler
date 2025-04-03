@@ -30,7 +30,8 @@ if __name__ == "__main__":
     asyncio.run(dependencies_flow(
         payload={
             "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME],
+                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
+                "activity_status": ['ACTIVE'],
                # "main_language": ["Python"]  # Uncomment if needed
             }
         }
