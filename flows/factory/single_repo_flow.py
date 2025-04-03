@@ -16,28 +16,14 @@ METRIC_TASKS = [
 ]
 
 
-
 @flow(
     name="process_single_repo_flow",
-    persist_result=False,
-    retries=0,
-    flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
-)
-def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
-    logger = get_run_logger()
-    logger.info(f"Starting processing for repo: {repo.get('repo_id')}")
-    # Simulate a delay
-    #await asyncio.sleep(2)
-    logger.info(f"Finished processing for repo: {repo.get('repo_id')}")
-
-@flow(
-    name="__process_single_repo_flow",
     persist_result=False,
     retries=0,
     on_completion=[cleanup_repo_task, update_status_task],
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
-async def __process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
+async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
     logger = get_run_logger()
     repo_id = repo["repo_id"]
     repo_slug = repo["repo_slug"]
