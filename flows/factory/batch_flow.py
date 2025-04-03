@@ -36,7 +36,7 @@ async def batch_repo_subflow(config: FlowConfig, repos: list[dict], parent_run_i
     logger.info(f"Starting batch_repo_subflow for {len(repos)} repositories.")
     
     # Map the async task over the repos. This returns a PrefectFutureList.
-    mapped_futures = run_subflow_async_task.map(
+    mapped_futures = await run_subflow_async_task.map(
         config=[config] * len(repos),
         repo=repos,
         parent_run_id=[parent_run_id] * len(repos)
