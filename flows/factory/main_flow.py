@@ -126,6 +126,7 @@ async def submit_batch_subflow(
                 deployment_id=deployment.id,
                 parameters={
                     "config": config.model_dump(),
+                    "parent_run_id": config.parent_run_id,
                     "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
                 },
                 name=flow_run_name
