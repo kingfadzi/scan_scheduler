@@ -9,6 +9,7 @@ from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_
 from prefect.client import get_client
 
 
+
 def create_analysis_flow(
         flow_name: str,
         default_sub_dir: str,
@@ -69,18 +70,42 @@ def create_analysis_flow(
             await start_task(flow_prefix)
 
             async for repo in fetch_repositories_task(payload, batch_size):
+                repo_count += 1
                 current_batch.append(repo)
 
-            batch_futures.append(
-                asyncio.create_task(
-                    submit_batch_subflow(
-                        config,
-                        current_batch,
-                        parent_time_str,
-                        batch_counter
+                if len(current_batch) >= processing_batch_size:
+                    logger.debug(f"Queueing batch {batch_counter} ({len(current_batch)} repos)")
+                    batch_futures.append(
+                        asyncio.create_task(
+                            submit_batch_subflow(
+                                config,
+                                current_batch.copy(),
+                                parent_time_str,
+                                batch_counter
+                            )
+                        )
+                    )
+                    current_batch = []
+                    batch_counter += 1
+
+            if current_batch:
+
+                logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
+                #batch_futures.append(...)
+
+                logger.info(f"Submitted {len(batch_futures)} batches")
+
+                batch_futures.append(
+                    asyncio.create_task(
+                        submit_batch_subflow(
+                            config,
+                            current_batch,
+                            parent_time_str,
+                            batch_counter
+                        )
                     )
                 )
-            )
+                batch_counter += 1
 
             logger.info(f"Submitted {len(batch_futures)} batches with parent time {parent_time_str}")
 
@@ -103,7 +128,7 @@ def create_analysis_flow(
             logger.info("Main flow cleanup completed")
 
     return main_flow
-
+    
 
 async def submit_batch_subflow(
         config: FlowConfig,
