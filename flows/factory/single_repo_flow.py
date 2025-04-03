@@ -1,5 +1,6 @@
 import traceback
-
+from functools import partial
+from prefect.cache_policies import NO_CACHE
 from prefect import flow, task, get_run_logger
 from prefect.context import get_run_context
 import asyncio
@@ -15,12 +16,56 @@ METRIC_TASKS = [
     "core.gitlog"
 ]
 
+@task(name='Clean Up Repository Task', cache_policy=NO_CACHE)
+def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
+    ctx = get_run_context()
+    try:
+        repo = ctx.flow_run.parameters["repo"]
+        parent_run_id = ctx.flow_run.parameters["parent_run_id"]
+        repo_dir = repo["repo_dir"]
+
+        bound_cleanup = partial(
+            cleanup_repo_task.fn,
+            repo_dir=repo_dir,
+            run_id=parent_run_id
+        )
+
+        return bound_cleanup()
+    except KeyError as e:
+        ctx.logger.error(f"Missing parameter in cleanup: {str(e)}")
+    except Exception as e:
+        ctx.logger.exception("Cleanup hook failed unexpectedly")
+
+
+@task(name='Update Data Status Task', cache_policy=NO_CACHE)
+def status_update_hook_adapter(flow=None, flow_run=None, state=None):
+    ctx = get_run_context()
+    try:
+        repo = ctx.flow_run.parameters["repo"]
+        parent_run_id = ctx.flow_run.parameters["parent_run_id"]
+        repo_dir = repo["repo_dir"]
+
+        bound_update = partial(
+            update_status_task.fn,
+            repo_dir=repo_dir,
+            run_id=parent_run_id,
+            status="completed",
+            metadata={"phase": "cleanup"}
+        )
+
+        return bound_update()  # Call the underlying function directly
+    except KeyError as e:
+        ctx.logger.error(f"Missing parameter in status update: {str(e)}")
+    except Exception as e:
+        ctx.logger.exception("Status update hook failed unexpectedly")
+        raise
+
 
 @flow(
     name="process_single_repo_flow",
     persist_result=False,
     retries=0,
-    on_completion=[cleanup_repo_task, update_status_task],
+    on_completion=[cleanup_hook_adapter, status_update_hook_adapter],
     flow_run_name=lambda: get_run_context().parameters["repo"]["repo_id"]
 )
 async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id: str):
@@ -79,39 +124,4 @@ async def process_single_repo_flow(config: FlowConfig, repo: Dict, parent_run_id
         result["error"] = str(e)
         raise
         #return result
-    
 
-import traceback
-
-@task(task_run_name="{repo[repo_slug]}", retries=1)
-async def safe_process_repo(config, repo, parent_run_id):
-    logger = get_run_logger()
-    ctx = get_run_context()
-    try:
-        logger.info(f"Starting safe_process_repo for repo: {repo.get('repo_slug')} with parent_run_id: {parent_run_id}")
-        logger.debug(f"Configuration received: {config}")
-        logger.debug(f"Repository details: {repo}")
-        
-        result = process_single_repo_flow(config, repo, parent_run_id)
-        
-        logger.info(f"Finished processing repo: {repo.get('repo_slug')} with result: {result}")
-        return {"status": "success", **result}
-    except Exception as original_exc:
-        error_info = {
-            "exception_type": type(original_exc).__name__,
-            "exception_message": str(original_exc),
-            "repo_id": repo['repo_id'],
-            "repo_slug": repo['repo_slug'],
-            "task_run_id": str(ctx.task_run.id),
-            "traceback": traceback.format_exc(),
-            "parent_run_id": parent_run_id
-        }
-
-        logger.error(
-            "Critical failure processing repository",
-            extra={"error_details": error_info}
-        )
-
-        raise RuntimeError(
-            f"Failed to process {repo['repo_slug']}: {str(original_exc)}"
-        ) from original_exc

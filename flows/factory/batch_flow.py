@@ -22,9 +22,8 @@ import asyncio
 async def batch_repo_subflow(config: FlowConfig, repos: list[dict], parent_run_id: str):
     logger = get_run_logger()
     logger.info(f"Starting batch_repo_subflow for {len(repos)} repositories.")
-    
-    # Limit concurrency to 5 using a semaphore
-    semaphore = asyncio.Semaphore(5)
+
+    semaphore = asyncio.Semaphore(config.per_batch_workers)
     
     async def run_repo(repo: dict):
         repo_id = repo.get("repo_id", "unknown")
