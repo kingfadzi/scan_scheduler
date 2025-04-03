@@ -23,6 +23,13 @@ def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
         repo = flow_run.parameters["repo"]
         parent_run_id = flow_run.parameters["parent_run_id"]
         repo_dir = state.result.get("repo_dir") if state and state.result else None
+        if state and isinstance(state, dict):
+            repo_dir = state.get("repo_dir")
+        elif state and hasattr(state, "result"):
+            repo_dir = state.result.get("repo_dir")
+        else:
+            repo_dir = None
+
         if not repo_dir:
             logger.error("repo_dir was not set in the flow result.")
             return
@@ -36,8 +43,10 @@ def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
         return bound_cleanup()
     except KeyError as e:
         logger.error(f"Missing parameter in cleanup: {str(e)}")
+        raise
     except Exception as e:
         logger.exception("Cleanup hook failed unexpectedly")
+        raise
 
 
 @task(name='Update Data Status Task', cache_policy=NO_CACHE)
@@ -50,14 +59,13 @@ def status_update_hook_adapter(flow=None, flow_run=None, state=None):
         bound_update = partial(
             update_status_task.fn,
             repo=repo,
-            run_id=parent_run_id,
-            status="completed",
-            metadata={"phase": "cleanup"}
+            run_id=parent_run_id
         )
 
         return bound_update()
     except KeyError as e:
         logger.error(f"Missing parameter in status update: {str(e)}")
+        raise
     except Exception as e:
         logger.exception("Status update hook failed unexpectedly")
         raise
