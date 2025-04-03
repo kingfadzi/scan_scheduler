@@ -22,7 +22,7 @@ async def run_subflow_async_task(config: FlowConfig, repo: dict, parent_run_id: 
     logger.info(f"Starting subflow for repo: {repo_id}")
     try:
         # Wrap the async subflow call in an asyncio task
-        subflow_future = asyncio.create_task(__process_single_repo_flow(config, repo, parent_run_id))
+        subflow_future = asyncio.create_task(process_single_repo_flow(config, repo, parent_run_id))
         result = await subflow_future
         logger.info(f"Completed subflow for repo: {repo_id}")
         return result
