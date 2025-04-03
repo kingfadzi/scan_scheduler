@@ -20,9 +20,9 @@ METRIC_TASKS = [
 def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
     logger = get_run_logger()
     try:
-        repo = flow_run.parameters["repo"]
+
         parent_run_id = flow_run.parameters["parent_run_id"]
-        repo_dir = state.result.get("repo_dir") if state and state.result else None
+
         if state and isinstance(state, dict):
             repo_dir = state.get("repo_dir")
         elif state and hasattr(state, "result"):
