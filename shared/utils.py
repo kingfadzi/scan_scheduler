@@ -150,14 +150,6 @@ class Utils(BaseLogger):
                 session.close()
 
 
-    @staticmethod
-    def generate_main_flow_run_name():
-        run_ctx = get_run_context()
-        start_time = run_ctx.flow_run.expected_start_time
-        formatted_time = start_time.strftime('%Y-%m-%d %H:%M:%S')
-        return f"{formatted_time}"
-
-
     def detect_repo_languages(self, repo_id):
         self.logger.info(f"Querying go_enry_analysis for repo_id: {repo_id}")
 
@@ -278,6 +270,8 @@ class Utils(BaseLogger):
         try:
             while True:
                 final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+
+                self.logger.debug(f"Generated query: {final_query}")
 
                 batch = await asyncio.to_thread(
                     lambda: [
