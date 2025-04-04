@@ -45,7 +45,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.logger.debug(f"Resolved repository directory: {root_dir.resolve()}")
         build_tools = set()
 
-        # Loop through each detector and check if the corresponding file exists.
+        # Process each configured build tool detector.
         for file_name, detector in self.build_tool_detectors:
             target = root_dir / file_name
             self.logger.debug(f"Checking for '{file_name}' in {root_dir}")
@@ -59,11 +59,25 @@ class PythonBuildToolAnalyzer(BaseLogger):
                         'runtime_version': self._detect_python_version(root_dir, tool_name)
                     }
                     self.logger.debug(f"Detected build tool info: {detected_info}")
-                    build_tools.add(detected_info)
+                    build_tools.add(tuple(detected_info.items()))
+
+        # If a requirements file exists, assume pip is used.
+        req_files = list(root_dir.rglob('requirements.txt'))
+        if req_files:
+            self.logger.debug("Found requirements.txt file(s) - assuming build tool is pip")
+            pip_info = {
+                'repo_id': repo['repo_id'],
+                'tool': 'pip',
+                'tool_version': None,  # Do not detect pip version to avoid scanning machine bias
+                'runtime_version': self._get_python_version()
+            }
+            self.logger.debug(f"Assumed pip info: {pip_info}")
+            build_tools.add(tuple(pip_info.items()))
 
         self.logger.debug(f"Persisting {len(build_tools)} build tools")
         self._persist_results(build_tools)
-        return build_tools
+        # Convert the set of tuples back to a list of dictionaries for returning
+        return [dict(items) for items in build_tools]
 
     def _detect_tool_version(self, dir: Path, tool: str) -> Optional[str]:
         self.logger.debug(f"Detecting tool version for {tool} in {dir}")
@@ -91,7 +105,9 @@ class PythonBuildToolAnalyzer(BaseLogger):
         self.logger.debug("Persisting build tool analysis results to the database")
         with Session() as session:
             if build_tools:
-                stmt = insert(BuildTool).values(list(build_tools))
+                # Convert each tuple back to dict before inserting
+                build_tool_dicts = [dict(items) for items in build_tools]
+                stmt = insert(BuildTool).values(build_tool_dicts)
                 stmt = stmt.on_conflict_do_nothing(
                     index_elements=['repo_id', 'tool', 'tool_version', 'runtime_version']
                 )
@@ -179,6 +195,12 @@ class PythonBuildToolAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.debug(f"Error reading Setuptools version: {e}")
             return None
+
+    def _get_python_version(self) -> Optional[str]:
+        match = re.search(r'\d+\.\d+\.\d+', sys.version)
+        version = match.group() if match else None
+        self.logger.debug(f"System Python version detected: {version}")
+        return version
 
 if __name__ == "__main__":
     logging.basicConfig(
