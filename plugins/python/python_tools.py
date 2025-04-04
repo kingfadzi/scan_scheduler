@@ -62,7 +62,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
                     build_tools.add(tuple(detected_info.items()))
 
         # If no explicit build tool is detected and a requirements.txt file exists,
-        # assume the build tool is pip.
+        # assume the build tool is pip. Set runtime_version to None.
         req_files = list(root_dir.rglob('requirements.txt'))
         if req_files and not build_tools:
             self.logger.debug("Found requirements.txt file(s) but no explicit build tool; assuming pip")
@@ -70,7 +70,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
                 'repo_id': repo['repo_id'],
                 'tool': 'pip',
                 'tool_version': None,  # No pip version detection
-                'runtime_version': self._get_python_version()
+                'runtime_version': None  # Set to None per instruction
             }
             self.logger.debug(f"Assumed pip info: {pip_info}")
             build_tools.add(tuple(pip_info.items()))
