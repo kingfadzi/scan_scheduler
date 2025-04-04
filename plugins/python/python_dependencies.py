@@ -1,5 +1,4 @@
 import re
-import sys
 import logging
 import subprocess
 import venv
@@ -7,11 +6,10 @@ import json
 from pathlib import Path
 from typing import List, Optional, ClassVar
 
-from shared.models import Session, BuildTool
+from shared.models import Session, Dependency
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger
-from sqlalchemy.dialects.postgresql import insert
 
 class PythonDependencyAnalyzer(BaseLogger):
     USE_VENV_FALLBACK: ClassVar[bool] = False
@@ -34,10 +32,10 @@ class PythonDependencyAnalyzer(BaseLogger):
         self.logger.debug(f"Starting dependency analysis on repo {repo.get('repo_id', 'unknown')} in {repo_dir}")
         root_dir = Path(repo_dir)
         self.logger.debug(f"Resolved repository directory: {root_dir.resolve()}")
-        all_dependencies = []
+        all_dependencies: List[Dependency] = []
 
         try:
-            # Fast path: Direct requirements.txt parsing
+            # Direct requirements.txt parsing
             req_files = self._find_requirements_files(root_dir)
             self.logger.debug(f"Found {len(req_files)} requirements.txt files")
             for req_file in req_files:
@@ -45,16 +43,17 @@ class PythonDependencyAnalyzer(BaseLogger):
                 deps = self._parse_requirements_file(req_file, repo)
                 self.logger.debug(f"Parsed {len(deps)} dependencies from {req_file}")
                 all_dependencies.extend(deps)
-            
-            # Fallback path: Venv-based analysis if no requirements file found
+
+            # Fallback: Venv-based analysis (if enabled)
             if not req_files and self.USE_VENV_FALLBACK:
                 self.logger.debug("No requirements.txt files found, using venv fallback analysis")
                 venv_deps = self._venv_fallback_analysis(root_dir, repo)
                 self.logger.debug(f"Venv fallback analysis found {len(venv_deps)} dependencies")
                 all_dependencies.extend(venv_deps)
 
-            self.logger.debug(f"Persisting {len(all_dependencies)} dependencies")
-            self._persist_dependencies(all_dependencies)
+            self.logger.debug(f"Persisting {len(all_dependencies)} dependencies using shared utils")
+            # Use the persist_dependencies method from shared/utils.py
+            self.utils.persist_dependencies(all_dependencies)
             return f"Found {len(all_dependencies)} dependencies"
 
         except Exception as e:
@@ -67,10 +66,11 @@ class PythonDependencyAnalyzer(BaseLogger):
         self.logger.debug(f"Found {len(files)} requirements.txt files")
         return files
 
-    def _parse_requirements_file(self, req_file: Path, repo: dict) -> List[BuildTool]:
-        dependencies = []
-        py_version = self._get_python_version()
-        self.logger.debug(f"Using system python version: {py_version} for parsing {req_file}")
+    def _parse_requirements_file(self, req_file: Path, repo: dict) -> List[Dependency]:
+        dependencies: List[Dependency] = []
+        # Always set runtime_version to None
+        runtime_version = None
+        self.logger.debug(f"Parsing {req_file} with runtime_version set to None")
 
         try:
             content = req_file.read_text(encoding='utf-8')
@@ -85,7 +85,7 @@ class PythonDependencyAnalyzer(BaseLogger):
             if not line:
                 continue
 
-            # Handle include directives (e.g. -r another_requirements.txt)
+            # Handle include directives (e.g. -r other_requirements.txt)
             if line.startswith(('-r ', '--requirement ')):
                 included = req_file.parent / line.split(' ', 1)[1]
                 self.logger.debug(f"Found include directive in {req_file}: including file {included}")
@@ -93,32 +93,35 @@ class PythonDependencyAnalyzer(BaseLogger):
                     dependencies.extend(self._parse_requirements_file(included, repo))
                 continue
 
-            # Parse package details using the version pattern
+            # Parse dependency details using the version pattern
             if match := self.VERSION_PATTERN.match(line):
                 name = match['name']
                 spec = (match['specifiers'] or '').strip()
-                version = self._extract_version(spec) if spec else None
+                version = self._extract_version(spec) if spec else ""
                 self.logger.debug(f"Parsed dependency from line '{original_line}': name={name}, version={version}")
-                dependencies.append(BuildTool(
+                dependencies.append(Dependency(
                     repo_id=repo['repo_id'],
-                    tool=name,
-                    tool_version=version,
-                    runtime_version=py_version
+                    name=name,
+                    version=version,
+                    package_type='pip',
+                    category=None,
+                    sub_category=None
                 ))
 
         return dependencies
 
-    def _venv_fallback_analysis(self, root_dir: Path, repo: dict) -> List[BuildTool]:
+    def _venv_fallback_analysis(self, root_dir: Path, repo: dict) -> List[Dependency]:
         venv_path = root_dir / '.tmp_venv'
-        dependencies = []
+        dependencies: List[Dependency] = []
         try:
             self.logger.info("Starting venv fallback analysis")
             self.logger.debug(f"Creating virtual environment at {venv_path}")
             venv.create(venv_path, with_pip=True)
-            py_version = self._get_venv_python_version(venv_path)
-            self.logger.debug(f"Virtual environment python version: {py_version}")
+            # Set runtime_version to None
+            runtime_version = None
+            self.logger.debug("Using runtime_version set to None for venv fallback analysis")
 
-            # Optionally install project dependencies if a setup.py exists
+            # Optionally, install the project if setup.py exists
             if (root_dir / "setup.py").exists():
                 self.logger.debug("Found setup.py, installing project dependencies with pip")
                 pip = venv_path / 'bin' / 'pip'
@@ -131,13 +134,15 @@ class PythonDependencyAnalyzer(BaseLogger):
             for line in frozen_file.read_text().splitlines():
                 if line.strip() and not line.startswith('-e '):
                     pkg_name = line.split('==')[0].split(' @ ')[0]
-                    pkg_version = self._extract_version(line)
+                    pkg_version = self._extract_version(line) or ""
                     self.logger.debug(f"Found frozen dependency: {pkg_name} with version: {pkg_version}")
-                    dependencies.append(BuildTool(
+                    dependencies.append(Dependency(
                         repo_id=repo['repo_id'],
-                        tool=pkg_name,
-                        tool_version=pkg_version,
-                        runtime_version=py_version
+                        name=pkg_name,
+                        version=pkg_version,
+                        package_type='pip',
+                        category=None,
+                        sub_category=None
                     ))
             return dependencies
         finally:
@@ -158,15 +163,6 @@ class PythonDependencyAnalyzer(BaseLogger):
         self.logger.debug(f"Frozen requirements written to {frozen_file}")
         return frozen_file
 
-    def _persist_dependencies(self, dependencies: List[BuildTool]):
-        self.logger.debug("Persisting dependency analysis results to the database")
-        with Session() as session:
-            if dependencies:
-                self.logger.debug(f"Persisting {len(dependencies)} dependencies")
-                session.bulk_save_objects(dependencies)
-            session.commit()
-            self.logger.debug("Database commit successful")
-
     def _extract_version(self, spec: str) -> Optional[str]:
         patterns = [
             r'==([\w.]+)',          # Standard version
@@ -180,28 +176,6 @@ class PythonDependencyAnalyzer(BaseLogger):
                 return version
         self.logger.debug(f"No version extracted from spec '{spec}'")
         return None
-
-    def _get_python_version(self) -> Optional[str]:
-        match = re.search(r'\d+\.\d+\.\d+', sys.version)
-        version = match.group() if match else None
-        self.logger.debug(f"System python version detected: {version}")
-        return version
-
-    def _get_venv_python_version(self, venv_path: Path) -> Optional[str]:
-        try:
-            result = subprocess.run(
-                [venv_path / 'bin' / 'python', '-V'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            match = re.search(r'\d+\.\d+\.\d+', result.stderr or result.stdout)
-            version = match.group() if match else None
-            self.logger.debug(f"Virtual environment python version detected: {version}")
-            return version
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Error detecting venv python version: {e}")
-            return None
 
     def _cleanup_venv(self, venv_path: Path):
         try:
