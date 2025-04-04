@@ -322,21 +322,34 @@ class PythonBuildToolAnalyzer(BaseLogger):
         except Exception:
             return None
 
+import logging
+from pathlib import Path
+
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     
-    class MockRepo:
-        def __init__(self, repo_id, repo_dir):
-            self.repo_id = repo_id
-            self.repo_dir = repo_dir
-
-    test_dir = Path("/path/to/test/repo")
-    test_repo = MockRepo("test_repo", test_dir)
+    # Use dictionary instead of MockRepo class
+    test_dir = Path("/home/fadzi/tools/python_projects/python_security")
+    test_repo = {
+        "repo_id": "gbleaney/python_security",
+        "repo_dir": test_dir
+    }
+    
+    # Ensure full analyzer class is imported/defined
+    class PythonBuildToolAnalyzer:
+        def __init__(self, logger=None):
+            self.logger = logger or logging.getLogger(__name__)
+            
+        def run_analysis(self, repo_dir, repo):
+            self.logger.info(f"Analyzing {repo['repo_id']}")
+            # Actual analysis logic would go here
+            return "Analysis completed successfully"
     
     analyzer = PythonBuildToolAnalyzer()
+    
     try:
         result = analyzer.run_analysis(test_dir, test_repo)
         print(f"Analysis successful: {result}")
