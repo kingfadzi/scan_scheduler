@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
                 "activity_status": ['ACTIVE'],
-               # "main_language": ["Python"]  # Uncomment if needed
+                "main_language": ["Python","Java", "Go", "JavaScript"],
             }
         }
     ))
