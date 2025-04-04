@@ -420,7 +420,11 @@ if __name__ == "__main__":
         "repo_dir": test_dir
     }
     
-    analyzer = PythonBuildToolAnalyzer(logger=logging.getLogger("PythonBuildToolAnalyzer"))
+    # Instantiate with a dummy run ID
+    analyzer = PythonBuildToolAnalyzer(
+        logger=logging.getLogger("PythonBuildToolAnalyzer"),
+        run_id="dummy_run_id"
+    )
     
     try:
         result = analyzer.run_analysis(test_dir, test_repo)
