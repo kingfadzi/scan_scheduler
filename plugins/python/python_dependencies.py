@@ -98,6 +98,8 @@ class PythonDependencyAnalyzer(BaseLogger):
                 name = match['name']
                 spec = (match['specifiers'] or '').strip()
                 version = self._extract_version(spec) if spec else ""
+                if version is None or version == "":
+                    version = "unknown"
                 self.logger.debug(f"Parsed dependency from line '{original_line}': name={name}, version={version}")
                 dependencies.append(Dependency(
                     repo_id=repo['repo_id'],

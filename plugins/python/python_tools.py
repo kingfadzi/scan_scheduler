@@ -11,7 +11,6 @@ from shared.models import Session, BuildTool
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger
-from sqlalchemy.dialects.postgresql import insert
 
 class PythonBuildToolAnalyzer(BaseLogger):
     VERSION_PATTERN = re.compile(
@@ -62,7 +61,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
                     build_tools.add(tuple(detected_info.items()))
 
         # If no explicit build tool is detected and a requirements.txt file exists,
-        # assume the build tool is pip. Set runtime_version to None.
+        # assume the build tool is pip with runtime_version set to None.
         req_files = list(root_dir.rglob('requirements.txt'))
         if req_files and not build_tools:
             self.logger.debug("Found requirements.txt file(s) but no explicit build tool; assuming pip")
@@ -75,7 +74,7 @@ class PythonBuildToolAnalyzer(BaseLogger):
             self.logger.debug(f"Assumed pip info: {pip_info}")
             build_tools.add(tuple(pip_info.items()))
 
-        self.logger.debug(f"Persisting {len(build_tools)} build tools")
+        self.logger.debug(f"Persisting {len(build_tools)} build tools using utils.persist_build_tool")
         self._persist_results(build_tools)
         # Convert the set of tuples back to a list of dictionaries for returning
         return [dict(items) for items in build_tools]
@@ -103,18 +102,12 @@ class PythonBuildToolAnalyzer(BaseLogger):
         return version
 
     def _persist_results(self, build_tools: set):
-        self.logger.debug("Persisting build tool analysis results to the database")
-        with Session() as session:
-            if build_tools:
-                # Convert each tuple back to dict before inserting
-                build_tool_dicts = [dict(items) for items in build_tools]
-                stmt = insert(BuildTool).values(build_tool_dicts)
-                stmt = stmt.on_conflict_do_nothing(
-                    index_elements=['repo_id', 'tool', 'tool_version', 'runtime_version']
-                )
-                session.execute(stmt)
-            session.commit()
-            self.logger.debug("Database commit successful")
+        self.logger.debug("Persisting build tool analysis results using utils.persist_build_tool")
+        build_tool_dicts = [dict(items) for items in build_tools]
+        for bt in build_tool_dicts:
+            self.logger.debug(f"Persisting build tool: {bt}")
+            # Call the shared utility method using the provided signature.
+            self.utils.persist_build_tool(bt["tool"], bt["repo_id"], bt["tool_version"], bt["runtime_version"])
 
     def _detect_poetry(self, path: Path) -> Optional[str]:
         try:
