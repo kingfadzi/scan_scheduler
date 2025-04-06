@@ -27,24 +27,19 @@ EOF
 fi
 
 # --- Create Needed Directories in Your Home ---
-mkdir -p "$HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.kantra,.semgrep,.trivy,.syft,.xeol}
+mkdir -p "$HOME"/{cloned_repositories,output,logs,.ssh,.m2,.gradle,.cache,.grype,.semgrep,.trivy,.syft,.xeol}
 chmod 700 "$HOME/.ssh"
 chmod 755 "$HOME/.m2" 2>/dev/null || echo "Warning: Could not change permissions on .m2 (possibly a mounted volume)."
 chmod 755 "$HOME/.gradle" 2>/dev/null || echo "Warning: Could not change permissions on .gradle (possibly a mounted volume)."
 
 # --- Write Environment Variables to File ---
 cat << EOF > "$PREFECT_HOME/.env_variables"
-export JAVA_8_HOME="/usr/lib/jvm/java-1.8.0-openjdk"
-export JAVA_11_HOME="/usr/lib/jvm/java-11-openjdk"
-export JAVA_17_HOME="/usr/lib/jvm/java-17-openjdk"
-export JAVA_21_HOME="/usr/lib/jvm/java-21-openjdk"
-export JAVA_HOME="\$JAVA_17_HOME"
+# Removed version-specific Java home definitions.
 export GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
-export PATH="\$HOME/tools/bin:/usr/local/go/bin:\$JAVA_HOME/bin:\$GRADLE_HOME/bin:\$PATH"
+export PATH="\$HOME/tools/bin:/usr/local/go/bin:\$GRADLE_HOME/bin:\$PATH"
 export PREFECT_HOME="$PREFECT_HOME"
 export PREFECT_API_URL="$PREFECT_API_URL"
 export PYTHONIOENCODING=utf-8
-export RULESETS_GIT_URL=$RULESETS_GIT_URL
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export PYTHONPATH="\$(pwd):\$PYTHONPATH"
@@ -71,7 +66,7 @@ echo "Extracting tools tarball for user-specific files..."
 tar -xzvf /tmp/tools.tar.gz -C "$TEMP_USER_EXTRACT"
 
 # Remove old copies to avoid merging stale data.
-rm -rf "$HOME/.semgrep/" "$HOME/.kantra/"
+rm -rf "$HOME/.semgrep/"
 
 # --- Extract tool binaries to $HOME/tools/bin ---
 if [ -d "$TEMP_USER_EXTRACT/usr/local/bin" ]; then
@@ -98,20 +93,5 @@ ls -la "$HOME"
 rm -rf "$TEMP_USER_EXTRACT"
 # Optionally remove the tarball:
 # rm /tmp/tools.tar.gz
-
-# --- Clone the Repository (User Action) ---
-CLONE_DIR="$HOME/.kantra/custom-rulesets"
-
-rm -rf "${CLONE_DIR}"
-
-echo "Cloning repository to ${CLONE_DIR}..."
-SSH_KEY="$HOME/.ssh/id_ed25519"
-if [ ! -f "$SSH_KEY" ]; then
-    echo "Warning: SSH key $SSH_KEY not found. Cloning might fail."
-fi
-
-GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes" \
-git clone "$RULESETS_GIT_URL" "$CLONE_DIR" || { echo "ERROR: Failed to clone repository."; exit 1; }
-echo "Repository cloned successfully to ${CLONE_DIR}"
 
 echo "User setup complete."
