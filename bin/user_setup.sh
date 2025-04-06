@@ -32,9 +32,9 @@ chmod 700 "$HOME/.ssh"
 chmod 755 "$HOME/.m2" 2>/dev/null || echo "Warning: Could not change permissions on .m2 (possibly a mounted volume)."
 chmod 755 "$HOME/.gradle" 2>/dev/null || echo "Warning: Could not change permissions on .gradle (possibly a mounted volume)."
 
-# --- Write Environment Variables to File ---
-cat << EOF > "$PREFECT_HOME/.env_variables"
-# Removed version-specific Java home definitions.
+# --- Write Environment Variables to File and Source Them ---
+cat << EOF > "$HOME/.env_variables"
+# Environment variable definitions
 export GRADLE_HOME="/opt/gradle/gradle-${DEFAULT_GRADLE_VERSION}"
 export PATH="\$HOME/tools/bin:/usr/local/go/bin:\$GRADLE_HOME/bin:\$PATH"
 export PREFECT_HOME="$PREFECT_HOME"
@@ -44,15 +44,17 @@ export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export PYTHONPATH="\$(pwd):\$PYTHONPATH"
 
-export TRIVY_CACHE_DIR=$PREFECT_HOME/.cache/trivy
-export GRYPE_DB_CACHE_DIR=$PREFECT_HOME/.cache/grype/db
-export XEOL_DB_CACHE_DIR=$PREFECT_HOME/.cache/xeol/db
+export TRIVY_CACHE_DIR=\$PREFECT_HOME/.cache/trivy
+export GRYPE_DB_CACHE_DIR=\$PREFECT_HOME/.cache/grype/db
+export XEOL_DB_CACHE_DIR=\$PREFECT_HOME/.cache/xeol/db
 export GRYPE_DB_AUTO_UPDATE=false
 export GRYPE_DB_VALIDATE_AGE=false
 export SYFT_CHECK_FOR_APP_UPDATE=false
 export XEOL_DB_AUTO_UPDATE=false
-
 EOF
+
+# Source the file so the variables are set in the current session.
+source "$HOME/.env_variables"
 
 # --- Download & Extract User Tools from Tarball ---
 echo "Downloading tools tarball from ${TOOLS_URL}..."
