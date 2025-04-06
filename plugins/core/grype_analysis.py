@@ -163,7 +163,7 @@ class GrypeAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_slug = "sonar-metrics"
+    repo_slug = "wrongsecrets"
     repo_id = "sonar-metrics"
     
     # Changed to dictionary
