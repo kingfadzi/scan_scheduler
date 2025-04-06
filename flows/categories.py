@@ -208,7 +208,7 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
             update_start = time.time()
             categorizer.bulk_update_dependencies(session.connection(), updates)
             logger.info(f"[{package_type}] Updated {len(updates)} rows in {time.time() - update_start:.2f}s")
-
+            session.commit()
         return chunk_size
 
     except Exception as e:
