@@ -165,15 +165,15 @@ class GrypeAnalyzer(BaseLogger):
 if __name__ == "__main__":
     repo_slug = "sonar-metrics"
     repo_id = "sonar-metrics"
-
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
-
+    
+    # Changed to dictionary
+    repo = {
+        'repo_id': repo_id,
+        'repo_slug': repo_slug,
+        'repo_name': repo_slug  # Preserving the original name assignment
+    }
+    
     analyzer = GrypeAnalyzer()
-    repo = MockRepo(repo_id, repo_slug)
     repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
