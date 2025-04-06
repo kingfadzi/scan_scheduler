@@ -173,13 +173,13 @@ if __name__ == "__main__":
         'repo_name': repo_slug  # Preserving the original name assignment
     }
     
-    analyzer = GrypeAnalyzer()
+    analyzer = GrypeAnalyzer(run_id="GRYPE_STANDALONE_001")
     repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     try:
         analyzer.logger.info(f"Starting standalone Grype analysis for repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="GRYPE_STANDALONE_001")
+        result = analyzer.run_analysis(repo_dir, repo=repo)
 
         if isinstance(result, str):
             analyzer.logger.info(result)
