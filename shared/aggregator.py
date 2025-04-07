@@ -115,15 +115,16 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Classification Label"] = classification
 
     # --------------- DEPENDENCIES -------------------
-    deps = session.query(Dependency).filter_by(repo_id=repo_id).all()
+    deps = session.query(SyftDependency).filter_by(repo_id=repo_id).all()
     profile["Dependencies"] = []
     for d in deps:
         profile["Dependencies"].append({
-            "name": d.name,
+            "name": d.package_name,
             "version": d.version,
             "package_type": d.package_type,
-            "category": d.category,
-            "sub_category": d.sub_category,
+            "language": d.language,  # Added because Syft has language info
+            "locations": d.locations, 
+            "licenses": d.licenses,  # Optional, good to keep for later
         })
     profile["Total Dependencies"] = len(profile["Dependencies"])
 
