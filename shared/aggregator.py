@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
     Repository, RepoMetrics, LizardSummary, ClocMetric, BuildTool,
-    GoEnryAnalysis, Dependency, GrypeResult, TrivyVulnerability,
+    GoEnryAnalysis, SyftDependency, GrypeResult, TrivyVulnerability,
     XeolResult, SemgrepResult
 )
 import datetime
