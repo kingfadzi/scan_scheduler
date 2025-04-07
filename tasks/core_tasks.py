@@ -12,6 +12,8 @@ from plugins.core.syft_analysis import SyftAnalyzer
 from plugins.core.grype_analysis import GrypeAnalyzer
 from plugins.core.xeol_analysis import XeolAnalyzer
 
+from plugins.core.syft_dependency_analysis import SyftDependencyAnalyzer
+
 @task(name="Category Analysis Task", cache_policy=NO_CACHE)
 async def run_catgeory_analysis_task(run_id):
     logger = get_run_logger()
