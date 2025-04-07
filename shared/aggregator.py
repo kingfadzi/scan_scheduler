@@ -49,6 +49,9 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo ID"] = repo.repo_id
     profile["Repo Name"] = repo.repo_name
     profile["Status"] = repo.status or "Unknown"
+    profile["VCS Hostname"] = repo.host_name
+    profile["Last Update"] = repo.updated_on
+    profile["Clone URL SSh"] = repo.clone_url_ssh
 
     # Convert bytes -> MB for display
     repo_size_mb = round(metrics.repo_size_bytes / 1_000_000, 2)
