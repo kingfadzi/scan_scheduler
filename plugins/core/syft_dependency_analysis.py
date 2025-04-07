@@ -5,12 +5,11 @@ import logging
 from sqlalchemy.dialects.postgresql import insert
 
 from plugins.core.syft_analysis import SyftAnalyzer
-from shared.models import Session
+from shared.models import Session, SyftDependency
 from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 
-from plugins.core.syft_dependency_model import SyftDependency  # updated model import
 
 class SyftDependencyAnalyzer(BaseLogger):
 
