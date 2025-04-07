@@ -34,6 +34,38 @@ def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
         else:
             return "Massive"
 
+def infer_build_tool(syft_deps):
+    build_tool = None
+
+    for dep in syft_deps:
+        name = (dep.package_name or "").lower()
+        ptype = (dep.package_type or "").lower()
+        version = (dep.version or "").strip()
+        locations = (dep.locations or "").lower()
+
+        if "gradle-wrapper" in name:
+            build_tool = f"gradle:{version}" if version else "gradle"
+            break
+        elif "maven-wrapper" in name:
+            build_tool = f"maven:{version}" if version else "maven"
+            break
+
+        if ptype == "java-archive" and "pom.xml" in locations:
+            build_tool = "maven"
+
+        if not build_tool:
+            if ptype == "python":
+                build_tool = f"python:{version}" if version else "python"
+            elif ptype == "npm":
+                build_tool = f"node:{version}" if version else "node"
+            elif ptype == "go-module":
+                build_tool = f"go:{version}" if version else "go"
+            elif ptype == "gem":
+                build_tool = f"ruby:{version}" if version else "ruby"
+
+    return build_tool or "Unknown"
+
+
 def build_profile(session: Session, repo_id: str) -> dict:
     profile = {}
 
@@ -81,14 +113,6 @@ def build_profile(session: Session, repo_id: str) -> dict:
         profile["Main Language"] = None
         profile["Other Languages"] = []
 
-    # --------------- BUILD TOOL -------------------
-    if buildtool:
-        profile["Build Tool"] = buildtool.tool
-        profile["Runtime Version"] = buildtool.runtime_version
-    else:
-        profile["Build Tool"] = None
-        profile["Runtime Version"] = None
-
     # --------------- CLOC + LIZARD -------------------
     if lizard:
         profile["Total NLOC"] = lizard.total_nloc
@@ -127,6 +151,10 @@ def build_profile(session: Session, repo_id: str) -> dict:
             "licenses": d.licenses,
         })
     profile["Total Dependencies"] = len(profile["Dependencies"])
+
+    # --------------- BUILD TOOL -------------------
+    profile["Build Tool"] = infer_build_tool(deps)
+    profile["Runtime Version"] = buildtool.runtime_version if buildtool else None
 
     # --------------- SECURITY (GRYPE/TRIVY) -------------------
     grype_vulns = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
