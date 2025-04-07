@@ -4,12 +4,16 @@ from flows.factory.main_flow import create_analysis_flow
 from config.config import Config
 from tasks.registry import task_registry
 
+# VALID_DEPENDENCY_TASKS = [
+#     "languages.go.dependencies",
+#     "languages.java.gradle.dependencies",
+#     "languages.java.maven.dependencies",
+#     "languages.javascript.dependencies",
+#     "languages.python.dependencies"
+# ]
+
 VALID_DEPENDENCY_TASKS = [
-    "languages.go.dependencies",
-    "languages.java.gradle.dependencies",
-    "languages.java.maven.dependencies",
-    "languages.javascript.dependencies",
-    "languages.python.dependencies"
+    "core.syft_dependency"  # Updated to use Syft Dependency Analysis
 ]
 
 dependencies_flow = create_analysis_flow(

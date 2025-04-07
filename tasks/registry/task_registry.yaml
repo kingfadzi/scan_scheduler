@@ -18,6 +18,7 @@ core:
   category: tasks.core_tasks.run_catgeory_analysis_task
   gitlog: tasks.core_tasks.run_gitlog_task
   goenry: tasks.core_tasks.run_goenry_task
+  syft_dependency: tasks.core_tasks.run_syft_dependency_analysis_task
 
 languages:
   go:

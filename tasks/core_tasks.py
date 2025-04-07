@@ -143,3 +143,16 @@ async def run_xeol_analysis_task(repo_dir, repo, run_id):
     except Exception as exc:
         logger.exception("Error during Xeol analysis")
         raise exc
+        
+        
+@task(name="Run Syft Dependency Analysis Task", cache_policy=NO_CACHE)
+async def run_syft_dependency_analysis_task(repo_dir, repo, run_id):
+    logger = get_run_logger()
+    try:
+        logger.info(f"[Component Patterns] Starting Syft dependency analysis for repository: {repo['repo_id']}")
+        analyzer = SyftDependencyAnalyzer(logger=logger, run_id=run_id)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        logger.info(f"[Component Patterns] Completed Syft dependency analysis for repository: {repo['repo_id']}")
+    except Exception as exc:
+        logger.exception("Error during Syft dependency analysis")
+        raise exc
