@@ -8,6 +8,32 @@ from shared.models import (
 )
 import datetime
 
+def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
+
+    if repo_size_bytes is None:
+        repo_size_bytes = 0
+    if total_loc is None:
+        total_loc = 0
+
+    if total_loc < 100:
+        # "Empty/Minimal" or "Docs/Data"
+        if repo_size_bytes < 1_000_000:
+            return "Empty/Minimal"
+        else:
+            return "Docs/Data"
+    else:
+        # Enough code
+        if repo_size_bytes < 1_000_000:
+            return "Tiny"
+        elif repo_size_bytes < 10_000_000:
+            return "Small"
+        elif repo_size_bytes < 100_000_000:
+            return "Medium"
+        elif repo_size_bytes < 1_000_000_000:
+            return "Large"
+        else:
+            return "Massive"
+
 def build_profile(session: Session, repo_id: str) -> dict:
     profile = {}
 
@@ -24,7 +50,9 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Name"] = repo.repo_name
     profile["Status"] = repo.status or "Unknown"
 
-    profile["Repo Size (MB)"] = round(metrics.repo_size_bytes / 1_000_000, 2)
+    # Convert bytes -> MB for display
+    repo_size_mb = round(metrics.repo_size_bytes / 1_000_000, 2)
+    profile["Repo Size (MB)"] = repo_size_mb
     profile["File Count"] = metrics.file_count
     profile["Total Commits"] = metrics.total_commits
     profile["Contributors"] = metrics.number_of_contributors
@@ -33,15 +61,18 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Age (Years)"] = round(metrics.repo_age_days / 365, 2)
     profile["Active Branch Count"] = metrics.active_branch_count
 
-    profile["Classification Label"] = None  # Placeholder (if you want to add it later)
-
     # --------------- LANGUAGES -------------------
     langs = session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
     if langs:
         lang_dict = {lang.language: round(lang.percent_usage, 2) for lang in langs}
         profile["Language Percentages"] = lang_dict
-        profile["Main Language"] = max(lang_dict, key=lang_dict.get)
-        profile["Other Languages"] = [k for k in lang_dict if k != profile["Main Language"]]
+        if lang_dict:
+            main_lang = max(lang_dict, key=lang_dict.get)
+            profile["Main Language"] = main_lang
+            profile["Other Languages"] = [k for k in lang_dict if k != main_lang]
+        else:
+            profile["Main Language"] = None
+            profile["Other Languages"] = []
     else:
         profile["Language Percentages"] = {}
         profile["Main Language"] = None
@@ -68,11 +99,17 @@ def build_profile(session: Session, repo_id: str) -> dict:
 
     cloc = session.query(ClocMetric).filter_by(repo_id=repo_id).all()
     if cloc:
-        profile["Lines of Code"] = sum(x.code for x in cloc)
+        total_loc = sum(x.code for x in cloc)
+        profile["Lines of Code"] = total_loc
         profile["Blank Lines"] = sum(x.blank for x in cloc)
         profile["Comment Lines"] = sum(x.comment for x in cloc)
     else:
+        total_loc = 0
         profile["Lines of Code"] = profile["Blank Lines"] = profile["Comment Lines"] = 0
+
+    # --------------- CLASSIFICATION LABEL -------------------
+    classification = classify_repo(metrics.repo_size_bytes, total_loc)
+    profile["Classification Label"] = classification
 
     # --------------- DEPENDENCIES -------------------
     deps = session.query(Dependency).filter_by(repo_id=repo_id).all()
