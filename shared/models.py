@@ -41,6 +41,7 @@ class GoEnryAnalysis(Base):
     analysis_date = Column(DateTime, default=datetime.utcnow)
     __table_args__ = (UniqueConstraint('repo_id', 'language', name='_repo_language_uc'),)
 
+#Gitlog data
 class RepoMetrics(Base):
     __tablename__ = "repo_metrics"
     repo_id = Column(String, primary_key=True)
@@ -53,25 +54,6 @@ class RepoMetrics(Base):
     repo_age_days = Column(Integer, nullable=False)
     active_branch_count = Column(Integer, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-# Lizard Metrics Model
-class LizardMetric(Base):
-    __tablename__ = "lizard_metrics"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    repo_id = Column(String, nullable=False)
-    file_name = Column(Text)
-    function_name = Column(Text)
-    long_name = Column(Text)
-    nloc = Column(Integer)
-    ccn = Column(Integer)
-    token_count = Column(Integer)
-    param = Column(Integer)
-    function_length = Column(Integer)
-    start_line = Column(Integer)
-    end_line = Column(Integer)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "file_name", "function_name", name="lizard_metric_uc"),
-    )
 
 # Lizard Summary Model
 class LizardSummary(Base):
@@ -95,19 +77,6 @@ class ClocMetric(Base):
     code = Column(Integer)
     __table_args__ = (
         UniqueConstraint("repo_id", "language", name="cloc_metric_uc"),
-    )
-
-# Checkov Results Model
-class CheckovResult(Base):
-    __tablename__ = "checkov_results"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    repo_id = Column(String, nullable=False)
-    resource = Column(Text)
-    check_name = Column(Text)
-    check_result = Column(Text)
-    severity = Column(Text)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "resource", "check_name", name="checkov_result_uc"),
     )
 
 
