@@ -50,8 +50,8 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Name"] = repo.repo_name
     profile["Status"] = repo.status or "Unknown"
     profile["VCS Hostname"] = repo.host_name
-    profile["Last Update"] = repo.updated_on.isoformat()
-    profile["Clone URL SSh"] = repo.clone_url_ssh
+    profile["Last Updated"] = repo.updated_on.isoformat()
+    profile["Clone URL SSH"] = repo.clone_url_ssh
 
     # Convert bytes -> MB for display
     repo_size_mb = round(metrics.repo_size_bytes / 1_000_000, 2)
@@ -122,9 +122,9 @@ def build_profile(session: Session, repo_id: str) -> dict:
             "name": d.package_name,
             "version": d.version,
             "package_type": d.package_type,
-            "language": d.language,  # Added because Syft has language info
+            "language": d.language,
             "locations": d.locations, 
-            "licenses": d.licenses,  # Optional, good to keep for later
+            "licenses": d.licenses,
         })
     profile["Total Dependencies"] = len(profile["Dependencies"])
 
