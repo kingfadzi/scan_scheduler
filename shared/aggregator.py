@@ -50,7 +50,7 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Name"] = repo.repo_name
     profile["Status"] = repo.status or "Unknown"
     profile["VCS Hostname"] = repo.host_name
-    profile["Last Update"] = repo.updated_on
+    profile["Last Update"] = repo.updated_on.isoformat()
     profile["Clone URL SSh"] = repo.clone_url_ssh
 
     # Convert bytes -> MB for display
