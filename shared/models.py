@@ -253,3 +253,22 @@ class BuildTool(Base):
             name='_build_tools_full_uc'
         ),
     )
+
+class SyftDependency(Base):
+    __tablename__ = 'syft_dependencies'
+    
+    id = Column(String, primary_key=True)
+    repo_id = Column(String, nullable=False)
+    package_name = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    package_type = Column(String, nullable=False)
+    licenses = Column(Text)
+    locations = Column(Text)
+    language = Column(String)
+
+    __table_args__ = (
+        UniqueConstraint('repo_id', 'package_name', 'version', name='uq_syft_dependencies_repo_package_version'),
+    )
+
+    def __repr__(self):
+        return f"<SyftDependency(package='{self.package_name}', version='{self.version}', type='{self.package_type}')>"
