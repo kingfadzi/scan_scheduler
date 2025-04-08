@@ -96,11 +96,11 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Age (Years)"] = round(metrics.repo_age_days / 365, 2)
     profile["Active Branch Count"] = metrics.active_branch_count
 
+
     # --------------- MODERNIZATION SIGNALS -------------------
     dockerfile_present = session.query(GoEnryAnalysis).filter(
-        GoEnryAnalysis.repo_id == repo_id,
-        GoEnryAnalysis.language.ilike("Dockerfile")
-    ).first()
+        func.lower(GoEnryAnalysis.language) == "dockerfile"
+    ).filter_by(repo_id=repo_id).first()
     profile["Dockerfile"] = dockerfile_present is not None
     
     iac_check = session.query(CheckovSummary).filter(
@@ -122,7 +122,6 @@ def build_profile(session: Session, repo_id: str) -> dict:
         CheckovSummary.check_type == "secrets"
     ).first()
     profile["Hardcoded Secrets Found"] = secrets_check.failed if secrets_check else 0
-
 
     # --------------- LANGUAGES -------------------
     langs = session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
