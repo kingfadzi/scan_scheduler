@@ -1,9 +1,28 @@
 import time
-from prefect import flow
-from shared.models import Repository
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+import json
+from typing import Optional
 
+from prefect import flow, task
+from prefect.task_runners import ConcurrentTaskRunner
+
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker, Session
+
+from shared.repo_profile_cache import RepoProfileCache
+from shared.models import (
+    Repository,
+    RepoMetrics,
+    LizardSummary,
+    ClocMetric,
+    BuildTool,
+    GoEnryAnalysis,
+    SyftDependency,
+    GrypeResult,
+    TrivyVulnerability,
+    XeolResult,
+    SemgrepResult,
+    CheckovSummary,
+)
 # --- DB Setup
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
