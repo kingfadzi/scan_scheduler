@@ -123,6 +123,9 @@ class GitLogAnalyzer(BaseLogger):
                     "repo_age_days": repo_age_days,
                     "active_branch_count": active_branch_count,
                     "activity_status": activity_status,
+                    "commits_by_top_3_contributors": commits_by_top_3_contributors,
+                    "recent_commit_dates": recent_commit_dates,
+                    "top_contributor_commits": top_contributor_commits,
                     "updated_at": datetime.now(timezone.utc)
                 }
             )
