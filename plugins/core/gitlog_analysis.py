@@ -1,6 +1,8 @@
 import os
+from collections import Counter
+
 from git import Repo, GitCommandError, InvalidGitRepositoryError
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from sqlalchemy.dialects.postgresql import insert
 from shared.models import Session, RepoMetrics
 from shared.execution_decorator import analyze_execution
@@ -53,6 +55,23 @@ class GitLogAnalyzer(BaseLogger):
 
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
 
+        commit_authors = [commit.author.email for commit in repo_obj.iter_commits(default_branch)]
+        author_commit_counts = Counter(commit_authors)
+
+        top_contributor_commits = author_commit_counts.most_common(1)[0][1] if author_commit_counts else 0
+        commits_by_top_3_contributors = sum(count for _, count in author_commit_counts.most_common(3))
+
+        # Define the cutoff as 12 months ago
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=365)
+
+        # Collect commit dates from past 12 months
+        recent_commit_dates = [
+            commit.committed_datetime
+            for commit in repo_obj.iter_commits(default_branch)
+            if commit.committed_datetime >= cutoff_date
+        ]
+
+
         self.logger.info(f"Metrics for {repo['repo_name']} (ID: {repo['repo_id']}):")
         self.logger.info(f"  Total Size: {total_size} bytes")
         self.logger.info(f"  File Count: {file_count}")
@@ -75,7 +94,10 @@ class GitLogAnalyzer(BaseLogger):
                 last_commit_date=last_commit_date,
                 repo_age_days=repo_age_days,
                 active_branch_count=active_branch_count,
-                activity_status=activity_status
+                activity_status=activity_status,
+                top_contributor_commits=top_contributor_commits,
+                commits_by_top_3_contributors=commits_by_top_3_contributors,
+                recent_commit_dates=recent_commit_dates
             ).on_conflict_do_update(
                 index_elements=['repo_id'],
                 set_={
@@ -123,21 +145,19 @@ class GitLogAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "WebGoat"
+    repo_slug = "AzureGoat"
+    repo_id = "AzureGoat"
     activity_status = "ACTIVE"
-    repo_dir = f"/tmp/{repo_slug}"
+    repo_dir = f"/Users/fadzi/tools/python_projects/{repo_slug}"
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_slug
+    }
 
-    repo = MockRepo(repo_id, repo_slug)
     session = Session()
-
-    analyzer = GitLogAnalyzer()
+    analyzer = GitLogAnalyzer( run_id="STANDALONE_RUN_001")
 
     try:
         analyzer.logger.info(f"Running metrics calculation for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
@@ -148,3 +168,4 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info("Session closed.")
+

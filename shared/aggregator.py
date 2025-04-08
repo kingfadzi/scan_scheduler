@@ -9,22 +9,18 @@ from shared.models import (
 import datetime
 from sqlalchemy import func
 
-
 def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
-
     if repo_size_bytes is None:
         repo_size_bytes = 0
     if total_loc is None:
         total_loc = 0
 
     if total_loc < 100:
-        # "Empty/Minimal" or "Docs/Data"
         if repo_size_bytes < 1_000_000:
             return "Empty/Minimal"
         else:
             return "Docs/Data"
     else:
-        # Enough code
         if repo_size_bytes < 1_000_000:
             return "Tiny"
         elif repo_size_bytes < 10_000_000:
@@ -38,7 +34,6 @@ def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
 
 def infer_build_tool(syft_deps):
     build_tool = None
-
     for dep in syft_deps:
         name = (dep.package_name or "").lower()
         ptype = (dep.package_type or "").lower()
@@ -57,28 +52,26 @@ def infer_build_tool(syft_deps):
 
         if not build_tool:
             if ptype == "python":
-                build_tool = f"python:{version}" if version else "python"
+                build_tool = "python"
             elif ptype == "npm":
-                build_tool = f"node:{version}" if version else "node"
+                build_tool = "node"
             elif ptype == "go-module":
-                build_tool = f"go:{version}" if version else "go"
+                build_tool = "go"
             elif ptype == "gem":
-                build_tool = f"ruby:{version}" if version else "ruby"
+                build_tool = "ruby"
 
     return build_tool or "Unknown"
-
 
 def build_profile(session: Session, repo_id: str) -> dict:
     profile = {}
 
-    # --------------- BASIC INFO -------------------
     repo = session.query(Repository).filter_by(repo_id=repo_id).first()
     metrics = session.query(RepoMetrics).filter_by(repo_id=repo_id).first()
     lizard = session.query(LizardSummary).filter_by(repo_id=repo_id).first()
     buildtool = session.query(BuildTool).filter_by(repo_id=repo_id).first()
 
     if not repo or not metrics:
-        return None  # Can't build profile without basics
+        return None
 
     profile["Repo ID"] = repo.repo_id
     profile["Repo Name"] = repo.repo_name
@@ -87,7 +80,6 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Last Updated"] = repo.updated_on.isoformat()
     profile["Clone URL SSH"] = repo.clone_url_ssh
 
-    # Convert bytes -> MB for display
     repo_size_mb = round(metrics.repo_size_bytes / 1_000_000, 2)
     profile["Repo Size (MB)"] = repo_size_mb
     profile["File Count"] = metrics.file_count
@@ -97,14 +89,13 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Last Commit Date"] = metrics.last_commit_date.isoformat() if metrics.last_commit_date else None
     profile["Repo Age (Years)"] = round(metrics.repo_age_days / 365, 2)
     profile["Active Branch Count"] = metrics.active_branch_count
+    profile["Recent Commit Dates"] = metrics.recent_commit_dates or []
 
-
-    # --------------- MODERNIZATION SIGNALS -------------------
     dockerfile_present = session.query(GoEnryAnalysis).filter(
         func.lower(GoEnryAnalysis.language) == "dockerfile"
     ).filter_by(repo_id=repo_id).first()
     profile["Dockerfile"] = dockerfile_present is not None
-    
+
     iac_check = session.query(CheckovSummary).filter(
         CheckovSummary.repo_id == repo_id,
         CheckovSummary.check_type.in_([
@@ -112,20 +103,19 @@ def build_profile(session: Session, repo_id: str) -> dict:
         ])
     ).first()
     profile["IaC Config Present"] = iac_check is not None
-    
+
     cicd_check = session.query(CheckovSummary).filter(
         CheckovSummary.repo_id == repo_id,
         CheckovSummary.check_type.in_(["gitlab_ci", "bitbucket_pipelines"])
     ).first()
     profile["CI/CD Present"] = cicd_check is not None
-    
+
     secrets_check = session.query(CheckovSummary).filter(
         CheckovSummary.repo_id == repo_id,
         CheckovSummary.check_type == "secrets"
     ).first()
     profile["Hardcoded Secrets Found"] = secrets_check.failed if secrets_check else 0
 
-    # --------------- LANGUAGES -------------------
     langs = session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
     if langs:
         lang_dict = {lang.language: round(lang.percent_usage, 2) for lang in langs}
@@ -142,7 +132,6 @@ def build_profile(session: Session, repo_id: str) -> dict:
         profile["Main Language"] = None
         profile["Other Languages"] = []
 
-    # --------------- CLOC + LIZARD -------------------
     if lizard:
         profile["Total NLOC"] = lizard.total_nloc
         profile["Avg Cyclomatic Complexity"] = round(lizard.avg_ccn or 0, 2)
@@ -163,56 +152,61 @@ def build_profile(session: Session, repo_id: str) -> dict:
         total_loc = 0
         profile["Lines of Code"] = profile["Blank Lines"] = profile["Comment Lines"] = 0
 
-    # --------------- CLASSIFICATION LABEL -------------------
     classification = classify_repo(metrics.repo_size_bytes, total_loc)
     profile["Classification Label"] = classification
 
-    # --------------- DEPENDENCIES -------------------
     deps = session.query(SyftDependency).filter_by(repo_id=repo_id).all()
+    seen_deps = set()
     profile["Dependencies"] = []
     for d in deps:
-        profile["Dependencies"].append({
-            "name": d.package_name,
-            "version": d.version,
-            "package_type": d.package_type,
-            "language": d.language,
-            "locations": d.locations, 
-            "licenses": d.licenses,
-        })
+        key = (d.package_name, d.version)
+        if key not in seen_deps:
+            seen_deps.add(key)
+            profile["Dependencies"].append({
+                "name": d.package_name,
+                "version": d.version,
+                "package_type": d.package_type,
+                "language": d.language,
+                "locations": d.locations,
+                "licenses": d.licenses,
+            })
     profile["Total Dependencies"] = len(profile["Dependencies"])
 
-    # --------------- BUILD TOOL -------------------
     profile["Build Tool"] = infer_build_tool(deps)
     profile["Runtime Version"] = buildtool.runtime_version if buildtool else None
 
-    # --------------- SECURITY (GRYPE/TRIVY) -------------------
     grype_vulns = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
     trivy_vulns = session.query(TrivyVulnerability).filter_by(repo_id=repo_id).all()
-
+    seen_vulns = set()
     merged_vulns = []
-    for g in grype_vulns:
-        merged_vulns.append({
-            "package": g.package,
-            "version": g.version,
-            "severity": g.severity,
-            "fix_version": g.fix_versions,
-            "source": "G"
-        })
-    for t in trivy_vulns:
-        if t.pkg_name:
+    for v in grype_vulns:
+        key = (v.package, v.version)
+        if key not in seen_vulns:
+            seen_vulns.add(key)
             merged_vulns.append({
-                "package": t.pkg_name,
-                "version": t.installed_version,
-                "severity": t.severity,
-                "fix_version": t.fixed_version,
-                "source": "T"
+                "package": v.package,
+                "version": v.version,
+                "severity": v.severity,
+                "fix_version": v.fix_versions,
+                "source": "G"
             })
+    for v in trivy_vulns:
+        if v.pkg_name:
+            key = (v.pkg_name, v.installed_version)
+            if key not in seen_vulns:
+                seen_vulns.add(key)
+                merged_vulns.append({
+                    "package": v.pkg_name,
+                    "version": v.installed_version,
+                    "severity": v.severity,
+                    "fix_version": v.fixed_version,
+                    "source": "T"
+                })
 
     profile["Vulnerabilities"] = merged_vulns
     profile["Critical Vuln Count"] = sum(1 for v in merged_vulns if v["severity"] == "Critical")
-    profile["Vulnerable Dependencies %"] = round((len(merged_vulns) / (len(deps) or 1)) * 100, 2)
+    profile["Vulnerable Dependencies %"] = round((len(merged_vulns) / (len(profile["Dependencies"]) or 1)) * 100, 2)
 
-    # --------------- EOL (XEOL) -------------------
     xeol = session.query(XeolResult).filter_by(repo_id=repo_id).all()
     profile["EOL Results"] = []
     for x in xeol:
@@ -224,7 +218,6 @@ def build_profile(session: Session, repo_id: str) -> dict:
         })
     profile["EOL Packages Found"] = len(profile["EOL Results"])
 
-    # --------------- STATIC SCAN (SEMGREP) -------------------
     semgrep = session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
     profile["Semgrep Findings"] = []
     for s in semgrep:

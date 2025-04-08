@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, UniqueConstraint
+from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, UniqueConstraint, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -53,6 +53,9 @@ class RepoMetrics(Base):
     last_commit_date = Column(DateTime)
     repo_age_days = Column(Integer, nullable=False)
     active_branch_count = Column(Integer, nullable=False)
+    top_contributor_commits = Column(Integer, nullable=True)
+    commits_by_top_3_contributors = Column(Integer, nullable=True)
+    recent_commit_dates = Column(ARRAY(DateTime), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # Lizard Summary Model
