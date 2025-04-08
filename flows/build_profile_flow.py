@@ -1,7 +1,7 @@
 import json
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func
-from prefect import flow, task, concurrent
+from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 
 from shared.repo_profile_cache import RepoProfileCache
@@ -68,74 +68,82 @@ def infer_build_tool(syft_dependencies):
     return build_tool or "Unknown"
 
 # =========================
-# Fetch Tasks
+# Fetch Tasks (Thread-safe Sessions)
 # =========================
 
 @task
-def fetch_basic_info(session: Session, repo_id: str):
-    repository = session.query(Repository).filter_by(repo_id=repo_id).first()
-    repo_metrics = session.query(RepoMetrics).filter_by(repo_id=repo_id).first()
-    build_tool_metadata = session.query(BuildTool).filter_by(repo_id=repo_id).first()
-    lizard_summary = session.query(LizardSummary).filter_by(repo_id=repo_id).first()
-    if not repository or not repo_metrics:
-        raise ValueError(f"Missing repository or metrics for {repo_id}")
-    return repository, repo_metrics, build_tool_metadata, lizard_summary
+def fetch_basic_info(repo_id: str):
+    with SessionLocal() as session:
+        repository = session.query(Repository).filter_by(repo_id=repo_id).first()
+        repo_metrics = session.query(RepoMetrics).filter_by(repo_id=repo_id).first()
+        build_tool_metadata = session.query(BuildTool).filter_by(repo_id=repo_id).first()
+        lizard_summary = session.query(LizardSummary).filter_by(repo_id=repo_id).first()
+        if not repository or not repo_metrics:
+            raise ValueError(f"Missing repository or metrics for {repo_id}")
+        return repository, repo_metrics, build_tool_metadata, lizard_summary
 
 @task
-def fetch_languages(session: Session, repo_id: str):
-    return session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
+def fetch_languages(repo_id: str):
+    with SessionLocal() as session:
+        return session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_cloc(session: Session, repo_id: str):
-    return session.query(ClocMetric).filter_by(repo_id=repo_id).all()
+def fetch_cloc(repo_id: str):
+    with SessionLocal() as session:
+        return session.query(ClocMetric).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_dependencies(session: Session, repo_id: str):
-    return session.query(SyftDependency).filter_by(repo_id=repo_id).all()
+def fetch_dependencies(repo_id: str):
+    with SessionLocal() as session:
+        return session.query(SyftDependency).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_security(session: Session, repo_id: str):
-    grype_results = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
-    trivy_results = session.query(TrivyVulnerability).filter_by(repo_id=repo_id).all()
-    return grype_results, trivy_results
+def fetch_security(repo_id: str):
+    with SessionLocal() as session:
+        grype_results = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
+        trivy_results = session.query(TrivyVulnerability).filter_by(repo_id=repo_id).all()
+        return grype_results, trivy_results
 
 @task
-def fetch_eol(session: Session, repo_id: str):
-    return session.query(XeolResult).filter_by(repo_id=repo_id).all()
+def fetch_eol(repo_id: str):
+    with SessionLocal() as session:
+        return session.query(XeolResult).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_semgrep(session: Session, repo_id: str):
-    return session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
+def fetch_semgrep(repo_id: str):
+    with SessionLocal() as session:
+        return session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_modernization_signals(session: Session, repo_id: str):
-    dockerfile_present = session.query(GoEnryAnalysis).filter(
-        func.lower(GoEnryAnalysis.language) == "dockerfile"
-    ).filter_by(repo_id=repo_id).first()
+def fetch_modernization_signals(repo_id: str):
+    with SessionLocal() as session:
+        dockerfile_present = session.query(GoEnryAnalysis).filter(
+            func.lower(GoEnryAnalysis.language) == "dockerfile"
+        ).filter_by(repo_id=repo_id).first()
 
-    iac_check = session.query(CheckovSummary).filter(
-        CheckovSummary.repo_id == repo_id,
-        CheckovSummary.check_type.in_([
-            "cloudformation", "terraform", "terraform_plan", "kubernetes", "helm", "kustomize"
-        ])
-    ).first()
+        iac_check = session.query(CheckovSummary).filter(
+            CheckovSummary.repo_id == repo_id,
+            CheckovSummary.check_type.in_([
+                "cloudformation", "terraform", "terraform_plan", "kubernetes", "helm", "kustomize"
+            ])
+        ).first()
 
-    cicd_check = session.query(CheckovSummary).filter(
-        CheckovSummary.repo_id == repo_id,
-        CheckovSummary.check_type.in_(["gitlab_ci", "bitbucket_pipelines"])
-    ).first()
+        cicd_check = session.query(CheckovSummary).filter(
+            CheckovSummary.repo_id == repo_id,
+            CheckovSummary.check_type.in_(["gitlab_ci", "bitbucket_pipelines"])
+        ).first()
 
-    secrets_check = session.query(CheckovSummary).filter(
-        CheckovSummary.repo_id == repo_id,
-        CheckovSummary.check_type == "secrets"
-    ).first()
+        secrets_check = session.query(CheckovSummary).filter(
+            CheckovSummary.repo_id == repo_id,
+            CheckovSummary.check_type == "secrets"
+        ).first()
 
-    return {
-        "Dockerfile": dockerfile_present is not None,
-        "IaC Config Present": iac_check is not None,
-        "CI/CD Present": cicd_check is not None,
-        "Hardcoded Secrets Found": secrets_check.failed if secrets_check else 0,
-    }
+        return {
+            "Dockerfile": dockerfile_present is not None,
+            "IaC Config Present": iac_check is not None,
+            "CI/CD Present": cicd_check is not None,
+            "Hardcoded Secrets Found": secrets_check.failed if secrets_check else 0,
+        }
 
 # =========================
 # Assemble Section Tasks
@@ -261,6 +269,10 @@ def assemble_semgrep_info(semgrep_findings):
     }
 
 @task
+def assemble_modernization_info(modernization_signals):
+    return {"Modernization Signals": modernization_signals}
+
+@task
 def merge_profile_sections(*sections):
     profile = {}
     for section in sections:
@@ -268,85 +280,68 @@ def merge_profile_sections(*sections):
     return profile
 
 @task
-def cache_profile(session: Session, repo_id: str, complete_profile: dict):
-    existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
-    if existing:
-        existing.profile_json = json.dumps(complete_profile)
-    else:
-        new_cache = RepoProfileCache(repo_id=repo_id, profile_json=json.dumps(complete_profile))
-        session.add(new_cache)
-    session.commit()
+def cache_profile(repo_id: str, complete_profile: dict):
+    with SessionLocal() as session:
+        existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
+        if existing:
+            existing.profile_json = json.dumps(complete_profile)
+        else:
+            new_cache = RepoProfileCache(repo_id=repo_id, profile_json=json.dumps(complete_profile))
+            session.add(new_cache)
+        session.commit()
     print(f"Profile cached for {repo_id}")
 
 # =========================
-# Main Single-Repo Flow
+# Main Flow
 # =========================
 
 @flow(task_runner=ConcurrentTaskRunner())
 def build_profile_flow(repo_id: str):
-    session = SessionLocal()
-    try:
-        # Fetch basic repo metadata
-        repository, repo_metrics, build_tool_metadata, lizard_summary = fetch_basic_info(session, repo_id)
+    # Fetch all data in parallel
+    basic_info_future = fetch_basic_info.submit(repo_id)
+    languages_future = fetch_languages.submit(repo_id)
+    cloc_future = fetch_cloc.submit(repo_id)
+    dependencies_future = fetch_dependencies.submit(repo_id)
+    security_future = fetch_security.submit(repo_id)
+    eol_future = fetch_eol.submit(repo_id)
+    semgrep_future = fetch_semgrep.submit(repo_id)
+    modernization_signals_future = fetch_modernization_signals.submit(repo_id)
 
-        # Fetch all other repo data in parallel
-        with concurrent():
-            languages_future = fetch_languages.submit(session, repo_id)
-            cloc_future = fetch_cloc.submit(session, repo_id)
-            dependencies_future = fetch_dependencies.submit(session, repo_id)
-            security_future = fetch_security.submit(session, repo_id)
-            eol_future = fetch_eol.submit(session, repo_id)
-            semgrep_future = fetch_semgrep.submit(session, repo_id)
-            modernization_signals_future = fetch_modernization_signals.submit(session, repo_id)
+    # Resolve futures
+    repository, repo_metrics, build_tool_metadata, lizard_summary = basic_info_future.result()
+    languages = languages_future.result()
+    cloc_metrics = cloc_future.result()
+    dependencies = dependencies_future.result()
+    grype_results, trivy_results = security_future.result()
+    eol_results = eol_future.result()
+    semgrep_findings = semgrep_future.result()
+    modernization_signals = modernization_signals_future.result()
 
-        # Resolve all futures
-        languages = languages_future.result()
-        cloc_metrics = cloc_future.result()
-        dependencies = dependencies_future.result()
-        grype_results, trivy_results = security_future.result()
-        eol_results = eol_future.result()
-        semgrep_findings = semgrep_future.result()
-        modernization_signals = modernization_signals_future.result()
+    # Assemble sections in parallel
+    basic_info = assemble_basic_info.submit(repository, repo_metrics)
+    languages_info = assemble_languages_info.submit(languages)
+    code_quality_info = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
+    dependencies_info = assemble_dependencies_info.submit(dependencies, build_tool_metadata)
+    security_info = assemble_security_info.submit(grype_results, trivy_results, dependencies)
+    eol_info = assemble_eol_info.submit(eol_results)
+    semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
+    modernization_info = assemble_modernization_info.submit(modernization_signals)
+    classification_info = assemble_classification_info.submit(repo_metrics, code_quality_info.result()["total_loc"])
 
-        # Assemble sections in parallel
-        with concurrent():
-            basic_info_future = assemble_basic_info.submit(repository, repo_metrics)
-            languages_info_future = assemble_languages_info.submit(languages)
-            code_quality_info_future = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
-            dependencies_info_future = assemble_dependencies_info.submit(dependencies, build_tool_metadata)
-            security_info_future = assemble_security_info.submit(grype_results, trivy_results, dependencies)
-            eol_info_future = assemble_eol_info.submit(eol_results)
-            semgrep_info_future = assemble_semgrep_info.submit(semgrep_findings)
-            modernization_info_future = assemble_modernization_info.submit(modernization_signals)
-
-        # Resolve assembled sections
-        basic_info = basic_info_future.result()
-        languages_info = languages_info_future.result()
-        code_quality_info = code_quality_info_future.result()
-        dependencies_info = dependencies_info_future.result()
-        security_info = security_info_future.result()
-        eol_info = eol_info_future.result()
-        semgrep_info = semgrep_info_future.result()
-        modernization_info = modernization_info_future.result()
-
-        classification_info = assemble_classification_info(repo_metrics, code_quality_info["total_loc"])
-
-        complete_profile = merge_profile_sections(
-            basic_info,
-            languages_info,
-            code_quality_info,
-            classification_info,
-            dependencies_info,
-            security_info,
-            eol_info,
-            semgrep_info,
-            modernization_info
-        )
-
-        cache_profile(session, repo_id, complete_profile)
-
-    finally:
-        session.close()
+    # Merge and cache
+    complete_profile = merge_profile_sections.submit(
+        basic_info.result(),
+        languages_info.result(),
+        code_quality_info.result(),
+        classification_info.result(),
+        dependencies_info.result(),
+        security_info.result(),
+        eol_info.result(),
+        semgrep_info.result(),
+        modernization_info.result()
+    )
+    
+    cache_profile.submit(repo_id, complete_profile.result())
 
 if __name__ == "__main__":
     build_profile_flow(repo_id="WebGoat/WebGoat")
