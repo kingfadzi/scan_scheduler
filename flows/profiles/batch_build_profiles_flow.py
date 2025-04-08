@@ -13,7 +13,7 @@ async def batch_build_profiles_flow(repo_ids: list[str], batch_number: int):
     client = get_client()
     
     # Get deployment ID first
-    deployment = await client.read_deployment_by_name("build_profile_flow/build_profile_flow")
+    deployment = await client.read_deployment_by_name("build-profile-flow/build_profile_flow")
     
     futures = []
     for repo_id in repo_ids:
