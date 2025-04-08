@@ -4,7 +4,7 @@ from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
     Repository, RepoMetrics, LizardSummary, ClocMetric, BuildTool,
     GoEnryAnalysis, SyftDependency, GrypeResult, TrivyVulnerability,
-    XeolResult, SemgrepResult
+    XeolResult, SemgrepResult, CheckovSummary
 )
 import datetime
 
