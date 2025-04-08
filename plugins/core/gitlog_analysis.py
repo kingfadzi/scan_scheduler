@@ -56,10 +56,20 @@ class GitLogAnalyzer(BaseLogger):
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
 
         commit_authors = [commit.author.email for commit in repo_obj.iter_commits(default_branch)]
-        author_commit_counts = Counter(commit_authors)
+        analyzer.logger.debug(f"Collected {len(commit_authors)} commits from branch '{default_branch}'.")
 
-        top_contributor_commits = author_commit_counts.most_common(1)[0][1] if author_commit_counts else 0
+        author_commit_counts = Counter(commit_authors)
+        analyzer.logger.debug(f"Author commit counts: {author_commit_counts}")
+
+        if author_commit_counts:
+            top_contributor_commits = author_commit_counts.most_common(1)[0][1]
+            analyzer.logger.debug(f"Top contributor has {top_contributor_commits} commits.")
+        else:
+            top_contributor_commits = 0
+            analyzer.logger.debug("No contributors found.")
+
         commits_by_top_3_contributors = sum(count for _, count in author_commit_counts.most_common(3))
+        analyzer.logger.debug(f"Total commits by top 3 contributors: {commits_by_top_3_contributors}")
 
         # Define the cutoff as 12 months ago
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=365)
@@ -81,6 +91,10 @@ class GitLogAnalyzer(BaseLogger):
         self.logger.info(f"  Repository Age: {repo_age_days} days")
         self.logger.info(f"  Active Branch Count: {active_branch_count}")
         self.logger.info(f"  Activity Status: {activity_status}")
+
+        self.logger.info(f"  commits_by_top_3_contributors: {commits_by_top_3_contributors}")
+        self.logger.info(f"  recent_commit_dates: {recent_commit_dates}")
+        self.logger.info(f"  top_contributor_commits: {top_contributor_commits}")
 
         session = Session()
 
