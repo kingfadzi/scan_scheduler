@@ -7,6 +7,8 @@ from shared.models import (
     XeolResult, SemgrepResult, CheckovSummary
 )
 import datetime
+from sqlalchemy import func
+
 
 def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
 
