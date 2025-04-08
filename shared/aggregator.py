@@ -46,10 +46,10 @@ def infer_build_tool(syft_deps):
         locations = (dep.locations or "").lower()
 
         if "gradle-wrapper" in name:
-            build_tool = f"gradle:{version}" if version else "gradle"
+            build_tool = f"gradle-wrapper:{version}" if version else "gradle-wrapper"
             break
         elif "maven-wrapper" in name:
-            build_tool = f"maven:{version}" if version else "maven"
+            build_tool = f"maven-wrapper:{version}" if version else "maven-wrapper"
             break
 
         if ptype == "java-archive" and "pom.xml" in locations:
