@@ -104,7 +104,7 @@ class CheckovSummary(Base):
     id = Column(Integer, primary_key=True)
     repo_id = Column(String, nullable=False)
     check_type = Column(String, nullable=False)
-    language = Column(String, nullable=False)
+    #language = Column(String, nullable=False)
     passed = Column(Integer, default=0)
     failed = Column(Integer, default=0)
     skipped = Column(Integer, default=0)
