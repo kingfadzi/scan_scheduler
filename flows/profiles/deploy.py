@@ -22,19 +22,19 @@ WORK_POOL = "fundamentals-pool"
 DEPLOYMENTS = [
     (
         "flows/profiles/build_profile_flow.py:build_profile_flow",
-        "Batch Build Profiles",
+        "build_profile_flow",
         WORK_POOL,
         ["build_profile_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
     (
         "flows/profiles/batch_build_profiles_flow.py:batch_build_profiles_flow",
-        "Batch Build Profiles",
+        "batch_build_profiles_flow",
         WORK_POOL,
         ["batch_build_profiles_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
     (
         "flows/profiles/main_batch_orchestrator_flow.py:main_batch_orchestrator_flow",
-        "Main Batch Orchestrator",
+        "main_batch_orchestrator_flow",
         WORK_POOL,
         ["main_batch_orchestrator_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
