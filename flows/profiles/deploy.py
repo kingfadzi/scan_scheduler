@@ -28,7 +28,7 @@ DEPLOYMENTS = [
     ),
     (
         "flows/profiles/batch_build_profiles_flow.py:batch_build_profiles_flow",
-        "Batch Build Profiles Batch",
+        "Batch Build Profiles",
         WORK_POOL,
         ["batch_build_profiles_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
