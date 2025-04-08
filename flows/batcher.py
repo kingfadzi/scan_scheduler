@@ -1,5 +1,5 @@
 import asyncio
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.client import get_client
 from prefect.task_runners import ConcurrentTaskRunner
 
@@ -31,38 +31,43 @@ async def main_batch_orchestrator_flow():
     processed = 0
     last_seen_repo_id = None
     batch_futures = []
-    client = get_client()
 
-    while True:
-        batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
-
-        if not batch_repo_ids:
-            break
-
-        batch_number = (processed // REPOS_PER_BATCH) + 1
-
-        future = asyncio.create_task(
-            client.create_flow_run_from_deployment(
-                deployment_name="batch-build-profiles-flow/Batch Build Profiles Batch",
-                parameters={
-                    "repo_ids": batch_repo_ids,
-                    "batch_number": batch_number
-                }
-            )
+    async with get_client() as client:
+        # Fetch the batch deployment
+        deployment = await client.read_deployment_by_name(
+            "batch_build_profiles_flow/Batch Build Profiles Batch"
         )
-        batch_futures.append(future)
 
-        processed += len(batch_repo_ids)
-        last_seen_repo_id = batch_repo_ids[-1]
+        while True:
+            batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
 
-        # Limit how many batch deployments we launch at once
-        if len(batch_futures) >= MAX_PARALLEL_BATCHES:
+            if not batch_repo_ids:
+                break
+
+            batch_number = (processed // REPOS_PER_BATCH) + 1
+
+            # Launch batch by deployment ID
+            future = asyncio.create_task(
+                client.create_flow_run_from_deployment(
+                    deployment_id=deployment.id,
+                    parameters={
+                        "repo_ids": batch_repo_ids,
+                        "batch_number": batch_number
+                    },
+                    name=f"batch-{batch_number:04d}"
+                )
+            )
+            batch_futures.append(future)
+
+            processed += len(batch_repo_ids)
+            last_seen_repo_id = batch_repo_ids[-1]
+
+            if len(batch_futures) >= MAX_PARALLEL_BATCHES:
+                await asyncio.gather(*batch_futures)
+                batch_futures = []
+
+        if batch_futures:
             await asyncio.gather(*batch_futures)
-            batch_futures = []
-
-    # Gather any remaining
-    if batch_futures:
-        await asyncio.gather(*batch_futures)
 
     print(f"Completed submitting {processed} repositories.")
 
