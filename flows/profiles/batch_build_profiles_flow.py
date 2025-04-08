@@ -19,7 +19,8 @@ async def batch_build_profiles_flow(repo_ids: list[str], batch_number: int):
                 client.create_flow_run_from_deployment(
                     deployment_name="Batch Build Profiles",
                     parameters={"repo_id": repo_id}
-                )
+                ),
+                name=f"batch-{batch_number:04d}"
             )
         )
 
