@@ -225,18 +225,16 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["EOL Packages Found"] = len(profile["EOL Results"])
 
     # --------------- STATIC SCAN (SEMGREP) -------------------
-    semgrep = session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
-    profile["Semgrep Findings"] = []
-    for s in semgrep:
-        profile["Semgrep Findings"].append({
-            "path": s.path,
-            "rule_id": s.rule_id,
-            "severity": s.severity,
-            "category": s.category,
-            "subcategory": s.subcategory,
-            "likelihood": s.likelihood,
-            "impact": s.impact,
-            "confidence": s.confidence,
-        })
-
+    # --- SEMGREP CATEGORY COUNTS (Dynamic for Top 3) ---
+    from collections import Counter
+    
+    semgrep_category_counter = Counter()
+    
+    for finding in profile["Semgrep Findings"]:
+        category = finding.get("category", "").strip()
+        if category:
+            semgrep_category_counter[category] += 1
+    
+    profile["Semgrep Category Counts"] = dict(semgrep_category_counter)
+   
     return profile
