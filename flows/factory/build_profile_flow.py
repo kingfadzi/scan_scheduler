@@ -349,4 +349,4 @@ def build_profile_flow(repo_id: str):
         session.close()
 
 if __name__ == "__main__":
-    build_profile_flow(repo_id="your-repo-id-here")
+    build_profile_flow(repo_id="WebGoat/WebGoat")
