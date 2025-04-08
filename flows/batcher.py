@@ -1,55 +1,70 @@
 import asyncio
-import random
-from prefect import task, flow
+from prefect import flow, get_run_logger
+from prefect.client import get_client
 from prefect.task_runners import ConcurrentTaskRunner
 
-# Parameters
-PER_BATCH_WORKERS = 10
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from shared.models import Repository
+
+# --- DB Setup
+DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+
+# --- Parameters
+MAX_PARALLEL_BATCHES = 2
 REPOS_PER_BATCH = 100
-TOTAL_BATCHES = 10
-SIMULATED_SLEEP_RANGE = (1, 2)
 
-# --- Simulated per-repo task
-@task
-async def simulate_build_profile(repo_id: str, batch_number: int):
-    print(f"[Batch {batch_number}] Starting repo {repo_id}")
-    await asyncio.sleep(random.uniform(*SIMULATED_SLEEP_RANGE))
-    print(f"[Batch {batch_number}] Completed repo {repo_id}")
+# --- DB Helper function
+def fetch_repo_chunk(last_seen_repo_id: str | None, limit: int) -> list[str]:
+    with SessionLocal() as session:
+        query = session.query(Repository.repo_id).order_by(Repository.repo_id)
+        if last_seen_repo_id:
+            query = query.filter(Repository.repo_id > last_seen_repo_id)
+        rows = query.limit(limit).all()
+        return [r.repo_id for r in rows]
 
-# --- Per-repo flow
-@flow
-async def build_profile_flow(repo_id: str, batch_number: int):
-    await simulate_build_profile(repo_id, batch_number)
-
-# --- Batch *ASYNC FUNCTION* (NOT flow)
-async def batch_build_profiles_async(batch_repo_ids: list[str], batch_number: int):
-    semaphore = asyncio.Semaphore(PER_BATCH_WORKERS)
-    futures = []
-
-    async def run_repo(repo_id):
-        async with semaphore:
-            await build_profile_flow(repo_id=repo_id, batch_number=batch_number)
-
-    for repo_id in batch_repo_ids:
-        futures.append(asyncio.create_task(run_repo(repo_id)))
-
-    await asyncio.gather(*futures)
-
-# --- Top orchestrator
+# --- Main Orchestrator Flow
+@flow(task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
 async def main_batch_orchestrator_flow():
+    processed = 0
+    last_seen_repo_id = None
     batch_futures = []
+    client = get_client()
 
-    for batch_number in range(1, TOTAL_BATCHES + 1):
-        batch_repo_ids = [f"repo-{batch_number}-{i+1}" for i in range(REPOS_PER_BATCH)]
+    while True:
+        batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
 
-        # Launch batch asynchronously
-        batch_future = asyncio.create_task(
-            batch_build_profiles_async(batch_repo_ids, batch_number)
+        if not batch_repo_ids:
+            break
+
+        batch_number = (processed // REPOS_PER_BATCH) + 1
+
+        future = asyncio.create_task(
+            client.create_flow_run_from_deployment(
+                deployment_name="batch-build-profiles-flow/Batch Build Profiles Batch",
+                parameters={
+                    "repo_ids": batch_repo_ids,
+                    "batch_number": batch_number
+                }
+            )
         )
-        batch_futures.append(batch_future)
+        batch_futures.append(future)
 
-    await asyncio.gather(*batch_futures)
-    print("All batches completed.")
+        processed += len(batch_repo_ids)
+        last_seen_repo_id = batch_repo_ids[-1]
+
+        # Limit how many batch deployments we launch at once
+        if len(batch_futures) >= MAX_PARALLEL_BATCHES:
+            await asyncio.gather(*batch_futures)
+            batch_futures = []
+
+    # Gather any remaining
+    if batch_futures:
+        await asyncio.gather(*batch_futures)
+
+    print(f"Completed submitting {processed} repositories.")
 
 # --- Launcher
 if __name__ == "__main__":
