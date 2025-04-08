@@ -5,7 +5,6 @@ from shared.repo_profile_cache import RepoProfileCache
 from shared.aggregator import build_profile
 from shared.models import Repository
 
-# Replace this with your actual DB URL
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 
 engine = create_engine(DATABASE_URL)
