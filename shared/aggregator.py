@@ -89,7 +89,16 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Last Commit Date"] = metrics.last_commit_date.isoformat() if metrics.last_commit_date else None
     profile["Repo Age (Years)"] = round(metrics.repo_age_days / 365, 2)
     profile["Active Branch Count"] = metrics.active_branch_count
-    profile["Recent Commit Dates"] = metrics.recent_commit_dates or []
+    profile["Recent Commit Dates"] = [
+        dt.isoformat() if hasattr(dt, "isoformat") else dt
+        for dt in (metrics.recent_commit_dates or [])
+    ]
+
+    if metrics.total_commits and metrics.top_contributor_commits is not None:
+        profile["Single Developer %"] = round((metrics.top_contributor_commits / metrics.total_commits) * 100, 2)
+    else:
+        profile["Single Developer %"] = None
+
 
     dockerfile_present = session.query(GoEnryAnalysis).filter(
         func.lower(GoEnryAnalysis.language) == "dockerfile"
