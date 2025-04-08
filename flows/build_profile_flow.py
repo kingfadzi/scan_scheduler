@@ -1,23 +1,60 @@
-import json
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import create_engine, func
-from prefect import flow, task
-from prefect.task_runners import ConcurrentTaskRunner
+import time
+from prefect import flow
+from shared.models import Repository
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
-from shared.repo_profile_cache import RepoProfileCache
-from shared.models import (
-    Repository, RepoMetrics, LizardSummary, ClocMetric, BuildTool,
-    GoEnryAnalysis, SyftDependency, GrypeResult, TrivyVulnerability,
-    XeolResult, SemgrepResult, CheckovSummary
-)
-
-# =========================
-# Database Setup
-# =========================
-
+# --- DB Setup
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
+
+# --- Parameters
+CHUNK_SIZE = 500        # how many repos per batch
+WAIT_BETWEEN_BATCHES = 15  # seconds
+PRINT_EVERY = 5000      # progress reporting
+TOTAL_REPOS_ESTIMATE = 100_000  # Optional if you want a % complete tracker
+
+# --- Fetch Repo IDs Chunked
+def fetch_repo_chunk(last_seen_repo_id: str | None, limit: int) -> list[str]:
+    with SessionLocal() as session:
+        query = session.query(Repository.repo_id).order_by(Repository.repo_id)
+        if last_seen_repo_id:
+            query = query.filter(Repository.repo_id > last_seen_repo_id)
+        rows = query.limit(limit).all()
+        return [r.repo_id for r in rows]
+
+# --- Main Flow
+@flow
+def build_profiles_for_all_repos_flow():
+    processed = 0
+    last_seen_repo_id = None
+
+    while True:
+        repo_ids = fetch_repo_chunk(last_seen_repo_id, CHUNK_SIZE)
+        if not repo_ids:
+            print(f"All repos processed. Total: {processed}")
+            break
+
+        print(f"Fetched {len(repo_ids)} repos after {last_seen_repo_id or 'start'}... launching flows...")
+
+        # Submit flows for each repo
+        for repo_id in repo_ids:
+            build_profile_flow.submit(repo_id=repo_id)
+
+        processed += len(repo_ids)
+        last_seen_repo_id = repo_ids[-1]  # move cursor to last repo_id seen
+
+        # Optional: print progress
+        if processed % PRINT_EVERY < CHUNK_SIZE:
+            percent = (processed / TOTAL_REPOS_ESTIMATE) * 100
+            print(f"Progress: {processed} repos processed ({percent:.2f}%)")
+
+        # Optional: throttle a little
+        time.sleep(WAIT_BETWEEN_BATCHES)
+
+    print("Completed processing all repositories.")
+
 
 # =========================
 # Helper Functions
@@ -347,5 +384,8 @@ def build_profile_flow(repo_id: str):
     cache_future = cache_profile.submit(repo_id, complete_profile.result())
     cache_future.wait()
 
+#if __name__ == "__main__":
+#    build_profile_flow(repo_id="WebGoat/WebGoat")
+    
 if __name__ == "__main__":
-    build_profile_flow(repo_id="WebGoat/WebGoat")
+    build_profiles_for_all_repos_flow()
