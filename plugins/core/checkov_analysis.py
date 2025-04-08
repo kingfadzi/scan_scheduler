@@ -37,9 +37,10 @@ class CheckovAnalyzer(BaseLogger):
             "--output-file-path", output_dir,
             "--skip-download",
             "--framework",
-            "cloudformation", "dockerfile", "gitlab_configuration", "gitlab_ci",
-            "helm", "json", "yaml", "kubernetes",
-            "serverless", "terraform", "terraform_plan"
+            "bitbucket_pipelines", "cloudformation", "dockerfile", "github_configuration",
+            "gitlab_configuration", "gitlab_ci", "bitbucket_configuration", "helm",
+            "json", "yaml", "kubernetes", "kustomize", "openapi", "sca_package",
+            "sca_image", "secrets", "serverless", "terraform", "terraform_plan"
         ]
 
         self.logger.info(f"Checkov command to execute: {' '.join(cmd)}")

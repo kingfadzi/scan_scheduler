@@ -96,6 +96,34 @@ def build_profile(session: Session, repo_id: str) -> dict:
     profile["Repo Age (Years)"] = round(metrics.repo_age_days / 365, 2)
     profile["Active Branch Count"] = metrics.active_branch_count
 
+    # --------------- MODERNIZATION SIGNALS -------------------
+    dockerfile_present = session.query(GoEnryAnalysis).filter(
+        GoEnryAnalysis.repo_id == repo_id,
+        GoEnryAnalysis.language.ilike("Dockerfile")
+    ).first()
+    profile["Dockerfile"] = dockerfile_present is not None
+    
+    iac_check = session.query(CheckovSummary).filter(
+        CheckovSummary.repo_id == repo_id,
+        CheckovSummary.check_type.in_([
+            "cloudformation", "terraform", "terraform_plan", "kubernetes", "helm", "kustomize"
+        ])
+    ).first()
+    profile["IaC Config Present"] = iac_check is not None
+    
+    cicd_check = session.query(CheckovSummary).filter(
+        CheckovSummary.repo_id == repo_id,
+        CheckovSummary.check_type.in_(["gitlab_ci", "bitbucket_pipelines"])
+    ).first()
+    profile["CI/CD Present"] = cicd_check is not None
+    
+    secrets_check = session.query(CheckovSummary).filter(
+        CheckovSummary.repo_id == repo_id,
+        CheckovSummary.check_type == "secrets"
+    ).first()
+    profile["Hardcoded Secrets Found"] = secrets_check.failed if secrets_check else 0
+
+
     # --------------- LANGUAGES -------------------
     langs = session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
     if langs:
