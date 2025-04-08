@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 from prefect import flow
 from prefect.client import get_client
 from prefect.task_runners import ConcurrentTaskRunner
@@ -13,11 +14,11 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 # --- Parameters
-MAX_PARALLEL_BATCHES = 2
-REPOS_PER_BATCH = 100
+MAX_PARALLEL_BATCHES = 2      # How many batches running at once
+REPOS_PER_BATCH = 100         # How many repos per batch
 
-# --- DB Helper function
-def fetch_repo_chunk(last_seen_repo_id: str | None, limit: int) -> list[str]:
+# --- DB Helper: Fetch next chunk of repo IDs
+def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int) -> list[str]:
     with SessionLocal() as session:
         query = session.query(Repository.repo_id).order_by(Repository.repo_id)
         if last_seen_repo_id:
@@ -25,28 +26,28 @@ def fetch_repo_chunk(last_seen_repo_id: str | None, limit: int) -> list[str]:
         rows = query.limit(limit).all()
         return [r.repo_id for r in rows]
 
-# --- Main Orchestrator Flow
-@flow(task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
+# --- Main Batch Orchestrator
+@flow(name="Main Batch Orchestrator", task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
 async def main_batch_orchestrator_flow():
     processed = 0
     last_seen_repo_id = None
     batch_futures = []
 
     async with get_client() as client:
-        # Fetch the batch deployment
+        # Fetch the Batch Build Profiles Batch deployment
         deployment = await client.read_deployment_by_name(
-            "build-profile-flow/Batch Build Profiles"
+            "batch-build-profiles-flow/Batch Build Profiles Batch"
         )
 
         while True:
             batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
 
             if not batch_repo_ids:
-                break
+                break  # No more repos to process
 
             batch_number = (processed // REPOS_PER_BATCH) + 1
 
-            # Launch batch by deployment ID
+            # Launch batch deployment
             future = asyncio.create_task(
                 client.create_flow_run_from_deployment(
                     deployment_id=deployment.id,
@@ -62,15 +63,17 @@ async def main_batch_orchestrator_flow():
             processed += len(batch_repo_ids)
             last_seen_repo_id = batch_repo_ids[-1]
 
+            # Control how many batches in flight
             if len(batch_futures) >= MAX_PARALLEL_BATCHES:
                 await asyncio.gather(*batch_futures)
                 batch_futures = []
 
+        # Gather any remaining batches
         if batch_futures:
             await asyncio.gather(*batch_futures)
 
     print(f"Completed submitting {processed} repositories.")
 
-# --- Launcher
+# --- Script Launcher
 if __name__ == "__main__":
     asyncio.run(main_batch_orchestrator_flow())
