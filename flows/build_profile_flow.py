@@ -292,56 +292,60 @@ def cache_profile(repo_id: str, complete_profile: dict):
     print(f"Profile cached for {repo_id}")
 
 # =========================
-# Main Flow
+# Main Flow with Proper Future Handling
 # =========================
 
-@flow(task_runner=ConcurrentTaskRunner())
+@flow(task_runner=ConcurrentTaskRunner(), persist_result=True)
 def build_profile_flow(repo_id: str):
     # Fetch all data in parallel
-    basic_info_future = fetch_basic_info.submit(repo_id)
-    languages_future = fetch_languages.submit(repo_id)
+    basic_future = fetch_basic_info.submit(repo_id)
+    lang_future = fetch_languages.submit(repo_id)
     cloc_future = fetch_cloc.submit(repo_id)
-    dependencies_future = fetch_dependencies.submit(repo_id)
+    deps_future = fetch_dependencies.submit(repo_id)
     security_future = fetch_security.submit(repo_id)
     eol_future = fetch_eol.submit(repo_id)
     semgrep_future = fetch_semgrep.submit(repo_id)
-    modernization_signals_future = fetch_modernization_signals.submit(repo_id)
+    modern_future = fetch_modernization_signals.submit(repo_id)
 
-    # Resolve futures
-    repository, repo_metrics, build_tool_metadata, lizard_summary = basic_info_future.result()
-    languages = languages_future.result()
+    # Wait for all fetch tasks first
+    repo_data = basic_future.result()
+    languages = lang_future.result()
     cloc_metrics = cloc_future.result()
-    dependencies = dependencies_future.result()
-    grype_results, trivy_results = security_future.result()
+    dependencies = deps_future.result()
+    grype, trivy = security_future.result()
     eol_results = eol_future.result()
     semgrep_findings = semgrep_future.result()
-    modernization_signals = modernization_signals_future.result()
+    modernization_signals = modern_future.result()
+    
+    repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
 
-    # Assemble sections in parallel
+    # Process data in parallel
     basic_info = assemble_basic_info.submit(repository, repo_metrics)
-    languages_info = assemble_languages_info.submit(languages)
-    code_quality_info = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
-    dependencies_info = assemble_dependencies_info.submit(dependencies, build_tool_metadata)
-    security_info = assemble_security_info.submit(grype_results, trivy_results, dependencies)
+    lang_info = assemble_languages_info.submit(languages)
+    code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
+    classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
+    deps_info = assemble_dependencies_info.submit(dependencies, build_tool_metadata)
+    security_info = assemble_security_info.submit(grype, trivy, dependencies)
     eol_info = assemble_eol_info.submit(eol_results)
     semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
-    modernization_info = assemble_modernization_info.submit(modernization_signals)
-    classification_info = assemble_classification_info.submit(repo_metrics, code_quality_info.result()["total_loc"])
+    modern_info = assemble_modernization_info.submit(modernization_signals)
 
-    # Merge and cache
+    # Merge sections
     complete_profile = merge_profile_sections.submit(
         basic_info.result(),
-        languages_info.result(),
-        code_quality_info.result(),
-        classification_info.result(),
-        dependencies_info.result(),
+        lang_info.result(),
+        code_quality.result(),
+        classification.result(),
+        deps_info.result(),
         security_info.result(),
         eol_info.result(),
         semgrep_info.result(),
-        modernization_info.result()
+        modern_info.result()
     )
-    
-    cache_profile.submit(repo_id, complete_profile.result())
+
+    # Final cache operation with explicit wait
+    cache_future = cache_profile.submit(repo_id, complete_profile.result())
+    cache_future.wait()
 
 if __name__ == "__main__":
-    build_profile_flow(repo_id="WebGoat/WebGoat")
+    build_profile_flow(repo_id="your-repo-id-here")
