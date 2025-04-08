@@ -58,13 +58,13 @@ def infer_build_tool(syft_dependencies):
             build_tool = "maven"
         if not build_tool:
             if package_type == "python":
-                build_tool = f"python:{version}" if version else "python"
+                build_tool = "pip"
             elif package_type == "npm":
-                build_tool = f"node:{version}" if version else "node"
+                build_tool = "npm/yarn"
             elif package_type == "go-module":
-                build_tool = f"go:{version}" if version else "go"
+                build_tool = "go-mod"
             elif package_type == "gem":
-                build_tool = f"ruby:{version}" if version else "ruby"
+                build_tool = "ruby-gems"
     return build_tool or "Unknown"
 
 # =========================
