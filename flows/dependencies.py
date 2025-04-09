@@ -13,7 +13,7 @@ from tasks.registry import task_registry
 # ]
 
 VALID_DEPENDENCY_TASKS = [
-    "core.syft_dependency"  # Updated to use Syft Dependency Analysis
+    "core.syft_dependency"
 ]
 
 dependencies_flow = create_analysis_flow(
@@ -35,8 +35,7 @@ if __name__ == "__main__":
         payload={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-                "activity_status": ['ACTIVE'],
-                "main_language": ["Python","Java", "Go", "JavaScript"],
+                "activity_status": ['ACTIVE']
             }
         }
     ))
