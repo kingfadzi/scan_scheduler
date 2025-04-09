@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func
 from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
+from prefect.context import get_run_context
 
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
@@ -295,9 +296,14 @@ def cache_profile(repo_id: str, complete_profile: dict):
 # Main Flow with Proper Future Handling
 # =========================
 
-@flow(task_runner=ConcurrentTaskRunner(), persist_result=True)
+@flow(
+    name="build_profile_flow",
+    persist_result=False,
+    retries=0,
+    flow_run_name=lambda: get_run_context().parameters["repo_id"]
+)
 async def build_profile_flow(repo_id: str):
-    # Fetch all data in parallel
+
     basic_future = fetch_basic_info.submit(repo_id)
     lang_future = fetch_languages.submit(repo_id)
     cloc_future = fetch_cloc.submit(repo_id)
@@ -307,7 +313,6 @@ async def build_profile_flow(repo_id: str):
     semgrep_future = fetch_semgrep.submit(repo_id)
     modern_future = fetch_modernization_signals.submit(repo_id)
 
-    # Wait for all fetch tasks first
     repo_data = basic_future.result()
     languages = lang_future.result()
     cloc_metrics = cloc_future.result()

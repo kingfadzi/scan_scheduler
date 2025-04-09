@@ -8,16 +8,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from shared.models import Repository
 
-# --- DB Setup
+
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-# --- Parameters
-MAX_PARALLEL_BATCHES = 2      # How many batches running at once
-REPOS_PER_BATCH = 100         # How many repos per batch
 
-# --- DB Helper: Fetch next chunk of repo IDs
+MAX_PARALLEL_BATCHES = 2
+REPOS_PER_BATCH = 100
+
 def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int) -> list[str]:
     with SessionLocal() as session:
         query = session.query(Repository.repo_id).order_by(Repository.repo_id)
@@ -26,7 +25,7 @@ def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int) -> list[str]:
         rows = query.limit(limit).all()
         return [r.repo_id for r in rows]
 
-# --- Main Batch Orchestrator
+
 @flow(name="Main Batch Orchestrator", task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
 async def main_batch_orchestrator_flow():
     processed = 0
@@ -43,11 +42,10 @@ async def main_batch_orchestrator_flow():
             batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
 
             if not batch_repo_ids:
-                break  # No more repos to process
+                break
 
             batch_number = (processed // REPOS_PER_BATCH) + 1
 
-            # Launch batch deployment
             future = asyncio.create_task(
                 client.create_flow_run_from_deployment(
                     deployment_id=deployment.id,
@@ -63,12 +61,12 @@ async def main_batch_orchestrator_flow():
             processed += len(batch_repo_ids)
             last_seen_repo_id = batch_repo_ids[-1]
 
-            # Control how many batches in flight
+
             if len(batch_futures) >= MAX_PARALLEL_BATCHES:
                 await asyncio.gather(*batch_futures)
                 batch_futures = []
 
-        # Gather any remaining batches
+
         if batch_futures:
             await asyncio.gather(*batch_futures)
 
