@@ -6,20 +6,23 @@ from prefect.task_runners import ConcurrentTaskRunner
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from shared.models import Repository
-
+from shared.models import Repository, RepoMetrics
 
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-
 MAX_PARALLEL_BATCHES = 2
 REPOS_PER_BATCH = 100
 
-def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int) -> list[str]:
+def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int, activity_status: str) -> list[str]:
     with SessionLocal() as session:
-        query = session.query(Repository.repo_id).order_by(Repository.repo_id)
+        query = (
+            session.query(Repository.repo_id)
+            .join(RepoMetrics, Repository.repo_id == RepoMetrics.repo_id)
+            .filter(RepoMetrics.activity_status == activity_status)
+            .order_by(Repository.repo_id)
+        )
         if last_seen_repo_id:
             query = query.filter(Repository.repo_id > last_seen_repo_id)
         rows = query.limit(limit).all()
@@ -27,19 +30,19 @@ def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int) -> list[str]:
 
 
 @flow(name="Main Batch Orchestrator", task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
-async def main_batch_orchestrator_flow():
+async def main_batch_orchestrator_flow(activity_status: str = "ACTIVE"):
     processed = 0
     last_seen_repo_id = None
     batch_futures = []
 
     async with get_client() as client:
-
         deployment = await client.read_deployment_by_name(
             "batch-build-profiles-flow/batch_build_profiles_flow"
         )
 
         while True:
-            batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH)
+            # Pass the activity_status parameter to fetch_repo_chunk
+            batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH, activity_status=activity_status)
 
             if not batch_repo_ids:
                 break
@@ -61,17 +64,18 @@ async def main_batch_orchestrator_flow():
             processed += len(batch_repo_ids)
             last_seen_repo_id = batch_repo_ids[-1]
 
-
             if len(batch_futures) >= MAX_PARALLEL_BATCHES:
                 await asyncio.gather(*batch_futures)
                 batch_futures = []
-
 
         if batch_futures:
             await asyncio.gather(*batch_futures)
 
     print(f"Completed submitting {processed} repositories.")
 
+
 # --- Script Launcher
 if __name__ == "__main__":
-    asyncio.run(main_batch_orchestrator_flow())
+    # Set activity_status from the main block
+    activity_status = "ACTIVE"
+    asyncio.run(main_batch_orchestrator_flow(activity_status=activity_status))

@@ -29,7 +29,7 @@ DEPLOYMENTS = [
         ["batch_build_profiles_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
     (
-        "flows/profiles/main_batch_orchestrator_flow.py:main_batch_orchestrator_flow",
+        "flows/profiles/main_flow.py:main_batch_orchestrator_flow",
         "main_batch_orchestrator_flow",
         WORK_POOL,
         ["main_batch_orchestrator_flow", f"v{DEPLOYMENT_VERSION}"]
