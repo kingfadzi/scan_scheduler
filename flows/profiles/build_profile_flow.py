@@ -14,7 +14,6 @@ from shared.models import (
     XeolResult, SemgrepResult, CheckovSummary
 )
 
-
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
@@ -280,12 +279,10 @@ async def merge_profile_sections(*sections):
 
 @task(retries=0, retry_delay_seconds=2)
 async def cache_profile(repo_id: str, complete_profile: dict):
-    """Cache profile with proper date serialization and error handling"""
     from datetime import date
     import json
     
     class DateEncoder(json.JSONEncoder):
-        """Custom encoder for date serialization"""
         def default(self, obj):
             if isinstance(obj, (datetime, date)):
                 return obj.isoformat()
@@ -293,7 +290,6 @@ async def cache_profile(repo_id: str, complete_profile: dict):
 
     try:
         with SessionLocal() as session:
-            # Convert dates to ISO strings before serialization
             sanitized_profile = json.loads(
                 json.dumps(complete_profile, cls=DateEncoder)
             )
@@ -322,7 +318,6 @@ async def cache_profile(repo_id: str, complete_profile: dict):
 )
 async def build_profile_flow(repo_id: str):
     try:
-        # Submit tasks to fetch repository-related data concurrently.
         basic_future = fetch_basic_info.submit(repo_id)
         lang_future = fetch_languages.submit(repo_id)
         cloc_future = fetch_cloc.submit(repo_id)
@@ -332,7 +327,6 @@ async def build_profile_flow(repo_id: str):
         semgrep_future = fetch_semgrep.submit(repo_id)
         modern_future = fetch_modernization_signals.submit(repo_id)
 
-        # Wait for initial task results.
         repo_data = basic_future.result()
         languages = lang_future.result()
         cloc_metrics = cloc_future.result()
@@ -344,7 +338,6 @@ async def build_profile_flow(repo_id: str):
 
         repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
 
-        # Process data in parallel by submitting further tasks.
         basic_info = assemble_basic_info.submit(repository, repo_metrics)
         lang_info = assemble_languages_info.submit(languages)
         code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
@@ -356,7 +349,6 @@ async def build_profile_flow(repo_id: str):
         semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
         modern_info = assemble_modernization_info.submit(modernization_signals)
 
-        # Merge sections into a complete profile.
         complete_profile = merge_profile_sections.submit(
             basic_info.result(),
             lang_info.result(),
@@ -369,8 +361,7 @@ async def build_profile_flow(repo_id: str):
             modern_info.result()
         )
 
-        # Cache the complete profile with proper error propagation
-        cache_profile.submit(repo_id, complete_profile.result()).result()  
+        cache_profile.submit(repo_id, complete_profile.result()).result()
 
     except Exception as exc:
         print(f"Flow failed for repo_id {repo_id} with error: {exc}")
