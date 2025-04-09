@@ -302,55 +302,61 @@ async def cache_profile(repo_id: str, complete_profile: dict):
     flow_run_name=lambda: get_run_context().parameters["repo_id"]
 )
 async def build_profile_flow(repo_id: str):
+    try:
+        # Submit tasks to fetch repository-related data concurrently.
+        basic_future = fetch_basic_info.submit(repo_id)
+        lang_future = fetch_languages.submit(repo_id)
+        cloc_future = fetch_cloc.submit(repo_id)
+        deps_future = fetch_dependencies.submit(repo_id)
+        security_future = fetch_security.submit(repo_id)
+        eol_future = fetch_eol.submit(repo_id)
+        semgrep_future = fetch_semgrep.submit(repo_id)
+        modern_future = fetch_modernization_signals.submit(repo_id)
 
-    basic_future = fetch_basic_info.submit(repo_id)
-    lang_future = fetch_languages.submit(repo_id)
-    cloc_future = fetch_cloc.submit(repo_id)
-    deps_future = fetch_dependencies.submit(repo_id)
-    security_future = fetch_security.submit(repo_id)
-    eol_future = fetch_eol.submit(repo_id)
-    semgrep_future = fetch_semgrep.submit(repo_id)
-    modern_future = fetch_modernization_signals.submit(repo_id)
+        # Wait for initial task results.
+        repo_data = basic_future.result()
+        languages = lang_future.result()
+        cloc_metrics = cloc_future.result()
+        dependencies = deps_future.result()
+        grype, trivy = security_future.result()
+        eol_results = eol_future.result()
+        semgrep_findings = semgrep_future.result()
+        modernization_signals = modern_future.result()
 
-    repo_data = basic_future.result()
-    languages = lang_future.result()
-    cloc_metrics = cloc_future.result()
-    dependencies = deps_future.result()
-    grype, trivy = security_future.result()
-    eol_results = eol_future.result()
-    semgrep_findings = semgrep_future.result()
-    modernization_signals = modern_future.result()
-    
-    repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
+        repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
 
-    # Process data in parallel
-    basic_info = assemble_basic_info.submit(repository, repo_metrics)
-    lang_info = assemble_languages_info.submit(languages)
-    code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
-    classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
-    with SessionLocal() as session:
-        deps_info = assemble_dependencies_info.submit(session, repository.repo_id, dependencies)
-    security_info = assemble_security_info.submit(grype, trivy, dependencies)
-    eol_info = assemble_eol_info.submit(eol_results)
-    semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
-    modern_info = assemble_modernization_info.submit(modernization_signals)
+        # Process data in parallel by submitting further tasks.
+        basic_info = assemble_basic_info.submit(repository, repo_metrics)
+        lang_info = assemble_languages_info.submit(languages)
+        code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
+        classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
+        with SessionLocal() as session:
+            deps_info = assemble_dependencies_info.submit(session, repository.repo_id, dependencies)
+        security_info = assemble_security_info.submit(grype, trivy, dependencies)
+        eol_info = assemble_eol_info.submit(eol_results)
+        semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
+        modern_info = assemble_modernization_info.submit(modernization_signals)
 
-    # Merge sections
-    complete_profile = merge_profile_sections.submit(
-        basic_info.result(),
-        lang_info.result(),
-        code_quality.result(),
-        classification.result(),
-        deps_info.result(),
-        security_info.result(),
-        eol_info.result(),
-        semgrep_info.result(),
-        modern_info.result()
-    )
+        # Merge sections into a complete profile.
+        complete_profile = merge_profile_sections.submit(
+            basic_info.result(),
+            lang_info.result(),
+            code_quality.result(),
+            classification.result(),
+            deps_info.result(),
+            security_info.result(),
+            eol_info.result(),
+            semgrep_info.result(),
+            modern_info.result()
+        )
 
-    # Final cache operation with explicit wait
-    cache_future = cache_profile.submit(repo_id, complete_profile.result())
-    cache_future.wait()
+        # Cache the complete profile.
+        cache_future = cache_profile.submit(repo_id, complete_profile.result())
+        cache_future.wait()
+
+    except Exception as exc:
+        print(f"Flow failed for repo_id {repo_id} with error: {exc}")
+        raise exc
 
 if __name__ == "__main__":
     build_profile_flow(repo_id="WebGoat/WebGoat")
