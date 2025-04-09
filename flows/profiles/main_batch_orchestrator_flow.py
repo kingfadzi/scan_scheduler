@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 from prefect import flow
-from prefect.client import get_client
+from prefect.client.orchestration import get_client
 from prefect.task_runners import ConcurrentTaskRunner
 
 from sqlalchemy import create_engine
