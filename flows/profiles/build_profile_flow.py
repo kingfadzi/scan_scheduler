@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import json
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func
@@ -280,19 +280,39 @@ async def merge_profile_sections(*sections):
 
 @task(retries=0, retry_delay_seconds=2)
 async def cache_profile(repo_id: str, complete_profile: dict):
+    """Cache profile with proper date serialization and error handling"""
+    from datetime import date
+    import json
+    
+    class DateEncoder(json.JSONEncoder):
+        """Custom encoder for date serialization"""
+        def default(self, obj):
+            if isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            return super().default(obj)
+
     try:
         with SessionLocal() as session:
+            # Convert dates to ISO strings before serialization
+            sanitized_profile = json.loads(
+                json.dumps(complete_profile, cls=DateEncoder)
+            )
+            
             existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
             if existing:
-                existing.profile_json = json.dumps(complete_profile)
+                existing.profile_json = json.dumps(sanitized_profile)
             else:
-                new_cache = RepoProfileCache(repo_id=repo_id, profile_json=json.dumps(complete_profile))
+                new_cache = RepoProfileCache(
+                    repo_id=repo_id,
+                    profile_json=json.dumps(sanitized_profile)
+                )
                 session.add(new_cache)
             session.commit()
         print(f"Profile cached for {repo_id}")
     except Exception as exc:
         print(f"Error caching profile for {repo_id}: {exc}")
         raise exc
+
 
 @flow(
     name="build_profile_flow",
@@ -350,7 +370,7 @@ async def build_profile_flow(repo_id: str):
         )
 
         # Cache the complete profile with proper error propagation
-        cache_profile.submit(repo_id, complete_profile.result()).result()  # Changed line
+        cache_profile.submit(repo_id, complete_profile.result()).result()  
 
     except Exception as exc:
         print(f"Flow failed for repo_id {repo_id} with error: {exc}")
