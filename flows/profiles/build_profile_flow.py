@@ -73,7 +73,7 @@ def infer_build_tool(syft_dependencies):
 # =========================
 
 @task
-def fetch_basic_info(repo_id: str):
+async def fetch_basic_info(repo_id: str):
     with SessionLocal() as session:
         repository = session.query(Repository).filter_by(repo_id=repo_id).first()
         repo_metrics = session.query(RepoMetrics).filter_by(repo_id=repo_id).first()
@@ -84,39 +84,39 @@ def fetch_basic_info(repo_id: str):
         return repository, repo_metrics, build_tool_metadata, lizard_summary
 
 @task
-def fetch_languages(repo_id: str):
+async def fetch_languages(repo_id: str):
     with SessionLocal() as session:
         return session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_cloc(repo_id: str):
+async def fetch_cloc(repo_id: str):
     with SessionLocal() as session:
         return session.query(ClocMetric).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_dependencies(repo_id: str):
+async def fetch_dependencies(repo_id: str):
     with SessionLocal() as session:
         return session.query(SyftDependency).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_security(repo_id: str):
+async def fetch_security(repo_id: str):
     with SessionLocal() as session:
         grype_results = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
         trivy_results = session.query(TrivyVulnerability).filter_by(repo_id=repo_id).all()
         return grype_results, trivy_results
 
 @task
-def fetch_eol(repo_id: str):
+async def fetch_eol(repo_id: str):
     with SessionLocal() as session:
         return session.query(XeolResult).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_semgrep(repo_id: str):
+async def fetch_semgrep(repo_id: str):
     with SessionLocal() as session:
         return session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
 
 @task
-def fetch_modernization_signals(repo_id: str):
+async def fetch_modernization_signals(repo_id: str):
     with SessionLocal() as session:
         dockerfile_present = session.query(GoEnryAnalysis).filter(
             func.lower(GoEnryAnalysis.language) == "dockerfile"
@@ -151,7 +151,7 @@ def fetch_modernization_signals(repo_id: str):
 # =========================
 
 @task
-def assemble_basic_info(repository, repo_metrics):
+async def assemble_basic_info(repository, repo_metrics):
     return {
         "Repo ID": repository.repo_id,
         "Repo Name": repository.repo_name,
@@ -170,7 +170,7 @@ def assemble_basic_info(repository, repo_metrics):
     }
 
 @task
-def assemble_languages_info(languages):
+async def assemble_languages_info(languages):
     language_dict = {lang.language: round(lang.percent_usage, 2) for lang in languages}
     main_language = max(language_dict, key=language_dict.get) if language_dict else None
     return {
@@ -180,7 +180,7 @@ def assemble_languages_info(languages):
     }
 
 @task
-def assemble_code_quality_info(lizard_summary, cloc_metrics):
+async def assemble_code_quality_info(lizard_summary, cloc_metrics):
     if lizard_summary:
         lizard_data = {
             "Total NLOC": lizard_summary.total_nloc,
@@ -206,13 +206,13 @@ def assemble_code_quality_info(lizard_summary, cloc_metrics):
     return {**lizard_data, **cloc_data, "total_loc": total_loc}
 
 @task
-def assemble_classification_info(repo_metrics, total_loc):
+async def assemble_classification_info(repo_metrics, total_loc):
     return {
         "Classification Label": classify_repo(repo_metrics.repo_size_bytes, total_loc)
     }
 
 @task
-def assemble_dependencies_info(dependencies, build_tool_metadata):
+async def assemble_dependencies_info(dependencies, build_tool_metadata):
     return {
         "Dependencies": [{
             "name": dep.package_name,
@@ -228,7 +228,7 @@ def assemble_dependencies_info(dependencies, build_tool_metadata):
     }
 
 @task
-def assemble_security_info(grype_results, trivy_results, dependencies):
+async def assemble_security_info(grype_results, trivy_results, dependencies):
     vulnerabilities = [
         {"package": g.package, "version": g.version, "severity": g.severity, "fix_version": g.fix_versions, "source": "G"}
         for g in grype_results
@@ -243,7 +243,7 @@ def assemble_security_info(grype_results, trivy_results, dependencies):
     }
 
 @task
-def assemble_eol_info(eol_results):
+async def assemble_eol_info(eol_results):
     return {
         "EOL Results": [{
             "artifact_name": result.artifact_name,
@@ -255,7 +255,7 @@ def assemble_eol_info(eol_results):
     }
 
 @task
-def assemble_semgrep_info(semgrep_findings):
+async def assemble_semgrep_info(semgrep_findings):
     return {
         "Semgrep Findings": [{
             "path": finding.path,
@@ -270,18 +270,18 @@ def assemble_semgrep_info(semgrep_findings):
     }
 
 @task
-def assemble_modernization_info(modernization_signals):
+async def assemble_modernization_info(modernization_signals):
     return {"Modernization Signals": modernization_signals}
 
 @task
-def merge_profile_sections(*sections):
+async def merge_profile_sections(*sections):
     profile = {}
     for section in sections:
         profile.update(section)
     return profile
 
 @task
-def cache_profile(repo_id: str, complete_profile: dict):
+async def cache_profile(repo_id: str, complete_profile: dict):
     with SessionLocal() as session:
         existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
         if existing:
