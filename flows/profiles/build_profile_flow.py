@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, func
 from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
+from flows.profiles.runtime_version import extract_runtime_version
 
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
@@ -12,17 +13,10 @@ from shared.models import (
     XeolResult, SemgrepResult, CheckovSummary
 )
 
-# =========================
-# Database Setup
-# =========================
 
 DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
-
-# =========================
-# Helper Functions
-# =========================
 
 def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
     if repo_size_bytes is None:
@@ -68,9 +62,6 @@ def infer_build_tool(syft_dependencies):
                 build_tool = "ruby"
     return build_tool or "Unknown"
 
-# =========================
-# Fetch Tasks (Thread-safe Sessions)
-# =========================
 
 @task
 async def fetch_basic_info(repo_id: str):
@@ -146,9 +137,6 @@ async def fetch_modernization_signals(repo_id: str):
             "Hardcoded Secrets Found": secrets_check.failed if secrets_check else 0,
         }
 
-# =========================
-# Assemble Section Tasks
-# =========================
 
 @task
 async def assemble_basic_info(repository, repo_metrics):
@@ -212,7 +200,7 @@ async def assemble_classification_info(repo_metrics, total_loc):
     }
 
 @task
-async def assemble_dependencies_info(dependencies, build_tool_metadata):
+async def assemble_dependencies_info(session, repo_id, dependencies):
     return {
         "Dependencies": [{
             "name": dep.package_name,
@@ -224,7 +212,8 @@ async def assemble_dependencies_info(dependencies, build_tool_metadata):
         } for dep in dependencies],
         "Total Dependencies": len(dependencies),
         "Build Tool": infer_build_tool(dependencies),
-        "Runtime Version": build_tool_metadata.runtime_version if build_tool_metadata else None
+        "Runtime Version": extract_runtime_version(session, repo_id)
+
     }
 
 @task
@@ -292,9 +281,6 @@ async def cache_profile(repo_id: str, complete_profile: dict):
         session.commit()
     print(f"Profile cached for {repo_id}")
 
-# =========================
-# Main Flow with Proper Future Handling
-# =========================
 
 @flow(
     name="build_profile_flow",
@@ -329,7 +315,8 @@ async def build_profile_flow(repo_id: str):
     lang_info = assemble_languages_info.submit(languages)
     code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
     classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
-    deps_info = assemble_dependencies_info.submit(dependencies, build_tool_metadata)
+    with SessionLocal() as session:
+        deps_info = assemble_dependencies_info.submit(session, repository.repo_id, dependencies)
     security_info = assemble_security_info.submit(grype, trivy, dependencies)
     eol_info = assemble_eol_info.submit(eol_results)
     semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
