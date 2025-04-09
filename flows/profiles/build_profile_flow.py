@@ -1,3 +1,4 @@
+import datetime
 import json
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func
@@ -155,6 +156,12 @@ async def assemble_basic_info(repository, repo_metrics):
         "Last Commit Date": repo_metrics.last_commit_date.isoformat() if repo_metrics.last_commit_date else None,
         "Repo Age (Years)": round(repo_metrics.repo_age_days / 365, 2),
         "Active Branch Count": repo_metrics.active_branch_count,
+        "Top Contributor Commits": repo_metrics.top_contributor_commits or 0,
+        "Commits by Top 3 Contributors": repo_metrics.commits_by_top_3_contributors or 0,
+        "Recent Commit Dates": [
+            d.isoformat() if isinstance(d, datetime) else d
+            for d in (repo_metrics.recent_commit_dates or [])
+        ]
     }
 
 @task
