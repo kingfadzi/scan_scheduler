@@ -5,7 +5,7 @@ from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from flows.profiles.runtime_version import extract_runtime_version
-
+from prefect.cache_policies import NO_CACHE
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
     Repository, RepoMetrics, LizardSummary, ClocMetric, BuildTool,
@@ -199,7 +199,7 @@ async def assemble_classification_info(repo_metrics, total_loc):
         "Classification Label": classify_repo(repo_metrics.repo_size_bytes, total_loc)
     }
 
-@task
+@task(cache_policy=NO_CACHE)
 async def assemble_dependencies_info(session, repo_id, dependencies):
     return {
         "Dependencies": [{
