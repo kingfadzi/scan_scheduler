@@ -278,7 +278,7 @@ async def merge_profile_sections(*sections):
 
 
 
-@task(retries=1, retry_delay_seconds=2)
+@task(retries=0, retry_delay_seconds=2)
 async def cache_profile(repo_id: str, complete_profile: dict):
     try:
         with SessionLocal() as session:
@@ -294,16 +294,15 @@ async def cache_profile(repo_id: str, complete_profile: dict):
         print(f"Error caching profile for {repo_id}: {exc}")
         raise exc
 
-
 @flow(
     name="build_profile_flow",
-    persist_result=False,
+    persist_result=True,  # Changed to persist results
     retries=0,
     flow_run_name=lambda: get_run_context().parameters["repo_id"]
 )
 async def build_profile_flow(repo_id: str):
     try:
-        # Submit tasks to fetch repository-related data concurrently.
+        # Submit parallel data fetch tasks
         basic_future = fetch_basic_info.submit(repo_id)
         lang_future = fetch_languages.submit(repo_id)
         cloc_future = fetch_cloc.submit(repo_id)
@@ -313,50 +312,48 @@ async def build_profile_flow(repo_id: str):
         semgrep_future = fetch_semgrep.submit(repo_id)
         modern_future = fetch_modernization_signals.submit(repo_id)
 
-        # Wait for initial task results.
-        repo_data = basic_future.result()
-        languages = lang_future.result()
-        cloc_metrics = cloc_future.result()
-        dependencies = deps_future.result()
-        grype, trivy = security_future.result()
-        eol_results = eol_future.result()
-        semgrep_findings = semgrep_future.result()
-        modernization_signals = modern_future.result()
+        # Resolve all data dependencies first
+        repo_data = await basic_future
+        repository, repo_metrics, _, lizard_summary = repo_data
+        
+        # Process sections concurrently
+        process_tasks = [
+            assemble_basic_info(repository, repo_metrics),
+            assemble_languages_info(await lang_future),
+            assemble_code_quality_info(lizard_summary, await cloc_future),
+            assemble_classification_info(
+                repo_metrics, 
+                (await code_quality.result())["total_loc"]
+            ),
+            assemble_dependencies_info(
+                SessionLocal(), 
+                repository.repo_id, 
+                await deps_future
+            ),
+            assemble_security_info(
+                (await security_future)[0], 
+                (await security_future)[1], 
+                await deps_future
+            ),
+            assemble_eol_info(await eol_future),
+            assemble_semgrep_info(await semgrep_future),
+            assemble_modernization_info(await modern_future)
+        ]
 
-        repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
+        # Use gather for parallel processing
+        processed_sections = await gather(*process_tasks)
 
-        # Process data in parallel by submitting further tasks.
-        basic_info = assemble_basic_info.submit(repository, repo_metrics)
-        lang_info = assemble_languages_info.submit(languages)
-        code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
-        classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
-        with SessionLocal() as session:
-            deps_info = assemble_dependencies_info.submit(session, repository.repo_id, dependencies)
-        security_info = assemble_security_info.submit(grype, trivy, dependencies)
-        eol_info = assemble_eol_info.submit(eol_results)
-        semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
-        modern_info = assemble_modernization_info.submit(modernization_signals)
+        # Merge profile sections
+        complete_profile = await merge_profile_sections(*processed_sections)
 
-        # Merge sections into a complete profile.
-        complete_profile = merge_profile_sections.submit(
-            basic_info.result(),
-            lang_info.result(),
-            code_quality.result(),
-            classification.result(),
-            deps_info.result(),
-            security_info.result(),
-            eol_info.result(),
-            semgrep_info.result(),
-            modern_info.result()
-        )
-
-        # Cache the complete profile.
-        cache_future = cache_profile.submit(repo_id, complete_profile.result())
-        cache_future.wait()
+        # Cache with proper error propagation
+        cache_result = await cache_profile.submit(repo_id, complete_profile)
+        return cache_result  # Flow fails if caching fails
 
     except Exception as exc:
-        print(f"Flow failed for repo_id {repo_id} with error: {exc}")
-        raise exc
+        print(f"Flow failed for {repo_id}: {exc}")
+        raise
+
 
 if __name__ == "__main__":
     build_profile_flow(repo_id="WebGoat/WebGoat")
