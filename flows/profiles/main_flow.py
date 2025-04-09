@@ -41,7 +41,7 @@ async def main_batch_orchestrator_flow(activity_status: str = "ACTIVE"):
         )
 
         while True:
-            # Pass the activity_status parameter to fetch_repo_chunk
+
             batch_repo_ids = fetch_repo_chunk(last_seen_repo_id, REPOS_PER_BATCH, activity_status=activity_status)
 
             if not batch_repo_ids:
@@ -74,8 +74,7 @@ async def main_batch_orchestrator_flow(activity_status: str = "ACTIVE"):
     print(f"Completed submitting {processed} repositories.")
 
 
-# --- Script Launcher
+
 if __name__ == "__main__":
-    # Set activity_status from the main block
     activity_status = "ACTIVE"
     asyncio.run(main_batch_orchestrator_flow(activity_status=activity_status))
