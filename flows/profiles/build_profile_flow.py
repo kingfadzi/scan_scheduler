@@ -276,17 +276,23 @@ async def merge_profile_sections(*sections):
         profile.update(section)
     return profile
 
-@task
+
+
+@task(retries=1, retry_delay_seconds=2)
 async def cache_profile(repo_id: str, complete_profile: dict):
-    with SessionLocal() as session:
-        existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
-        if existing:
-            existing.profile_json = json.dumps(complete_profile)
-        else:
-            new_cache = RepoProfileCache(repo_id=repo_id, profile_json=json.dumps(complete_profile))
-            session.add(new_cache)
-        session.commit()
-    print(f"Profile cached for {repo_id}")
+    try:
+        with SessionLocal() as session:
+            existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
+            if existing:
+                existing.profile_json = json.dumps(complete_profile)
+            else:
+                new_cache = RepoProfileCache(repo_id=repo_id, profile_json=json.dumps(complete_profile))
+                session.add(new_cache)
+            session.commit()
+        print(f"Profile cached for {repo_id}")
+    except Exception as exc:
+        print(f"Error caching profile for {repo_id}: {exc}")
+        raise exc
 
 
 @flow(
