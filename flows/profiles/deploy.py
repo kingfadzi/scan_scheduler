@@ -3,22 +3,18 @@ from prefect import flow
 from prefect.runner.storage import GitRepository
 from config.config import Config
 
-# Allow Git to bypass strict host key checking (for private Git repos)
 os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 
-# Git storage settings (adjust your Config class accordingly)
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
     branch=Config.FLOW_GIT_BRANCH,
 )
 
-# Version for these deployments
 DEPLOYMENT_VERSION = "1.0.0"
 
-# Work pool name (adjust if needed)
+
 WORK_POOL = "fundamentals-pool"
 
-# Define deployments: (entrypoint, deployment name, pool name, tags)
 DEPLOYMENTS = [
     (
         "flows/profiles/build_profile_flow.py:build_profile_flow",

@@ -52,13 +52,13 @@ def infer_build_tool(syft_deps):
 
         if not build_tool:
             if ptype == "python":
-                build_tool = "python"
+                build_tool = "pip"
             elif ptype == "npm":
-                build_tool = "node"
+                build_tool = "npm/yarn"
             elif ptype == "go-module":
-                build_tool = "go"
+                build_tool = "go-module"
             elif ptype == "gem":
-                build_tool = "ruby"
+                build_tool = "rubygems"
 
     return build_tool or "Unknown"
 
