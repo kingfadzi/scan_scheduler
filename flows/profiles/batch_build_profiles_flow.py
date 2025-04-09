@@ -5,7 +5,7 @@ from prefect import flow, task, get_run_logger
 
 PER_BATCH_WORKERS = 5
 
-@flow(name="batch_repo_subflow")
+@flow(name="batch_build_profiles_flow")
 async def batch_build_profiles_flow(repo_ids: list[str], batch_number: int):
     logger = get_run_logger()
     logger.info(f"Starting batch processing for {len(repo_ids)} repositories.")
@@ -13,7 +13,6 @@ async def batch_build_profiles_flow(repo_ids: list[str], batch_number: int):
     semaphore = asyncio.Semaphore(PER_BATCH_WORKERS)
 
     async def build_profile(repo_id: str):
-
         async with semaphore:
             logger.info(f"Starting subflow for repo: {repo_id}")
             try:

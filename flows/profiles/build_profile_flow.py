@@ -296,7 +296,7 @@ def cache_profile(repo_id: str, complete_profile: dict):
 # =========================
 
 @flow(task_runner=ConcurrentTaskRunner(), persist_result=True)
-def build_profile_flow(repo_id: str):
+async def build_profile_flow(repo_id: str):
     # Fetch all data in parallel
     basic_future = fetch_basic_info.submit(repo_id)
     lang_future = fetch_languages.submit(repo_id)
