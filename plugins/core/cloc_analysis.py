@@ -66,9 +66,13 @@ class ClocAnalyzer(BaseLogger):
     def save_cloc_results(self, repo_id, results):
         self.logger.debug(f"Processing CLOC results for repo_id: {repo_id}")
     
+        session = Session()
         try:
             processed_languages = 0
-            session = Session()
+    
+            # Delete existing records for this repo_id
+            self.logger.debug(f"Deleting existing CLOC metrics for repo_id: {repo_id}")
+            session.query(ClocMetric).filter(ClocMetric.repo_id == repo_id).delete()
     
             for language, metrics in results.items():
                 if language == "SUM":
@@ -85,24 +89,18 @@ class ClocAnalyzer(BaseLogger):
                         blank=metrics["blank"],
                         comment=metrics["comment"],
                         code=metrics["code"]
-                    ).on_conflict_do_update(
-                        index_elements=["repo_id", "language"],
-                        set_={
-                            "files": metrics["nFiles"],
-                            "blank": metrics["blank"],
-                            "comment": metrics["comment"],
-                            "code": metrics["code"],
-                        }
                     )
                 )
                 processed_languages += 1
     
+            # Only commit once all inserts are done
             session.commit()
             self.logger.debug(f"CLOC results committed to the database for repo_id: {repo_id}")
             return processed_languages
     
         except Exception as e:
             self.logger.exception(f"Error saving CLOC results for repo_id {repo_id}")
+            session.rollback()  # Important: rollback if any error happens
             raise
         finally:
             session.close()
