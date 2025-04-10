@@ -74,13 +74,14 @@ class ClocAnalyzer(BaseLogger):
             self.logger.debug(f"Deleting existing CLOC metrics for repo_id: {repo_id}")
             session.query(ClocMetric).filter(ClocMetric.repo_id == repo_id).delete()
     
+            
             for language, metrics in results.items():
-                if language == "SUM":
-                    self.logger.debug(f"Skipping SUM in CLOC results for repo_id: {repo_id}")
+                if language in ("header", "SUM"):
+                    self.logger.debug(f"Skipping {language} in CLOC results for repo_id: {repo_id}")
                     continue
-    
+            
                 self.logger.debug(f"Saving metrics for language: {language} in repo_id: {repo_id}")
-    
+            
                 session.execute(
                     insert(ClocMetric).values(
                         repo_id=repo_id,
