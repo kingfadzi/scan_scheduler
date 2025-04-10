@@ -1,35 +1,129 @@
 categories:
   - name: "Infrastructure & Deployment"
     subcategories:
-
       - name: "Containerization & Orchestration"
-        patterns:
-          - "^com\\.google\\.cloud:.*"
-          - "^io\\.dekorate:.*"
-          - "^io\\.fabric8\\.kubernetes:.*"
-          - "^io\\.kubernetes:.*"
-          - "^org\\.arquillian\\.cube:.*"
-          - "^com\\.github\\.docker(?:-[^:]+)*:.*$"
-
+        frameworks:
+          - name: "Google Cloud Client Libraries"
+            patterns:
+              - ".*google\\.cloud.*"
+          - name: "Dekorate"
+            patterns:
+              - ".*dekorate.*"
+          - name: "Fabric8 Kubernetes Client"
+            patterns:
+              - ".*fabric8\\.kubernetes.*"
+          - name: "Kubernetes Java Client"
+            patterns:
+              - ".*kubernetes.*"
+          - name: "Arquillian Cube"
+            patterns:
+              - ".*arquillian\\.cube.*"
+          - name: "Docker Java Libraries"
+            patterns:
+              - ".*github\\.docker.*"
+          - name: "Jib"
+            patterns:
+              - ".*jib.*"
+          - name: "Podman Java SDK"
+            patterns:
+              - ".*podman.*"
+          - name: "Telepresence Java Client"
+            patterns:
+              - ".*telepresence.*"
 
       - name: "Cloud Platforms"
-        patterns:
-          - "^com\\.(amazonaws|azure):.*"
-          - "^com\\.microsoft\\.azure:.*"
-          - "^com\\.oracle\\.oci:.*"
-          - "^software\\.amazon\\.awssdk:.*"
-          - "^io\\.fabric8:.*"
-          - "^org\\.springframework\\.cloud:.*"
-          - "^software\\.amazon\\.lambda:.*"
+        frameworks:
+          - name: "AWS SDK v1"
+            patterns:
+              - ".*amazonaws.*"
+          - name: "AWS SDK v2"
+            patterns:
+              - ".*amazon\\.awssdk.*"
+          - name: "AWS Lambda SDK"
+            patterns:
+              - ".*amazon\\.lambda.*"
+          - name: "Microsoft Azure SDK"
+            patterns:
+              - ".*azure.*"
+          - name: "Oracle OCI SDK"
+            patterns:
+              - ".*oracle\\.oci.*"
+          - name: "Fabric8 OpenShift Client"
+            patterns:
+              - ".*fabric8.*"
+          - name: "Spring Cloud"
+            patterns:
+              - ".*springframework\\.cloud.*"
+          - name: "Pulumi Java SDK"
+            patterns:
+              - ".*pulumi.*"
+          - name: "AWS CDK Java"
+            patterns:
+              - ".*cdk.*"
+          - name: "Terraform Java SDK"
+            patterns:
+              - ".*terraform.*"
+          - name: "Crossplane Java SDK"
+            patterns:
+              - ".*crossplane.*"
 
       - name: "Application Servers"
-        patterns:
-          - "^io\\.undertow:.*"
-          - "^org\\.eclipse\\.jetty(?:\\..*)?:.+$"
-          - "^org\\.glassfish(?:\\..*)?:.+$"
-          - "^(org\\.codehaus\\.)?fabric3:.*"
-          - "^(com\\.oracle\\.)?(weblogic|weblogc):.*"
-          - "^javax[^:]*j2ee[^:]*:.*$"
+        frameworks:
+          - name: "Undertow Web Server"
+            patterns:
+              - ".*undertow.*"
+          - name: "Eclipse Jetty"
+            patterns:
+              - ".*eclipse\\.jetty.*"
+          - name: "GlassFish Application Server"
+            patterns:
+              - ".*glassfish.*"
+          - name: "Fabric3 Application Server"
+            patterns:
+              - ".*codehaus\\.fabric3.*"
+              - ".*fabric3.*"
+          - name: "Oracle WebLogic"
+            patterns:
+              - ".*oracle\\.weblogic.*"
+              - ".*oracle\\.weblogc.*"
+              - ".*weblogic.*"
+              - ".*weblogc.*"
+          - name: "J2EE Legacy Libraries"
+            patterns:
+              - ".*javax.*j2ee.*"
+          - name: "Apache TomEE"
+            patterns:
+              - ".*apache\\.tomee.*"
+          - name: "WildFly"
+            patterns:
+              - ".*wildfly.*"
+          - name: "JBoss EAP"
+            patterns:
+              - ".*jboss.*"
 
+      - name: "Serverless & Functions"
+        frameworks:
+          - name: "Google Cloud Functions SDK"
+            patterns:
+              - ".*functions-framework-api.*"
+          - name: "Azure Functions Java SDK"
+            patterns:
+              - ".*azure-functions.*"
+          - name: "AWS Lambda Java Runtime"
+            patterns:
+              - ".*aws-lambda.*"
+          - name: "Micronaut Function AWS/Azure/GCP"
+            patterns:
+              - ".*micronaut-function-.*"
 
-
+      - name: "Infrastructure Testing"
+        frameworks:
+          - name: "Testcontainers"
+            patterns:
+              - ".*testcontainers.*"
+          - name: "LocalStack SDK"
+            patterns:
+              - ".*localstack.*"
+          - name: "MockServer"
+            patterns:
+              - ".*mockserver.*"

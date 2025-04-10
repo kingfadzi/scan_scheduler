@@ -10,6 +10,7 @@ from config.config import Config
 from shared.base_logger import BaseLogger
 import configparser
 from pathlib import Path
+import psutil
 
 class SemgrepAnalyzer(BaseLogger):
 
@@ -37,13 +38,20 @@ class SemgrepAnalyzer(BaseLogger):
 
             self.logger.info(f"Executing Semgrep command: {' '.join(semgrep_command)}")
 
-            result = subprocess.run(
-                semgrep_command,
-                timeout=Config.DEFAULT_PROCESS_TIMEOUT,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            try:
+                result = subprocess.run(
+                    semgrep_command,
+                    #timeout=Config.DEFAULT_PROCESS_TIMEOUT,
+                    timeout=180,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+            except subprocess.TimeoutExpired as e:
+                parent = psutil.Process(e.process.pid)
+                for child in parent.children(recursive=True):
+                    child.kill()
+                parent.kill()
 
             semgrep_data = json.loads(result.stdout.strip())
 
@@ -179,12 +187,12 @@ if __name__ == "__main__":
     repo_slug = "WebGoat"
     repo_id = "WebGoat"
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
+    # Changed to dictionary
+    repo = {
+        'repo_id': repo_id,
+        'repo_slug': repo_slug
+    }
 
-    repo = MockRepo(repo_id=repo_id, repo_slug=repo_slug)
     repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
     analyzer = SemgrepAnalyzer()
@@ -198,3 +206,4 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Session closed for repo_id: {repo['repo_id']}")
+

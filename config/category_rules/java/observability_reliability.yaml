@@ -3,28 +3,79 @@ categories:
     subcategories:
 
       - name: "Logging & Monitoring"
-        patterns:
-          - "ch\\.qos\\.logback.*"
-          - "io\\.github\\.lognet.*"
-          - "commons-logging.*"
-          - "log4j.*"
-          - "net\\.logstash\\.logback.*"
-          - "org\\.jboss\\.logging.*"
-          - "org\\.slf4j\\.*"
+        frameworks:
+          - name: "Logback (SLF4J Backend)"
+            patterns:
+              - ".*qos\\.logback.*"
+          - name: "LogNet Logging Libraries"
+            patterns:
+              - ".*github\\.lognet.*"
+          - name: "Apache Commons Logging"
+            patterns:
+              - ".*commons-logging.*"
+          - name: "Apache Log4j"
+            patterns:
+              - ".*log4j.*"
+          - name: "Logstash Logback Encoder"
+            patterns:
+              - ".*logstash\\.logback.*"
+          - name: "JBoss Logging"
+            patterns:
+              - ".*jboss\\.logging.*"
+          - name: "SLF4J API"
+            patterns:
+              - ".*slf4j.*"
+          - name: "TinyLog"
+            patterns:
+              - ".*tinylog.*"
 
       - name: "Metrics & Distributed Tracing"
-        patterns:
-          - "com\\.netflix\\.netflix-commons.*"
-          - "io\\.dropwizard\\.metrics.*"
-          - "io\\.micrometer.*"
-          - "io\\.opentelemetry.*"
-          - "io\\.opentracing\\.brave.*"
-          - "io\\.prometheus.*"
-          - "^io\\.zipkin.*"
-          - "org\\.eclipse\\.jgit.*"
+        frameworks:
+          - name: "Netflix Commons Metrics"
+            patterns:
+              - ".*netflix-commons.*"
+          - name: "Dropwizard Metrics"
+            patterns:
+              - ".*dropwizard\\.metrics.*"
+          - name: "Micrometer Metrics"
+            patterns:
+              - ".*micrometer.*"
+          - name: "Spectator Metrics (Netflix)"
+            patterns:
+              - ".*spectator.*"
+          - name: "OpenTelemetry SDK"
+            patterns:
+              - ".*opentelemetry.*"
+          - name: "OpenTracing Brave Integration"
+            patterns:
+              - ".*opentracing\\.brave.*"
+          - name: "Brave"
+            patterns:
+              - ".*brave.*"
+          - name: "Spring Cloud Sleuth"
+            patterns:
+              - ".*spring-cloud-sleuth.*"
+          - name: "Zipkin Tracing"
+            patterns:
+              - ".*zipkin.*"
+          - name: "Jaeger Java Client"
+            patterns:
+              - ".*jaeger-client.*"
+          - name: "Prometheus Java Client"
+            patterns:
+              - ".*prometheus.*"
+          - name: "Eclipse JGit"
+            patterns:
+              - ".*eclipse\\.jgit.*"
 
       - name: "Circuit Breakers & Rate Limiting"
-        patterns:
-          - "com\\.netflix\\.hystrix.*"
-          - "org\\.jboss\\.narayana.*"
-
+        frameworks:
+          - name: "Netflix Hystrix"
+            patterns:
+              - ".*hystrix.*"
+          - name: "Resilience4j"
+            patterns:
+              - ".*resilience4j.*"
+          - name: "JBoss Narayana Transactions"
+            patterns:
+              - ".*jboss\\.narayana.*"

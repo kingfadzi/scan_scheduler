@@ -2,123 +2,228 @@ categories:
   - name: "Infrastructure & Deployment"
     subcategories:
       - name: "Application Servers"
-        patterns:
-          - "^jakarta\\.ejb(\\..*)?:.+$"
-          - "^jakarta\\.ejb\\.embeddable(\\..*)?:.+$"
-          - "^jakarta\\.ejb\\.spi(\\..*)?:.+$"
-          - "^jakarta\\.resource(\\..*)?:.+$"
-          - "^jakarta\\.batch(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta EJB"
+            patterns:
+              - ".*ejb.*"
+          - name: "Jakarta EJB Embeddable"
+            patterns:
+              - ".*ejb\\.embeddable.*"
+          - name: "Jakarta EJB SPI"
+            patterns:
+              - ".*ejb\\.spi.*"
+          - name: "Jakarta Resource"
+            patterns:
+              - ".*resource.*"
+          - name: "Jakarta Batch"
+            patterns:
+              - ".*batch.*"
+          - name: "Jakarta Connectors (JCA)"
+            patterns:
+              - ".*connector.*"
+              - ".*resource\\.spi.*"
 
   - name: "Data Management & Storage"
     subcategories:
       - name: "Relational Databases"
-        patterns:
-          - "^jakarta\\.persistence(\\..*)?:.+$"
-          - "^jakarta\\.transaction(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta Persistence"
+            patterns:
+              - ".*persistence.*"
+          - name: "Jakarta Transactions"
+            patterns:
+              - ".*transaction.*"
       - name: "NoSQL & Big Data"
-        patterns: []
+        frameworks: []
       - name: "Caching"
-        patterns: []
+        frameworks: []
       - name: "Data Lakes & Analytics"
-        patterns: []
+        frameworks: []
 
   - name: "Messaging & Data Integration"
     subcategories:
       - name: "Message Brokers & ETL Tools"
-        patterns:
-          - "^jakarta\\.jms(\\..*)?:.+$"
-          - "^jakarta\\.mail(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta JMS"
+            patterns:
+              - ".*jms.*"
+          - name: "Jakarta Mail"
+            patterns:
+              - ".*mail.*"
       - name: "API Gateways & REST/GraphQL"
-        patterns:
-          - "^jakarta\\.ws\\.rs(\\..*)?:.+$"
-          - "^jakarta\\.jws(\\..*)?:.+$"
-          - "^jakarta\\.xml\\.ws(\\..*)?:.+$"
-          - "^jakarta\\.xml\\.soap(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta RESTful Web Services (JAX-RS)"
+            patterns:
+              - ".*ws\\.rs.*"
+          - name: "Jakarta JWS (Web Services Annotations)"
+            patterns:
+              - ".*jws.*"
+          - name: "Jakarta XML Web Services (JAX-WS)"
+            patterns:
+              - ".*xml\\.ws.*"
+          - name: "Jakarta XML SOAP (SAAJ)"
+            patterns:
+              - ".*xml\\.soap.*"
       - name: "Event Streaming"
-        patterns: []
+        frameworks: []
       - name: "Networking"
-        patterns: []
+        frameworks: []
 
   - name: "Application Development"
     subcategories:
       - name: "Web Frameworks"
-        patterns:
-          - "^jakarta\\.faces(\\..*)?:.+$"
-          - "^jakarta\\.servlet(\\..*)?:.+$"
-          - "^jakarta\\.el(\\..*)?:.+$"
-          - "^jakarta\\.websocket(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta Faces (JSF)"
+            patterns:
+              - ".*faces.*"
+          - name: "Jakarta Servlet"
+            patterns:
+              - ".*servlet.*"
+          - name: "Jakarta Server Pages (JSP)"
+            patterns:
+              - ".*jsp.*"
+          - name: "Jakarta Standard Tag Library (JSTL)"
+            patterns:
+              - ".*jstl.*"
+          - name: "Jakarta Expression Language"
+            patterns:
+              - ".*el.*"
+          - name: "Jakarta WebSocket"
+            patterns:
+              - ".*websocket.*"
+
       - name: "Spring: Boot"
-        patterns: []
+        frameworks: []
       - name: "Spring: Framework"
-        patterns: []
+        frameworks: []
       - name: "Reactive Libraries"
-        patterns: []
+        frameworks: []
       - name: "Dependency Injection"
-        patterns:
-          - "^jakarta\\.enterprise\\.inject(\\..*)?:.+$"
-          - "^jakarta\\.inject(\\..*)?:.+$"
-          - "^jakarta\\.enterprise\\.context(\\..*)?:.+$"
-          - "^jakarta\\.enterprise\\.event(\\..*)?:.+$"
-          - "^jakarta\\.enterprise\\.concurrent(\\..*)?:.+$"
-          - "^jakarta\\.interceptor(\\..*)?:.+$"
-          - "^jakarta\\.decorator(\\..*)?:.+$"
-          - "^jakarta\\.enterprise\\.util(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta CDI (Contexts and Dependency Injection)"
+            patterns:
+              - ".*enterprise\\.inject.*"
+          - name: "Jakarta Inject"
+            patterns:
+              - ".*inject.*"
+          - name: "Jakarta Contexts"
+            patterns:
+              - ".*enterprise\\.context.*"
+          - name: "Jakarta Events"
+            patterns:
+              - ".*enterprise\\.event.*"
+          - name: "Jakarta Concurrency"
+            patterns:
+              - ".*enterprise\\.concurrent.*"
+          - name: "Jakarta Interceptor"
+            patterns:
+              - ".*interceptor.*"
+          - name: "Jakarta Decorator"
+            patterns:
+              - ".*decorator.*"
+          - name: "Jakarta Enterprise Utilities"
+            patterns:
+              - ".*enterprise\\.util.*"
+
       - name: "Template Engines"
-        patterns: []
+        frameworks: []
 
   - name: "Serialization"
     subcategories:
       - name: "JSON/XML"
-        patterns:
-          - "^jakarta\\.json(\\..*)?:.+$"
-          - "^jakarta\\.json\\.bind(\\..*)?:.+$"
-          - "^jakarta\\.json\\.spi(\\..*)?:.+$"
-          - "^jakarta\\.json\\.stream(\\..*)?:.+$"
-          - "^jakarta\\.xml\\.bind(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta JSON"
+            patterns:
+              - ".*json$"
+          - name: "Jakarta JSON Binding"
+            patterns:
+              - ".*json\\.bind.*"
+          - name: "Jakarta JSON SPI"
+            patterns:
+              - ".*json\\.spi.*"
+          - name: "Jakarta JSON Stream"
+            patterns:
+              - ".*json\\.stream.*"
+          - name: "Jakarta XML Binding"
+            patterns:
+              - ".*xml\\.bind.*"
+
       - name: "Protocol Buffers & Binary Formats"
-        patterns: []
+        frameworks: []
 
   - name: "Security & Identity"
     subcategories:
       - name: "Authentication"
-        patterns:
-          - "^jakarta\\.security\\.auth\\.message(\\..*)?:.+$"
-          - "^jakarta\\.annotation\\.security(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta Authentication Messages"
+            patterns:
+              - ".*security\\.auth\\.message.*"
+          - name: "Jakarta Annotation Security"
+            patterns:
+              - ".*annotation\\.security.*"
       - name: "Security Layers"
-        patterns:
-          - "^jakarta\\.security\\.jacc(\\..*)?:.+$"
-      - name: "Transport & Data Security "
-        patterns:
-          - "^jakarta\\.security\\.enterprise\\.authentication\\.mechanism\\.http(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta JACC (Authorization)"
+            patterns:
+              - ".*security\\.jacc.*"
+      - name: "Transport & Data Security"
+        frameworks:
+          - name: "Jakarta HTTP Authentication Mechanisms"
+            patterns:
+              - ".*security\\.enterprise\\.authentication\\.mechanism\\.http.*"
       - name: "Identity Management"
-        patterns:
-          - "^jakarta\\.security\\.enterprise\\.credential(\\..*)?:.+$"
-          - "^jakarta\\.security\\.enterprise\\.identitystore(\\..*)?:.+$"
-          - "^jakarta\\.security\\.enterprise(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta Credential Store"
+            patterns:
+              - ".*security\\.enterprise\\.credential.*"
+          - name: "Jakarta Identity Store"
+            patterns:
+              - ".*security\\.enterprise\\.identitystore.*"
+          - name: "Jakarta Security Enterprise"
+            patterns:
+              - ".*security\\.enterprise.*"
 
   - name: "Observability & Reliability"
     subcategories:
       - name: "Logging & Monitoring"
-        patterns: []
+        frameworks: []
       - name: "Metrics & Distributed Tracing"
-        patterns: []
+        frameworks: []
       - name: "Circuit Breakers & Rate Limiting"
-        patterns: []
+        frameworks: []
 
   - name: "Development & Testing Tools"
     subcategories:
       - name: "Build Tools & Dependency Management"
-        patterns: []
+        frameworks: []
       - name: "Testing"
-        patterns: []
+        frameworks: []
       - name: "Code Quality & Profiling"
-        patterns: []
+        frameworks: []
+      - name: "Jakarta Debug (Support for Other Languages)"
+        frameworks:
+          - name: "Jakarta Debug"
+            patterns:
+              - ".*debug.*"
 
   - name: "Utilities & Libraries"
     subcategories:
       - name: "General-Purpose"
-        patterns:
-          - "^jakarta\\.activation(\\..*)?:.+$"
-          - "^jakarta\\.annotation(\\..*)?:.+$"
-          - "^jakarta\\.annotation\\.sql(\\..*)?:.+$"
-          - "^jakarta\\.validation(\\..*)?:.+$"
+        frameworks:
+          - name: "Jakarta Activation"
+            patterns:
+              - ".*activation.*"
+          - name: "Jakarta Annotation"
+            patterns:
+              - ".*annotation$"
+          - name: "Jakarta Annotation SQL"
+            patterns:
+              - ".*annotation\\.sql.*"
+          - name: "Jakarta Validation (Bean Validation)"
+            patterns:
+              - ".*validation.*"
+      - name: "Management & Monitoring"
+        frameworks:
+          - name: "Jakarta Management (JMX)"
+            patterns:
+              - ".*management.*"

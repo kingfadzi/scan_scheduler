@@ -1,127 +1,398 @@
 categories:
   - name: "Database & Persistence"
-    patterns:
-      - ".*mongoose.*"
-      - ".*sequelize.*"
-      - ".*knex.*"
-      - ".*typeorm.*"
-      - ".*pg.*"
-      - ".*mysql.*"
-      - ".*sqlite.*"
-      - ".*leveldb.*"
+    subcategories:
+      - name: "Database Libraries"
+        frameworks:
+          - name: "Mongoose"
+            patterns:
+              - ".*mongoose.*"
+          - name: "Sequelize"
+            patterns:
+              - ".*sequelize.*"
+          - name: "Knex"
+            patterns:
+              - ".*knex.*"
+          - name: "TypeORM"
+            patterns:
+              - ".*typeorm.*"
+          - name: "pg"
+            patterns:
+              - ".*pg.*"
+          - name: "MySQL"
+            patterns:
+              - ".*mysql.*"
+          - name: "SQLite"
+            patterns:
+              - ".*sqlite.*"
+          - name: "LevelDB"
+            patterns:
+              - ".*leveldb.*"
+          - name: "Prisma"
+            patterns:
+              - ".*@prisma/client.*"
+
   - name: "Messaging & Event Streaming"
-    patterns:
-      - ".*kafkajs.*"
-      - ".*rabbitmq.*"
-      - ".*amqplib.*"
-      - ".*nats.*"
-      - ".*bull.*"
-      - ".*agenda.*"
+    subcategories:
+      - name: "Messaging Frameworks"
+        frameworks:
+          - name: "KafkaJS"
+            patterns:
+              - ".*kafkajs.*"
+          - name: "Kafka Node"
+            patterns:
+              - ".*kafka-node.*"
+          - name: "RabbitMQ"
+            patterns:
+              - ".*rabbitmq.*"
+          - name: "AMQP Library"
+            patterns:
+              - ".*amqplib.*"
+          - name: "NATS"
+            patterns:
+              - ".*nats.*"
+          - name: "Bull"
+            patterns:
+              - ".*bull.*"
+          - name: "Agenda"
+            patterns:
+              - ".*agenda.*"
+          - name: "Socket.IO"
+            patterns:
+              - ".*socket.io.*"
+
   - name: "Web & Application Frameworks"
-    patterns:
-      - ".*express.*"
-      - ".*koa.*"
-      - ".*hapi.*"
-      - ".*fastify.*"
-      - ".*sails.*"
-      - ".*meteor.*"
-      - ".*next.*"
-      - ".*nuxt.*"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Express"
+            patterns:
+              - ".*express.*"
+          - name: "Koa"
+            patterns:
+              - ".*koa.*"
+          - name: "Hapi"
+            patterns:
+              - ".*hapi.*"
+          - name: "Fastify"
+            patterns:
+              - ".*fastify.*"
+          - name: "Sails"
+            patterns:
+              - ".*sails.*"
+          - name: "Meteor"
+            patterns:
+              - ".*meteor.*"
+          - name: "Next.js"
+            patterns:
+              - ".*next.*"
+          - name: "Nuxt.js"
+            patterns:
+              - ".*nuxt.*"
+          - name: "NestJS"
+            patterns:
+              - ".*@nestjs/.*"
+
   - name: "Application Servers & Runtime Containers"
-    patterns:
-      - ".*pm2.*"
-      - ".*forever.*"
-      - ".*nodemon.*"
+    subcategories:
+      - name: "Runtime Containers"
+        frameworks:
+          - name: "PM2"
+            patterns:
+              - ".*pm2.*"
+          - name: "Forever"
+            patterns:
+              - ".*forever.*"
+          - name: "Nodemon"
+            patterns:
+              - ".*nodemon.*"
+
   - name: "Security & Authentication"
-    patterns:
-      - ".*jsonwebtoken.*"
-      - ".*passport.*"
-      - ".*bcrypt.*"
-      - ".*argon2.*"
-      - ".*helmet.*"
+    subcategories:
+      - name: "Authentication Libraries"
+        frameworks:
+          - name: "JSON Web Token"
+            patterns:
+              - ".*jsonwebtoken.*"
+          - name: "Passport.js"
+            patterns:
+              - ".*passport.*"
+          - name: "BCrypt"
+            patterns:
+              - ".*bcrypt.*"
+          - name: "Argon2"
+            patterns:
+              - ".*argon2.*"
+          - name: "Helmet"
+            patterns:
+              - ".*helmet.*"
+
   - name: "Caching & In-Memory Data Stores"
-    patterns:
-      - ".*node-cache.*"
-      - ".*memory-cache.*"
-      - ".*redis.*"
+    subcategories:
+      - name: "Caching Libraries"
+        frameworks:
+          - name: "Node Cache"
+            patterns:
+              - ".*node-cache.*"
+          - name: "Memory Cache"
+            patterns:
+              - ".*memory-cache.*"
+          - name: "Redis"
+            patterns:
+              - ".*redis.*"
+
   - name: "Logging, Monitoring & Observability"
-    patterns:
-      - ".*winston.*"
-      - ".*pino.*"
-      - ".*morgan.*"
-      - ".*log4js.*"
-      - ".*prom-client.*"
-      - ".*sentry.*"
+    subcategories:
+      - name: "Logging Frameworks"
+        frameworks:
+          - name: "Winston"
+            patterns:
+              - ".*winston.*"
+          - name: "Pino"
+            patterns:
+              - ".*pino.*"
+          - name: "Morgan"
+            patterns:
+              - ".*morgan.*"
+          - name: "Log4js"
+            patterns:
+              - ".*log4js.*"
+          - name: "Prometheus Client"
+            patterns:
+              - ".*prom-client.*"
+          - name: "Sentry"
+            patterns:
+              - ".*sentry.*"
+          - name: "OpenTelemetry"
+            patterns:
+              - ".*@opentelemetry/.*"
+
   - name: "Testing, Quality Assurance & Mocking"
-    patterns:
-      - ".*jest.*"
-      - ".*mocha.*"
-      - ".*chai.*"
-      - ".*ava.*"
-      - ".*cypress.*"
-      - ".*supertest.*"
-      - ".*sinon.*"
+    subcategories:
+      - name: "Testing Frameworks"
+        frameworks:
+          - name: "Jest"
+            patterns:
+              - ".*jest.*"
+          - name: "Jest Extended"
+            patterns:
+              - ".*jest-extended.*"
+          - name: "Mocha"
+            patterns:
+              - ".*mocha.*"
+          - name: "Chai"
+            patterns:
+              - ".*chai.*"
+          - name: "AVA"
+            patterns:
+              - ".*ava.*"
+          - name: "Cypress"
+            patterns:
+              - ".*cypress.*"
+          - name: "Supertest"
+            patterns:
+              - ".*supertest.*"
+          - name: "Sinon"
+            patterns:
+              - ".*sinon.*"
+          - name: "Vitest"
+            patterns:
+              - ".*vitest.*"
+
   - name: "Cloud, Containerization & Orchestration"
-    patterns:
-      - ".*aws-sdk.*"
-      - ".*google-cloud.*"
-      - ".*azure.*"
-      - ".*firebase.*"
-      - ".*docker.*"
-      - ".*kubernetes.*"
+    subcategories:
+      - name: "Cloud & DevOps Tools"
+        frameworks:
+          - name: "AWS SDK"
+            patterns:
+              - ".*aws-sdk.*"
+          - name: "Google Cloud SDK"
+            patterns:
+              - ".*google-cloud.*"
+          - name: "Azure SDK"
+            patterns:
+              - ".*azure.*"
+          - name: "Firebase"
+            patterns:
+              - ".*firebase.*"
+          - name: "Docker Libraries"
+            patterns:
+              - ".*docker.*"
+          - name: "Kubernetes Libraries"
+            patterns:
+              - ".*kubernetes.*"
+          - name: "Serverless Framework"
+            patterns:
+              - ".*serverless.*"
+
   - name: "Build, Dependency Management & Deployment Tools"
-    patterns:
-      - ".*webpack.*"
-      - ".*gulp.*"
-      - ".*grunt.*"
-      - ".*rollup.*"
-      - ".*esbuild.*"
-      - ".*babel.*"
-      - ".*lerna.*"
-      - ".*nx.*"
+    subcategories:
+      - name: "Build Tools"
+        frameworks:
+          - name: "Webpack"
+            patterns:
+              - ".*webpack.*"
+          - name: "Gulp"
+            patterns:
+              - ".*gulp.*"
+          - name: "Grunt"
+            patterns:
+              - ".*grunt.*"
+          - name: "Rollup"
+            patterns:
+              - ".*rollup.*"
+          - name: "Esbuild"
+            patterns:
+              - ".*esbuild.*"
+          - name: "Babel"
+            patterns:
+              - ".*babel.*"
+          - name: "Lerna"
+            patterns:
+              - ".*lerna.*"
+          - name: "NX"
+            patterns:
+              - ".*nx.*"
+          - name: "Vite"
+            patterns:
+              - ".*vite.*"
+          - name: "Snowpack"
+            patterns:
+              - ".*snowpack.*"
+
   - name: "Data Serialization, Transformation & Processing"
-    patterns:
-      - ".*csv-parser.*"
-      - ".*papaparse.*"
-      - ".*jsonschema.*"
-      - ".*protobuf.*"
+    subcategories:
+      - name: "Serialization Libraries"
+        frameworks:
+          - name: "CSV Parser"
+            patterns:
+              - ".*csv-parser.*"
+          - name: "PapaParse"
+            patterns:
+              - ".*papaparse.*"
+          - name: "JSON Schema Validator"
+            patterns:
+              - ".*jsonschema.*"
+          - name: "Protocol Buffers"
+            patterns:
+              - ".*protobuf.*"
+
   - name: "Networking & Communication"
-    patterns:
-      - ".*axios.*"
-      - ".*node-fetch.*"
-      - ".*superagent.*"
-      - ".*request.*"
-      - ".*websocket.*"
-      - ".*ws.*"
+    subcategories:
+      - name: "Networking Libraries"
+        frameworks:
+          - name: "Axios"
+            patterns:
+              - ".*axios.*"
+          - name: "node-fetch"
+            patterns:
+              - ".*node-fetch.*"
+          - name: "SuperAgent"
+            patterns:
+              - ".*superagent.*"
+          - name: "Request"
+            patterns:
+              - ".*request.*"
+          - name: "WebSocket"
+            patterns:
+              - ".*websocket.*"
+          - name: "ws"
+            patterns:
+              - ".*ws.*"
+
   - name: "Utility & Helper Libraries"
-    patterns:
-      - ".*lodash.*"
-      - ".*underscore.*"
-      - ".*moment.*"
-      - ".*date-fns.*"
-      - ".*ramda.*"
+    subcategories:
+      - name: "Utility Libraries"
+        frameworks:
+          - name: "Lodash"
+            patterns:
+              - ".*lodash.*"
+          - name: "Underscore"
+            patterns:
+              - ".*underscore.*"
+          - name: "Moment.js"
+            patterns:
+              - ".*moment.*"
+          - name: "date-fns"
+            patterns:
+              - ".*date-fns.*"
+          - name: "Ramda"
+            patterns:
+              - ".*ramda.*"
+
   - name: "User Interface & Client-Side"
-    patterns:
-      - ".*react.*"
-      - ".*angular.*"
-      - ".*vue.*"
-      - ".*svelte.*"
-      - ".*ember.*"
-      - ".*jquery.*"
-      - ".*bootstrap.*"
-      - ".*tailwind.*"
+    subcategories:
+      - name: "Frontend Frameworks"
+        frameworks:
+          - name: "React"
+            patterns:
+              - ".*react.*"
+          - name: "Angular"
+            patterns:
+              - ".*angular.*"
+          - name: "Vue.js"
+            patterns:
+              - ".*vue.*"
+          - name: "Svelte"
+            patterns:
+              - ".*svelte.*"
+          - name: "Ember.js"
+            patterns:
+              - ".*ember.*"
+          - name: "jQuery"
+            patterns:
+              - ".*jquery.*"
+          - name: "Bootstrap"
+            patterns:
+              - ".*bootstrap.*"
+          - name: "Tailwind CSS"
+            patterns:
+              - ".*tailwind.*"
+          - name: "Gatsby"
+            patterns:
+              - ".*gatsby.*"
+          - name: "11ty"
+            patterns:
+              - ".*@11ty/.*"
+
   - name: "Documentation, Code Generation & Development Tools"
-    patterns:
-      - ".*jsdoc.*"
-      - ".*typedoc.*"
-      - ".*eslint.*"
-      - ".*prettier.*"
-      - ".*husky.*"
-      - ".*lint-staged.*"
+    subcategories:
+      - name: "Documentation Tools"
+        frameworks:
+          - name: "JSDoc"
+            patterns:
+              - ".*jsdoc.*"
+          - name: "TypeDoc"
+            patterns:
+              - ".*typedoc.*"
+          - name: "ESLint"
+            patterns:
+              - ".*eslint.*"
+          - name: "Prettier"
+            patterns:
+              - ".*prettier.*"
+          - name: "Husky"
+            patterns:
+              - ".*husky.*"
+          - name: "Lint-Staged"
+            patterns:
+              - ".*lint-staged.*"
+
   - name: "Analytics, Machine Learning & Big Data"
-    patterns:
-      - ".*brain.js.*"
-      - ".*tensorflow.*"
-      - ".*onnx.*"
-      - ".*pandas-js.*"
-      - ".*apache-arrow.*"
+    subcategories:
+      - name: "AI & ML Libraries"
+        frameworks:
+          - name: "Brain.js"
+            patterns:
+              - ".*brain.js.*"
+          - name: "TensorFlow.js"
+            patterns:
+              - ".*tensorflow.*"
+          - name: "ONNX.js"
+            patterns:
+              - ".*onnx.*"
+          - name: "Pandas-js"
+            patterns:
+              - ".*pandas-js.*"
+          - name: "Apache Arrow"
+            patterns:
+              - ".*apache-arrow.*"

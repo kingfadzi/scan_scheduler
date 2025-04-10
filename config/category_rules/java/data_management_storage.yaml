@@ -2,58 +2,178 @@ categories:
   - name: "Data Management & Storage"
     subcategories:
       - name: "Relational Databases"
-        patterns:
-          - "^com\\.h2database:.*"
-          - "^com\\.ibm\\.db2:.*"
-          - "^com\\.microsoft\\.sqlserver.jdbc:.*"
-          - "^com\\.mysql:.*"
-          - "^com\\.oracle\\.(jdbc|ojdbc|database):.*"
-          - "^commons-dbcp:.*"
-          - "^com\\.zaxxer:.*"
-          - "^commons-pool:.*"
-          - "^io\\.r2dbc:.*"
-          - "^net\\.sourceforge\\.jtds:.*"
-          - "^mysql:.*"
-          - "^org\\.flywaydb:.*"
-          - "^org\\.firebirdsql\\.jdbc:.*"
-          - "^org\\.hibernate(?:\\..*)?:.+$"
-          - "^org\\.hsqldb:.*"
-          - "^org\\.oracle:odbc.*$"
-          - "^org\\.jooq:.*"
-          - "^org\\.liquibase:.*"
-          - "^org\\.mariadb:.*"
-          - "^org\\.postgresql:.*"
-          - "^org\\.xerial:.*"
-          - "^com\\.oracle\\..*:.*"
-          - "^io\\.r2dbc:.*"
-          - "^com\\.querydsl:.*"
-          - "^org\\.flywaydb:.*"
-          - "^org\\.eclipse\\.persistence:.*"
-          - "^org\\.mybatis(?:\\..*)?:.+$"
+        frameworks:
+          - name: "H2"
+            patterns:
+              - ".*h2database.*"
+          - name: "IBM DB2"
+            patterns:
+              - ".*ibm\\.db2.*"
+          - name: "Microsoft SQL Server"
+            patterns:
+              - ".*microsoft\\.sqlserver\\.jdbc.*"
+          - name: "MySQL"
+            patterns:
+              - ".*mysql.*"
+          - name: "Oracle JDBC"
+            patterns:
+              - ".*oracle\\.jdbc.*"
+              - ".*oracle\\.ojdbc.*"
+              - ".*oracle\\.database.*"
+          - name: "Commons DBCP"
+            patterns:
+              - ".*commons-dbcp.*"
+          - name: "HikariCP"
+            patterns:
+              - ".*zaxxer.*"
+          - name: "Commons Pool"
+            patterns:
+              - ".*commons-pool.*"
+          - name: "R2DBC"
+            patterns:
+              - ".*r2dbc.*"
+          - name: "jTDS"
+            patterns:
+              - ".*sourceforge\\.jtds.*"
+          - name: "Flyway"
+            patterns:
+              - ".*flywaydb.*"
+          - name: "Firebird"
+            patterns:
+              - ".*firebirdsql\\.jdbc.*"
+          - name: "Hibernate"
+            patterns:
+              - ".*hibernate.*"
+          - name: "HSQLDB"
+            patterns:
+              - ".*hsqldb.*"
+          - name: "Oracle ODBC"
+            patterns:
+              - ".*oracle:odbc.*"
+          - name: "jOOQ"
+            patterns:
+              - ".*jooq.*"
+          - name: "Liquibase"
+            patterns:
+              - ".*liquibase.*"
+          - name: "MariaDB"
+            patterns:
+              - ".*mariadb.*"
+          - name: "PostgreSQL"
+            patterns:
+              - ".*postgresql.*"
+          - name: "SQLite"
+            patterns:
+              - ".*xerial.*"
+          - name: "Oracle Miscellaneous"
+            patterns:
+              - ".*oracle\\..*"
+          - name: "QueryDSL"
+            patterns:
+              - ".*querydsl.*"
+          - name: "EclipseLink"
+            patterns:
+              - ".*eclipse\\.persistence.*"
+          - name: "MyBatis"
+            patterns:
+              - ".*mybatis.*"
+          - name: "SAP HANA"
+            patterns:
+              - ".*sap\\.cloud\\.db\\.jdbc.*"
+          - name: "Altibase"
+            patterns:
+              - ".*altibase.*"
+          - name: "Amazon RDS"
+            patterns:
+              - ".*rds-jdbc.*"
+          - name: "TiDB"
+            patterns:
+              - ".*tidb.*"
+          - name: "CockroachDB"
+            patterns:
+              - ".*cockroachdb.*"
+          - name: "OpenJPA"
+            patterns:
+              - ".*openjpa.*"
 
       - name: "NoSQL & Big Data"
-        patterns:
-          - "^com\\.couchbase\\.client:.*"
-          - "^com\\.datastax\\.(cassandra|oss):.*"
-          - "^co\\.elastic\\.clients:.*"
-          - "^com\\.oracle\\.coherence:.*"
-          - "^io\\.lettuce:.*"
-          - "^org\\.influxdb:.*"
-          - "^org\\.mongodb:.*"
-          - "^org\\.neo4j:.*"
-          - "^redis\\.clients:.*"
-          - "^org\\.elasticsearch(?:\\..*)?:.+$"
-          - "^coherence:.*"
-          - "^com.amazon.redshift:.*"
-          - "^com\\.cloudera(?:\\.[^:]+)*:.*"
-          - "^org\\.gridgain(?:\\..*)?:.+$"
-
+        frameworks:
+          - name: "Couchbase"
+            patterns:
+              - ".*couchbase\\.client.*"
+          - name: "DataStax Cassandra"
+            patterns:
+              - ".*datastax\\.cassandra.*"
+          - name: "DataStax OSS"
+            patterns:
+              - ".*datastax\\.oss.*"
+          - name: "Elastic Clients"
+            patterns:
+              - ".*elastic\\.clients.*"
+          - name: "Oracle Coherence"
+            patterns:
+              - ".*oracle\\.coherence.*"
+          - name: "Lettuce"
+            patterns:
+              - ".*lettuce.*"
+          - name: "InfluxDB"
+            patterns:
+              - ".*influxdb.*"
+          - name: "MongoDB"
+            patterns:
+              - ".*mongodb.*"
+          - name: "Neo4j"
+            patterns:
+              - ".*neo4j.*"
+          - name: "Redis Clients"
+            patterns:
+              - ".*redis\\.clients.*"
+          - name: "Elasticsearch"
+            patterns:
+              - ".*elasticsearch.*"
+          - name: "Coherence"
+            patterns:
+              - ".*coherence.*"
+          - name: "Amazon Redshift"
+            patterns:
+              - ".*amazon\\.redshift.*"
+          - name: "Cloudera"
+            patterns:
+              - ".*cloudera.*"
+          - name: "GridGain"
+            patterns:
+              - ".*gridgain.*"
+          - name: "Amazon DynamoDB"
+            patterns:
+              - ".*dynamodb.*"
+          - name: "ArangoDB"
+            patterns:
+              - ".*arangodb.*"
+          - name: "Aerospike"
+            patterns:
+              - ".*aerospike.*"
 
       - name: "Caching"
-        patterns:
-          - "^com\\.hazelcast:.*"
-          - "^net\\.sf\\.encache:.*"
-          - "^org\\.cache2k:.*"
-          - "^org\\.ehcache:.*"
-          - "^org\\.infinispan(?:\\..*)?:.+$"
-          - "^com\\.github\\.ben-manes:.*"
+        frameworks:
+          - name: "Hazelcast"
+            patterns:
+              - ".*hazelcast.*"
+          - name: "Ehcache"
+            patterns:
+              - ".*encache.*"
+              - ".*ehcache.*"
+          - name: "Cache2k"
+            patterns:
+              - ".*cache2k.*"
+          - name: "Infinispan"
+            patterns:
+              - ".*infinispan.*"
+          - name: "Caffeine Cache"
+            patterns:
+              - ".*ben-manes.*"
+          - name: "Redisson"
+            patterns:
+              - ".*redisson.*"
+          - name: "Apache Ignite"
+            patterns:
+              - ".*ignite.*"

@@ -54,7 +54,8 @@ class CheckovAnalyzer(BaseLogger):
                     text=True,
                     stdout=DEVNULL,
                     stderr=error_log,
-                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
+                    timeout=180
+                    #timeout=Config.DEFAULT_PROCESS_TIMEOUT
                 )
         except TimeoutExpired as e:
             msg = f"Checkov command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."

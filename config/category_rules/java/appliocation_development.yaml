@@ -1,34 +1,77 @@
 categories:
   - name: "Application Development"
-
     subcategories:
-
       - name: "Web Frameworks"
-        patterns:
-          - "^io\\.ktor:.*"
-          - "^gg\\.jte:.*"
-          - "^io\\.searchbox:.*"
-          - "^io\\.specto:.*"
-          - "^org\\.grails:.*"
-          - "^(com\\.vaadin|org\\.vaadin):.*"
-          - "^io\\.dropwizard:dropwizard-.*"
+        frameworks:
+          - name: "Ktor"
+            patterns:
+              - ".*ktor.*"
+          - name: "Java Template Engine"
+            patterns:
+              - ".*jte.*"
+          - name: "Searchbox"
+            patterns:
+              - ".*searchbox.*"
+          - name: "Specto"
+            patterns:
+              - ".*specto.*"
+          - name: "Grails Framework"
+            patterns:
+              - ".*grails.*"
+          - name: "Vaadin Framework"
+            patterns:
+              - ".*vaadin.*"
+          - name: "Dropwizard"
+            patterns:
+              - ".*dropwizard.*"
 
       - name: "Reactive Libraries"
-        patterns:
-          - "^io\\.projectreactor:.*"
-          - "^io\\.projectreactor\\.(spring|kafka|netty|addons):.*"
-          - "^org\\.projectreactor\\.[^:]+:.*"
-          - "^io\\.reactivex\\.(rxjava2|rxjava3):.*"
-          - "^io\\.vertx:.*"
-          - "^org\\.reactivesteams:.*"
+        frameworks:
+          - name: "Project Reactor"
+            patterns:
+              - ".*projectreactor.*"
+          - name: "Reactor Spring Addons"
+            patterns:
+              - ".*projectreactor\\.spring.*"
+          - name: "Reactor Kafka Addons"
+            patterns:
+              - ".*projectreactor\\.kafka.*"
+          - name: "Reactor Netty Addons"
+            patterns:
+              - ".*projectreactor\\.netty.*"
+          - name: "Reactor Addons"
+            patterns:
+              - ".*projectreactor\\.addons.*"
+          - name: "RxJava 2"
+            patterns:
+              - ".*rxjava2.*"
+          - name: "RxJava 3"
+            patterns:
+              - ".*rxjava3.*"
+          - name: "Vert.x"
+            patterns:
+              - ".*vertx.*"
+          - name: "Reactive Streams"
+            patterns:
+              - ".*reactivesteams.*"
 
       - name: "Dependency Injection"
-        patterns:
-          - "^io\\.micronaut:micronaut-spring$"
+        frameworks:
+          - name: "Micronaut Spring Support"
+            patterns:
+              - ".*micronaut-spring.*"
 
       - name: "Template Engines"
-        patterns:
-          - "^com\\.querydsl:.*"
-          - "^org\\.freemarker:.*"
-          - "^org\\.thymeleaf\\.extras:.*"
-          - "^org\\.springdoc:.*"
+        frameworks:
+          - name: "QueryDSL"
+            patterns:
+              - ".*querydsl.*"
+          - name: "FreeMarker"
+            patterns:
+              - ".*freemarker.*"
+          - name: "Thymeleaf Extras"
+            patterns:
+              - ".*thymeleaf\\.extras.*"
+          - name: "SpringDoc OpenAPI"
+            patterns:
+              - ".*springdoc.*"

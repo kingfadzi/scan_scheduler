@@ -20,12 +20,12 @@ MATERIALIZED_VIEW = "categorized_dependencies_mv"
 RULES_PATH = Config.CATEGORY_RULES_PATH
 
 RULES_MAPPING = {
-    "pip": "python",
-    "maven": "java",
-    "gradle": "java",
+    "python": "python",
+    "java-archive": "java",
     "npm": "javascript",
-    "yarn": "javascript",
-    "go": "go"
+    "gem": "ruby",
+    "dotnet": "dotnet",
+    "go-module": "go"
 }
 
 class CategoryAnalyzer(BaseLogger):
@@ -35,27 +35,36 @@ class CategoryAnalyzer(BaseLogger):
 
     def bulk_update_dependencies(self, connection, updates):
         if not updates:
-            self.logger.debug("No updates to apply to the database.")
             return
         query = """
-            UPDATE dependencies AS d
+            UPDATE syft_dependencies AS d
             SET 
                 category = v.category,
-                sub_category = v.sub_category
-            FROM (VALUES %s) AS v(id, category, sub_category)
+                sub_category = v.sub_category,
+                framework = v.framework  
+            FROM (VALUES %s) AS v(id, category, sub_category, framework)
             WHERE d.id = v.id;
         """
-        values = [(row["id"], row["category"], row["sub_category"]) for row in updates]
+        values = [(row["id"], row["category"], row["sub_category"], row["framework"]) for row in updates]
         self.logger.debug(f"Executing bulk update for {len(values)} rows.")
         with connection.connection.cursor() as cursor:
             execute_values(cursor, query, values)
         self.logger.debug("Bulk update completed.")
 
 def categorize_row(row, rules):
-    for regex, top_cat, sub_cat in rules:
+    for regex, top_cat, sub_cat, framework in rules:  # Changed to 4 elements
         if regex.search(row['name']):
-            return pd.Series({"category": top_cat, "sub_category": sub_cat})
-    return pd.Series({"category": "Other", "sub_category": ""})
+            return pd.Series({
+                "category": top_cat,
+                "sub_category": sub_cat,
+                "framework": framework
+            })
+    return pd.Series({
+        "category": "Other",
+        "sub_category": "",
+        "framework": ""
+    })
+
 
 @task
 def refresh_materialized_view():
@@ -95,28 +104,32 @@ def load_rules_for_type(package_type: str):
             for cat in rules.get('categories', []):
                 category_name = cat['name']
                 subcats = cat.get('subcategories', [])
-                logger.debug(f"[{package_type}] Category: {category_name} ({len(subcats)} subcats)")
 
-                if subcats:
-                    for sub in subcats:
-                        sub_name = sub.get('name', 'unnamed')
+                for sub in subcats:
+                    sub_name = sub.get('name', 'unnamed')
+                    frameworks = sub.get('frameworks', [])
+
+                    if frameworks:
+                        for framework in frameworks:
+                            fw_name = framework.get('name', 'unnamed')
+                            patterns = framework.get('patterns', [])
+                            for pattern in patterns:
+                                compiled_list.append((
+                                    re.compile(pattern, flags=re.IGNORECASE),
+                                    category_name,
+                                    sub_name,
+                                    fw_name
+                                ))
+                    else:
                         patterns = sub.get('patterns', [])
-                        logger.debug(f"[{package_type}]  Subcategory: {sub_name} ({len(patterns)} patterns)")
                         for pattern in patterns:
                             compiled_list.append((
-                                re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
+                                re.compile(pattern, flags=re.IGNORECASE),
                                 category_name,
-                                sub_name
+                                sub_name,
+                                ""
                             ))
-                else:
-                    patterns = cat.get('patterns', [])
-                    logger.debug(f"[{package_type}]  Top-level patterns: {len(patterns)}")
-                    for pattern in patterns:
-                        compiled_list.append((
-                            re.compile(pattern, flags=re.IGNORECASE),  # Explicit flag setting
-                            category_name,
-                            ""
-                        ))
+
 
             logger.info(f"[{package_type}] Loaded {len(rules.get('categories', []))} categories from {os.path.basename(file_path)}")
 
@@ -132,15 +145,21 @@ def fetch_chunks_for_type(package_type: str) -> list:
     logger.info(f"[{package_type}] Fetching data chunks")
     with Session() as session:
         query = f"""
-            SELECT d.id, d.repo_id, d.name, d.version, d.package_type, 
-                   b.tool, b.tool_version, b.runtime_version
-            FROM dependencies d 
-            LEFT JOIN build_tools b ON d.repo_id = b.repo_id
-            WHERE d.package_type = :ptype
+            SELECT 
+                s.id, 
+                s.repo_id, 
+                s.package_name AS name, 
+                s.version, 
+                s.package_type
+            FROM syft_dependencies s
+            WHERE s.package_type = :ptype
         """
         chunks = []
         total_rows = 0
-        for idx, chunk in enumerate(pd.read_sql(text(query), params={"ptype": package_type}, con=session.connection(), chunksize=CHUNK_SIZE)):
+        for idx, chunk in enumerate(pd.read_sql(text(query),
+                                                params={"ptype": package_type},
+                                                con=session.connection(),
+                                                chunksize=CHUNK_SIZE)):
             chunk_size = len(chunk)
             total_rows += chunk_size
             logger.debug(f"[{package_type}] Chunk {idx+1}: {chunk_size} rows")
@@ -151,6 +170,7 @@ def fetch_chunks_for_type(package_type: str) -> list:
 
         logger.info(f"[{package_type}] Total chunks: {len(chunks)} ({total_rows} rows)")
         return chunks
+
 
 @task
 def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_type: str):
@@ -171,39 +191,30 @@ def process_chunk_with_rules(chunk: pd.DataFrame, compiled_rules: list, package_
         matches = pd.Series(False, index=chunk.index)
         category_series = pd.Series("Other", index=chunk.index)
         sub_category_series = pd.Series("", index=chunk.index)
+        framework_series = pd.Series("", index=chunk.index)
 
-        # Suppress specific pandas warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                'ignore',
-                message='This pattern is interpreted as a regular expression',
-                category=UserWarning
-            )
+        for regex, top_cat, sub_cat, framework in compiled_rules:
+            current_matches = chunk['name'].str.contains(regex, regex=True)
+            new_matches = current_matches & ~matches
 
-            for regex, top_cat, sub_cat in compiled_rules:
-                current_matches = chunk['name'].str.contains(
-                    regex,
-                    regex=True
-                )
-                new_matches = current_matches & ~matches
-                category_series = category_series.mask(new_matches, top_cat)
-                sub_category_series = sub_category_series.mask(new_matches, sub_cat)
-                matches = matches | current_matches
+            category_series = category_series.mask(new_matches, top_cat)
+            sub_category_series = sub_category_series.mask(new_matches, sub_cat)
+            framework_series = framework_series.mask(new_matches, framework)
+
+            matches = matches | current_matches
 
         chunk["category"] = category_series
         chunk["sub_category"] = sub_category_series
+        chunk["framework"] = framework_series  # New column
 
-        # Calculate statistics
         duration = time.time() - cat_start
         category_dist = chunk['category'].value_counts().to_dict()
         logger.debug(f"[{package_type}] Categorization stats ({duration:.2f}s):")
         for cat, count in category_dist.items():
             logger.debug(f"[{package_type}]  {cat}: {count} rows")
 
-        # Prepare updates
-        updates = chunk[["id", "category", "sub_category"]].to_dict(orient="records")
+        updates = chunk[["id", "category", "sub_category", "framework"]].to_dict(orient="records")
 
-        # Database update
         with Session() as session:
             update_start = time.time()
             categorizer.bulk_update_dependencies(session.connection(), updates)

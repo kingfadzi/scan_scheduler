@@ -1,85 +1,263 @@
 categories:
   - name: "Database & Persistence"
-    patterns:
-      - "github\\.com/go-sql-driver/mysql.*"
-      - "github\\.com/lib/pq.*"
-      - "github\\.com/mattn/go-sqlite3.*"
-      - "gorm\\.io/gorm.*"
-      - "go\\.mongodb\\.org/mongo-driver.*"
+    subcategories:
+      - name: "Database Libraries"
+        frameworks:
+          - name: "go-sql-driver"
+            patterns:
+              - "github\\.com/go-sql-driver/mysql.*"
+          - name: "lib/pq"
+            patterns:
+              - "github\\.com/lib/pq.*"
+          - name: "mattn/go-sqlite3"
+            patterns:
+              - "github\\.com/mattn/go-sqlite3.*"
+          - name: "gorm"
+            patterns:
+              - "gorm\\.io/gorm.*"
+          - name: "mongo-driver"
+            patterns:
+              - "go\\.mongodb\\.org/mongo-driver.*"
+          - name: "ent"
+            patterns:
+              - "entgo\\.io/ent.*"
+
   - name: "Messaging & Event Streaming"
-    patterns:
-      - "github\\.com/segmentio/kafka-go.*"
-      - "github\\.com/streadway/amqp.*"
-      - "github\\.com/nats-io/nats\\.go.*"
+    subcategories:
+      - name: "Messaging Libraries"
+        frameworks:
+          - name: "kafka-go"
+            patterns:
+              - "github\\.com/segmentio/kafka-go.*"
+          - name: "amqp"
+            patterns:
+              - "github\\.com/streadway/amqp.*"
+          - name: "nats.go"
+            patterns:
+              - "github\\.com/nats-io/nats\\.go.*"
+          - name: "watermill"
+            patterns:
+              - "github\\.com/ThreeDotsLabs/watermill.*"
+
   - name: "Web & Application Frameworks"
-    patterns:
-      - "github\\.com/gin-gonic/gin.*"
-      - "github\\.com/labstack/echo.*"
-      - "github\\.com/gorilla/mux.*"
-      - "github\\.com/go-chi/chi.*"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "gin"
+            patterns:
+              - "github\\.com/gin-gonic/gin.*"
+          - name: "echo"
+            patterns:
+              - "github\\.com/labstack/echo.*"
+          - name: "mux"
+            patterns:
+              - "github\\.com/gorilla/mux.*"
+          - name: "chi"
+            patterns:
+              - "github\\.com/go-chi/chi.*"
+          - name: "fiber"
+            patterns:
+              - "github\\.com/gofiber/fiber.*"
+          - name: "buffalo"
+            patterns:
+              - "github\\.com/gobuffalo/buffalo.*"
+
   - name: "Application Servers & Runtime Containers"
-    patterns:
-      - "net/http.*"
-      - "github\\.com/valyala/fasthttp.*"
+    subcategories:
+      - name: "Runtime Containers"
+        frameworks:
+          - name: "net/http"
+            patterns:
+              - "net/http.*"
+          - name: "fasthttp"
+            patterns:
+              - "github\\.com/valyala/fasthttp.*"
+
   - name: "Security & Authentication"
-    patterns:
-      - "github\\.com/dgrijalva/jwt-go.*"
-      - "golang\\.org/x/crypto.*"
-      - "github\\.com/gorilla/securecookie.*"
-      - "github\\.com/auth0/go-jwt-middleware.*"
+    subcategories:
+      - name: "Security Libraries"
+        frameworks:
+          - name: "jwt-go"
+            patterns:
+              - "github\\.com/dgrijalva/jwt-go.*"
+          - name: "crypto"
+            patterns:
+              - "golang\\.org/x/crypto.*"
+          - name: "securecookie"
+            patterns:
+              - "github\\.com/gorilla/securecookie.*"
+          - name: "go-jwt-middleware"
+            patterns:
+              - "github\\.com/auth0/go-jwt-middleware.*"
+          - name: "casbin"
+            patterns:
+              - "github\\.com/casbin/casbin.*"
+
   - name: "Caching & In-Memory Data Stores"
-    patterns:
-      - "github\\.com/go-redis/redis.*"
-      - "github\\.com/patrickmn/go-cache.*"
-      - "github\\.com/allegro/bigcache.*"
+    subcategories:
+      - name: "Caching Libraries"
+        frameworks:
+          - name: "go-redis"
+            patterns:
+              - "github\\.com/go-redis/redis.*"
+          - name: "go-cache"
+            patterns:
+              - "github\\.com/patrickmn/go-cache.*"
+          - name: "bigcache"
+            patterns:
+              - "github\\.com/allegro/bigcache.*"
+
   - name: "Logging, Monitoring & Observability"
-    patterns:
-      - "github\\.com/sirupsen/logrus.*"
-      - "go\\.uber\\.org/zap.*"
-      - "github\\.com/rs/zerolog.*"
-      - "github\\.com/prometheus/client_golang.*"
+    subcategories:
+      - name: "Observability Libraries"
+        frameworks:
+          - name: "logrus"
+            patterns:
+              - "github\\.com/sirupsen/logrus.*"
+          - name: "zap"
+            patterns:
+              - "go\\.uber\\.org/zap.*"
+          - name: "zerolog"
+            patterns:
+              - "github\\.com/rs/zerolog.*"
+          - name: "client_golang"
+            patterns:
+              - "github\\.com/prometheus/client_golang.*"
+          - name: "otel"
+            patterns:
+              - "go\\.opentelemetry\\.io/otel.*"
+
   - name: "Testing, Quality Assurance & Mocking"
-    patterns:
-      - "github\\.com/stretchr/testify.*"
-      - "github\\.com/golang/mock.*"
-      - "github\\.com/onsi/ginkgo.*"
-      - "github\\.com/onsi/gomega.*"
+    subcategories:
+      - name: "Testing Frameworks"
+        frameworks:
+          - name: "testify"
+            patterns:
+              - "github\\.com/stretchr/testify.*"
+          - name: "mock"
+            patterns:
+              - "github\\.com/golang/mock.*"
+          - name: "ginkgo"
+            patterns:
+              - "github\\.com/onsi/ginkgo.*"
+          - name: "gomega"
+            patterns:
+              - "github\\.com/onsi/gomega.*"
+          - name: "goconvey"
+            patterns:
+              - "github\\.com/smartystreets/goconvey.*"
+
   - name: "Cloud, Containerization & Orchestration"
-    patterns:
-      - "github\\.com/aws/aws-sdk-go.*"
-      - "cloud\\.google\\.com/go.*"
-      - "github\\.com/Azure/azure-sdk-for-go.*"
-      - "k8s\\.io/client-go.*"
-      - "github\\.com/docker/docker.*"
+    subcategories:
+      - name: "Cloud SDKs"
+        frameworks:
+          - name: "aws-sdk-go"
+            patterns:
+              - "github\\.com/aws/aws-sdk-go.*"
+          - name: "google-cloud-go"
+            patterns:
+              - "cloud\\.google\\.com/go.*"
+          - name: "azure-sdk-for-go"
+            patterns:
+              - "github\\.com/Azure/azure-sdk-for-go.*"
+          - name: "client-go"
+            patterns:
+              - "k8s\\.io/client-go.*"
+          - name: "docker"
+            patterns:
+              - "github\\.com/docker/docker.*"
+
   - name: "Build, Dependency Management & Deployment Tools"
-    patterns:
-      - "github\\.com/goreleaser/goreleaser.*"
-      - "golang\\.org/x/tools.*"
+    subcategories:
+      - name: "Build Tools"
+        frameworks:
+          - name: "goreleaser"
+            patterns:
+              - "github\\.com/goreleaser/goreleaser.*"
+          - name: "x/tools"
+            patterns:
+              - "golang\\.org/x/tools.*"
+          - name: "cobra"
+            patterns:
+              - "github\\.com/spf13/cobra.*"
+          - name: "wire"
+            patterns:
+              - "github\\.com/google/wire.*"
+
   - name: "Data Serialization, Transformation & Processing"
-    patterns:
-      - "github\\.com/json-iterator/go.*"
-      - "gopkg\\.in/yaml\\.v2.*"
-      - "github\\.com/mitchellh/mapstructure.*"
+    subcategories:
+      - name: "Serialization Libraries"
+        frameworks:
+          - name: "json-iterator"
+            patterns:
+              - "github\\.com/json-iterator/go.*"
+          - name: "yaml.v2"
+            patterns:
+              - "gopkg\\.in/yaml\\.v2.*"
+          - name: "mapstructure"
+            patterns:
+              - "github\\.com/mitchellh/mapstructure.*"
+
   - name: "Networking & Communication"
-    patterns:
-      - "github\\.com/go-resty/resty.*"
-      - "github\\.com/gorilla/websocket.*"
+    subcategories:
+      - name: "Networking Libraries"
+        frameworks:
+          - name: "resty"
+            patterns:
+              - "github\\.com/go-resty/resty.*"
+          - name: "websocket"
+            patterns:
+              - "github\\.com/gorilla/websocket.*"
+
   - name: "Utility & Helper Libraries"
-    patterns:
-      - "github\\.com/pkg/errors.*"
-      - "golang\\.org/x/exp/slices.*"
-      - "golang\\.org/x/exp/maps.*"
+    subcategories:
+      - name: "Utility Libraries"
+        frameworks:
+          - name: "errors"
+            patterns:
+              - "github\\.com/pkg/errors.*"
+          - name: "x/exp/slices"
+            patterns:
+              - "golang\\.org/x/exp/slices.*"
+          - name: "x/exp/maps"
+            patterns:
+              - "golang\\.org/x/exp/maps.*"
+
   - name: "User Interface & Client-Side"
-    patterns:
-      - "fyne\\.io/fyne.*"
-      - "github\\.com/andlabs/ui.*"
+    subcategories:
+      - name: "UI Libraries"
+        frameworks:
+          - name: "fyne"
+            patterns:
+              - "fyne\\.io/fyne.*"
+          - name: "andlabs-ui"
+            patterns:
+              - "github\\.com/andlabs/ui.*"
+
   - name: "Documentation, Code Generation & Development Tools"
-    patterns:
-      - "github\\.com/swaggo/swag.*"
-      - "github\\.com/go-swagger/go-swagger.*"
+    subcategories:
+      - name: "Code Generation Tools"
+        frameworks:
+          - name: "swaggo"
+            patterns:
+              - "github\\.com/swaggo/swag.*"
+          - name: "go-swagger"
+            patterns:
+              - "github\\.com/go-swagger/go-swagger.*"
+
   - name: "Analytics, Machine Learning & Big Data"
-    patterns:
-      - "gonum\\.org/v1/gonum.*"
-      - "github\\.com/gonum/plot.*"
-      - "github\\.com/kniren/gota.*"
-      - "github\\.com/tensorflow/tensorflow/tensorflow/go.*"
+    subcategories:
+      - name: "Analytics Libraries"
+        frameworks:
+          - name: "gonum"
+            patterns:
+              - "gonum\\.org/v1/gonum.*"
+          - name: "gonum-plot"
+            patterns:
+              - "github\\.com/gonum/plot.*"
+          - name: "gota"
+            patterns:
+              - "github\\.com/kniren/gota.*"
+          - name: "tensorflow-go"
+            patterns:
+              - "github\\.com/tensorflow/tensorflow/tensorflow/go.*"

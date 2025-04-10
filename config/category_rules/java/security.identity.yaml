@@ -3,20 +3,59 @@ categories:
     subcategories:
 
       - name: "Authentication"
-        patterns:
-          - "com\\.google\\.auth.*"
-          - "com\\.nimbusds.*"
-          - "com\\.unboundid.*"
-          - "org\\.crac.*"
-          - "^org\\.opensaml:.*"
+        frameworks:
+          - name: "Google Auth Libraries"
+            patterns:
+              - ".*google\\.auth.*"
+          - name: "Nimbus JOSE + JWT"
+            patterns:
+              - ".*nimbusds.*"
+          - name: "UnboundID LDAP SDK"
+            patterns:
+              - ".*unboundid.*"
+          - name: "CRaC (Coordinated Restore at Checkpoint)"
+            patterns:
+              - ".*crac.*"
+          - name: "OpenSAML (SAML Authentication)"
+            patterns:
+              - ".*opensaml.*"
 
       - name: "Security Layers"
-        patterns:
-          - "org\\.owasp\\..*"
+        frameworks:
+          - name: "OWASP Security Libraries"
+            patterns:
+              - ".*owasp\\..*"
 
       - name: "Transport & Data Security"
-        patterns:
-          - "org\\.jasypt.*"
+        frameworks:
+          - name: "Jasypt Encryption Library"
+            patterns:
+              - ".*jasypt.*"
 
       - name: "Identity Management (SSO, RBAC)"
-        patterns: []
+        frameworks: []
+
+
+      - name: "Transport & Data Security"
+        frameworks:
+          - name: "BouncyCastle Crypto Libraries"
+            patterns:
+              - ".*bouncycastle.*"
+
+      - name: "Identity Management (SSO, RBAC)"
+        frameworks:
+          - name: "Keycloak Java Client"
+            patterns:
+              - ".*keycloak.*"
+          - name: "Okta Java SDK"
+            patterns:
+              - ".*okta.*"
+          - name: "OAuth2 / OIDC SDKs"
+            patterns:
+              - ".*oauth2.*"
+          - name: "Pac4j Security Engine"
+            patterns:
+              - ".*pac4j.*"
+          - name: "Apache Syncope IAM"
+            patterns:
+              - ".*syncope.*"

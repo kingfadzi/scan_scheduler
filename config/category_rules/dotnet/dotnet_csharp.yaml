@@ -1,0 +1,188 @@
+categories:
+  - name: "Database & Persistence"
+    subcategories:
+      - name: "Database Libraries"
+        frameworks:
+          - name: "EntityFramework"
+            patterns:
+              - "Microsoft\\.EntityFrameworkCore.*"
+          - name: "Dapper"
+            patterns:
+              - "Dapper.*"
+          - name: "NHibernate"
+            patterns:
+              - "NHibernate.*"
+          - name: "MongoDB.Driver"
+            patterns:
+              - "MongoDB\\.Driver.*"
+          - name: "ServiceStack.OrmLite"
+            patterns:
+              - "ServiceStack\\.OrmLite.*"
+          - name: "RavenDB Client"
+            patterns:
+              - "RavenDB.*"
+          - name: "Linq2DB"
+            patterns:
+              - "LinqToDB.*"
+
+  - name: "Messaging & Event Streaming"
+    subcategories:
+      - name: "Messaging Libraries"
+        frameworks:
+          - name: "MassTransit"
+            patterns:
+              - "MassTransit.*"
+          - name: "NServiceBus"
+            patterns:
+              - "NServiceBus.*"
+          - name: "RabbitMQ.Client"
+            patterns:
+              - "RabbitMQ\\.Client.*"
+          - name: "Azure.Messaging.ServiceBus"
+            patterns:
+              - "Azure\\.Messaging\\.ServiceBus.*"
+          - name: "Azure Event Hubs"
+            patterns:
+              - "Azure\\.Messaging\\.EventHubs.*"
+
+  - name: "Web & Application Frameworks"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "ASP.NET Core"
+            patterns:
+              - "Microsoft\\.AspNetCore.*"
+          - name: "NancyFX"
+            patterns:
+              - "Nancy.*"
+          - name: "ServiceStack"
+            patterns:
+              - "ServiceStack.*"
+          - name: "Blazor"
+            patterns:
+              - "Microsoft\\.AspNetCore\\.Components.*"
+          - name: "Orleans"
+            patterns:
+              - "Microsoft\\.Orleans.*"
+
+  - name: "Security & Authentication"
+    subcategories:
+      - name: "Security Libraries"
+        frameworks:
+          - name: "IdentityServer"
+            patterns:
+              - "IdentityServer.*"
+          - name: "Microsoft.AspNetCore.Authentication"
+            patterns:
+              - "Microsoft\\.AspNetCore\\.Authentication.*"
+          - name: "Microsoft.IdentityModel.Tokens"
+            patterns:
+              - "Microsoft\\.IdentityModel\\.Tokens.*"
+          - name: "Azure.Identity"
+            patterns:
+              - "Azure\\.Identity.*"
+
+  - name: "Caching & In-Memory Data Stores"
+    subcategories:
+      - name: "Caching Libraries"
+        frameworks:
+          - name: "Microsoft.Extensions.Caching"
+            patterns:
+              - "Microsoft\\.Extensions\\.Caching.*"
+          - name: "StackExchange.Redis"
+            patterns:
+              - "StackExchange\\.Redis.*"
+
+  - name: "Logging, Monitoring & Observability"
+    subcategories:
+      - name: "Logging Libraries"
+        frameworks:
+          - name: "Serilog"
+            patterns:
+              - "Serilog.*"
+          - name: "NLog"
+            patterns:
+              - "NLog.*"
+          - name: "Microsoft.Extensions.Logging"
+            patterns:
+              - "Microsoft\\.Extensions\\.Logging.*"
+          - name: "OpenTelemetry"
+            patterns:
+              - "OpenTelemetry.*"
+          - name: "AppInsights SDK"
+            patterns:
+              - "Microsoft\\.ApplicationInsights.*"
+
+  - name: "Testing, Quality Assurance & Mocking"
+    subcategories:
+      - name: "Testing Frameworks"
+        frameworks:
+          - name: "xUnit"
+            patterns:
+              - "xunit.*"
+          - name: "NUnit"
+            patterns:
+              - "nunit.*"
+          - name: "Moq"
+            patterns:
+              - "Moq.*"
+          - name: "FluentAssertions"
+            patterns:
+              - "FluentAssertions.*"
+          - name: "SpecFlow"
+            patterns:
+              - "SpecFlow.*"
+          - name: "Bogus"
+            patterns:
+              - "Bogus.*"
+
+  - name: "Cloud, Containerization & Orchestration"
+    subcategories:
+      - name: "Cloud SDKs"
+        frameworks:
+          - name: "Microsoft.Azure"
+            patterns:
+              - "Microsoft\\.Azure.*"
+          - name: "Amazon.Lambda"
+            patterns:
+              - "Amazon\\.Lambda.*"
+          - name: "Docker.DotNet"
+            patterns:
+              - "Docker\\.DotNet.*"
+          - name: "Pulumi"
+            patterns:
+              - "Pulumi.*"
+          - name: "Terraform CDK for .NET"
+            patterns:
+              - "HashiCorp\\.CDK.*"
+
+  - name: "Build, Dependency Management & Deployment Tools"
+    subcategories:
+      - name: "Build Tools"
+        frameworks:
+          - name: "NuGet"
+            patterns:
+              - "NuGet.*"
+          - name: "Cake"
+            patterns:
+              - "Cake.*"
+          - name: "FAKE"
+            patterns:
+              - "FakeItEasy.*"
+
+  - name: "Analytics, Machine Learning & Big Data"
+    subcategories:
+      - name: "Analytics Libraries"
+        frameworks:
+          - name: "ML.NET"
+            patterns:
+              - "Microsoft\\.ML.*"
+          - name: "SciSharp.TensorFlow.Redist"
+            patterns:
+              - "SciSharp\\.TensorFlow\\.Redist.*"
+          - name: "Deedle"
+            patterns:
+              - "Deedle.*"
+          - name: "Accord.NET"
+            patterns:
+              - "Accord.*"

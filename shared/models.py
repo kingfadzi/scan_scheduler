@@ -268,7 +268,9 @@ class SyftDependency(Base):
     licenses = Column(Text)
     locations = Column(Text)
     language = Column(String)
-
+    category = Column(String)
+    sub_category = Column(String)
+    framework = Column(String)
     __table_args__ = (
         UniqueConstraint('repo_id', 'package_name', 'version', name='uq_syft_dependencies_repo_package_version'),
     )
