@@ -5,6 +5,8 @@ from sqlalchemy import create_engine, func
 from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
+
+from config.config import Config
 from flows.profiles.runtime_version import extract_runtime_version
 from prefect.cache_policies import NO_CACHE
 from shared.repo_profile_cache import RepoProfileCache
@@ -14,7 +16,15 @@ from shared.models import (
     XeolResult, SemgrepResult, CheckovSummary
 )
 
-DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
+DATABASE_URL = (
+    f"postgresql+psycopg2://{Config.METRICS_DATABASE_USER}:"
+    f"{Config.METRICS_DATABASE_PASSWORD}@"
+    f"{Config.METRICS_DATABASE_HOST}:"
+    f"{Config.METRICS_DATABASE_PORT}/"
+    f"{Config.METRICS_DATABASE_NAME}"
+)
+
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
@@ -207,6 +217,12 @@ async def assemble_classification_info(repo_metrics, total_loc):
 
 @task(cache_policy=NO_CACHE)
 async def assemble_dependencies_info(session, repo_id, dependencies):
+    frameworks = [
+        dep.framework.strip()
+        for dep in dependencies
+        if dep.framework and dep.framework.strip()
+    ]
+
     return {
         "Dependencies": [{
             "name": dep.package_name,
@@ -214,13 +230,17 @@ async def assemble_dependencies_info(session, repo_id, dependencies):
             "package_type": dep.package_type,
             "language": dep.language,
             "locations": dep.locations,
-            "licenses": dep.licenses
+            "licenses": dep.licenses,
+            "category": dep.category,
+            "sub_category": dep.sub_category,
+            "framework": dep.framework
         } for dep in dependencies],
         "Total Dependencies": len(dependencies),
+        "Frameworks": sorted(list(set(frameworks))),
         "Build Tool": infer_build_tool(dependencies),
         "Runtime Version": extract_runtime_version(session, repo_id)
-
     }
+
 
 @task
 async def assemble_security_info(grype_results, trivy_results, dependencies):

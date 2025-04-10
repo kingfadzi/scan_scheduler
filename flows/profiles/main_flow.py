@@ -6,9 +6,19 @@ from prefect.task_runners import ConcurrentTaskRunner
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from config.config import Config
 from shared.models import Repository, RepoMetrics
 
-DATABASE_URL = "postgresql://postgres:postgres@192.168.1.188:5432/gitlab-usage"
+
+DATABASE_URL = (
+    f"postgresql+psycopg2://{Config.METRICS_DATABASE_USER}:"
+    f"{Config.METRICS_DATABASE_PASSWORD}@"
+    f"{Config.METRICS_DATABASE_HOST}:"
+    f"{Config.METRICS_DATABASE_PORT}/"
+    f"{Config.METRICS_DATABASE_NAME}"
+)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
