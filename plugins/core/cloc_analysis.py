@@ -64,22 +64,19 @@ class ClocAnalyzer(BaseLogger):
         return json.dumps(cloc_data)
 
     def save_cloc_results(self, repo_id, results):
-
         self.logger.debug(f"Processing CLOC results for repo_id: {repo_id}")
-
+    
         try:
             processed_languages = 0
+            session = Session()
+    
             for language, metrics in results.items():
-                if language == "header":
-                    self.logger.debug(f"Skipping header in CLOC results for repo_id: {repo_id}")
+                if language == "SUM":
+                    self.logger.debug(f"Skipping SUM in CLOC results for repo_id: {repo_id}")
                     continue
-
+    
                 self.logger.debug(f"Saving metrics for language: {language} in repo_id: {repo_id}")
-
-
-                session = Session()
-
-
+    
                 session.execute(
                     insert(ClocMetric).values(
                         repo_id=repo_id,
@@ -99,11 +96,11 @@ class ClocAnalyzer(BaseLogger):
                     )
                 )
                 processed_languages += 1
-
+    
             session.commit()
             self.logger.debug(f"CLOC results committed to the database for repo_id: {repo_id}")
             return processed_languages
-
+    
         except Exception as e:
             self.logger.exception(f"Error saving CLOC results for repo_id {repo_id}")
             raise
