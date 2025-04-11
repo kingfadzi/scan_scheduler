@@ -170,7 +170,7 @@ class XeolAnalyzer(BaseLogger):
 
 if __name__ == "__main__":
     repo_slug = "javaspringvulny"
-    repo_id = "nosql-injection-vulnapp"
+    repo_id = "javaspringvulny"
 
     # Changed to dictionary format
     repo = {

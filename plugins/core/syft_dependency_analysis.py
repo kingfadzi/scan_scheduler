@@ -107,7 +107,7 @@ class SyftDependencyAnalyzer(BaseLogger):
 
 if __name__ == "__main__":
     repo_slug = "javaspringvulny"
-    repo_id = "sonar-metrics"
+    repo_id = "javaspringvulny"
     
     repo = {
         'repo_id': repo_id,
