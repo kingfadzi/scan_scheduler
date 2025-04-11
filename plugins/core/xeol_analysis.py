@@ -169,17 +169,17 @@ class XeolAnalyzer(BaseLogger):
 
 
 if __name__ == "__main__":
-    repo_slug = "nosql-injection-vulnapp"
+    repo_slug = "javaspringvulny"
     repo_id = "nosql-injection-vulnapp"
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
+    # Changed to dictionary format
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_slug  # Assuming repo_name should match repo_slug
+    }
 
     analyzer = XeolAnalyzer()
-    repo = MockRepo(repo_id, repo_slug)
     repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 

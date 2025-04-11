@@ -106,7 +106,7 @@ class SyftDependencyAnalyzer(BaseLogger):
                 session.close()
 
 if __name__ == "__main__":
-    repo_slug = "wrongsecrets"
+    repo_slug = "javaspringvulny"
     repo_id = "sonar-metrics"
     
     repo = {
