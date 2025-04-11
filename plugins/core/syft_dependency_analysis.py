@@ -1,7 +1,10 @@
+import hashlib
 import subprocess
 import os
 import json
 import logging
+import uuid
+
 from sqlalchemy.dialects.postgresql import insert
 
 from plugins.core.syft_analysis import SyftAnalyzer
@@ -64,16 +67,24 @@ class SyftDependencyAnalyzer(BaseLogger):
 
             processed_count = 0
 
+            seen = set()
+
             for artifact in artifacts:
                 package_name = artifact.get("name", "Unknown")
                 version = artifact.get("version", "Unknown")
+                key = (package_name, version)
+
+                if key in seen:
+                    continue
+                seen.add(key)
+
                 package_type = artifact.get("type", "Unknown")
                 licenses = ", ".join([l.get("value", "Unknown") for l in artifact.get("licenses", [])])
                 locations = ", ".join([loc.get("path", "Unknown") for loc in artifact.get("locations", [])])
                 language = artifact.get("language", "Unknown")
 
                 dependency = SyftDependency(
-                    id=f"{repo_id}-{package_name}-{version}",
+                    id=str(uuid.uuid4()),
                     repo_id=repo_id,
                     package_name=package_name,
                     version=version,
@@ -102,21 +113,33 @@ class SyftDependencyAnalyzer(BaseLogger):
                 session.close()
 
 
+    def generate_dependency_id(self):
+        return str(uuid.uuid4())
+
+
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "javaspringvulny"
-    repo_id = "javaspringvulny"
-    
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
     repo = {
-        'repo_id': repo_id,
-        'repo_slug': repo_slug,
-        'repo_name': repo_slug
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
     }
-    
+
     analyzer = SyftDependencyAnalyzer(run_id="SYFT_DEP_001")
-    repo_dir = f"/tmp/{repo['repo_slug']}"
-    
+
     try:
-        analyzer.logger.info(f"Starting dependency analysis for repo_id: {repo['repo_id']}")
+        analyzer.logger.info(f"Starting dependency analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Analysis completed. Result: {result}")
     except Exception as e:

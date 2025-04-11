@@ -20,7 +20,9 @@ RULES_MAPPING = {
     "gradle": "java",
     "npm": "javascript",
     "yarn": "javascript",
-    "go": "go"
+    "go": "go",
+    "ruby": "ruby",
+    "dotnet": "dotnet",
 }
 
 compiled_rules_cache = {}

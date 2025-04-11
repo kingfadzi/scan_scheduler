@@ -91,8 +91,7 @@ class GoEnryAnalyzer(BaseLogger):
 
                         self.save_goenry_analysis( repo_id=repo_id,
                                                    language=language.strip(),
-                                                   percent_usage=percent_usage,
-                                                   analysis_date=datetime.now(timezone.utc))
+                                                   percent_usage=percent_usage)
 
                         processed_languages += 1
 
@@ -132,24 +131,30 @@ class GoEnryAnalyzer(BaseLogger):
 
 
 
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "WebGoat"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
 
-    repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo['repo_slug']}"
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
+    }
+
     session = Session()
-
-    analyzer = GoEnryAnalyzer()
+    analyzer = GoEnryAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
     try:
-        analyzer.logger.info(f"Running language analysis for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
+        analyzer.logger.info(f"Running language analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone language analysis result: {result}")
     except Exception as e:
@@ -157,3 +162,4 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info("Session closed.")
+

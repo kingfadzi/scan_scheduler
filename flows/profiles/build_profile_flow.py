@@ -100,6 +100,7 @@ async def assemble_basic_info(repository, repo_metrics):
         "VCS Hostname": repository.host_name,
         "Last Updated": repository.updated_on.isoformat(),
         "Clone URL SSH": repository.clone_url_ssh,
+        "Browse URL": repository.browse_url,
         "Repo Size (MB)": round(repo_metrics.repo_size_bytes / 1_000_000, 2),
         "File Count": repo_metrics.file_count,
         "Total Commits": repo_metrics.total_commits,

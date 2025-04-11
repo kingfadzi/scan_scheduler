@@ -146,55 +146,63 @@ class GrypeAnalyzer(BaseLogger):
             if session is not None:
                 session.close()
 
-        def save_grype_result(self, repo_id, cve, description, severity, package, version, file_path, language, fix_versions, fix_state):
-            session = Session()
-            try:
-                session.query(GrypeResult).filter(
-                    GrypeResult.repo_id == repo_id,
-                    GrypeResult.cve == cve,
-                    GrypeResult.package == package,
-                    GrypeResult.version == version
-                ).delete()
+    def save_grype_result(self, repo_id, cve, description, severity, package, version, file_path, language, fix_versions, fix_state):
+        session = Session()
+        try:
+            session.query(GrypeResult).filter(
+                GrypeResult.repo_id == repo_id,
+                GrypeResult.cve == cve,
+                GrypeResult.package == package,
+                GrypeResult.version == version
+            ).delete()
 
-                session.add(
-                    GrypeResult(
-                        repo_id=repo_id,
-                        cve=cve,
-                        description=description,
-                        severity=severity,
-                        package=package,
-                        version=version,
-                        file_path=file_path,
-                        language=language,
-                        fix_versions=fix_versions,
-                        fix_state=fix_state,
-                    )
+            session.add(
+                GrypeResult(
+                    repo_id=repo_id,
+                    cve=cve,
+                    description=description,
+                    severity=severity,
+                    package=package,
+                    version=version,
+                    file_path=file_path,
+                    language=language,
+                    fix_versions=fix_versions,
+                    fix_state=fix_state,
                 )
+            )
 
-                session.commit()
-                self.logger.info(f"Grype result saved for repo_id: {repo_id}, cve: {cve}, package: {package}, version: {version}")
-            except Exception as e:
-                session.rollback()
-                self.logger.exception(f"Error saving Grype result for repo_id {repo_id}, cve {cve}, package {package}, version {version}")
-                raise
-            finally:
-                session.close()
+            session.commit()
+            self.logger.info(f"Grype result saved for repo_id: {repo_id}, cve: {cve}, package: {package}, version: {version}")
+        except Exception as e:
+            session.rollback()
+            self.logger.exception(f"Error saving Grype result for repo_id {repo_id}, cve {cve}, package {package}, version {version}")
+            raise
+        finally:
+            session.close()
 
 
+
+import sys
+import os
+import json
 
 if __name__ == "__main__":
-    repo_slug = "wrongsecrets"
-    repo_id = "sonar-metrics"
-    
-    # Changed to dictionary
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
     repo = {
-        'repo_id': repo_id,
-        'repo_slug': repo_slug,
-        'repo_name': repo_slug  # Preserving the original name assignment
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
     }
-    
+
     analyzer = GrypeAnalyzer(run_id="GRYPE_STANDALONE_001")
-    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
 
     try:
@@ -211,3 +219,4 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")
+

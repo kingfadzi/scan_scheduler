@@ -167,10 +167,18 @@ class CheckovAnalyzer(BaseLogger):
             session.close()
 
 
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "sonar-metrics"
-    repo_id = "sonar-metrics"
-    repo_dir = "/Users/fadzi/tools/gradle_projects/VyAPI"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
 
     repo = {
         "repo_id": repo_id,
@@ -178,12 +186,16 @@ if __name__ == "__main__":
     }
 
     session = Session()
-    analyzer = CheckovAnalyzer()
+    analyzer = CheckovAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
     try:
-        analyzer.logger.info(f"Starting standalone Checkov analysis for mock repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo, run_id="STANDALONE_RUN_001")
+        analyzer.logger.info(f"Starting standalone Checkov analysis for repo_id: {repo['repo_id']}")
+        result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone Checkov analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Checkov analysis: {e}")
+    finally:
+        session.close()
+        analyzer.logger.info("Session closed.")
+
 

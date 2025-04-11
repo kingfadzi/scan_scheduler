@@ -105,23 +105,29 @@ class ClocAnalyzer(BaseLogger):
             session.close()
 
 
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "VulnerableLightApp"
-    repo_id = "VulnerableLightApp"
-    repo_dir = f"/tmp/{repo_slug}"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
 
-    repo = MockRepo(repo_id, repo_slug)
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug
+    }
+
     session = Session()
-
-    analyzer = ClocAnalyzer()
+    analyzer = ClocAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
     try:
-        analyzer.logger.info(f"Starting standalone CLOC analysis for mock repo_id: {repo['repo_id']}")
+        analyzer.logger.info(f"Starting standalone CLOC analysis for repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone CLOC analysis result: {result}")
     except Exception as e:
@@ -129,3 +135,4 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")
+

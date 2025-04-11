@@ -167,23 +167,30 @@ class TrivyAnalyzer(BaseLogger):
 
 
 
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "WebGoat"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
 
-    analyzer = TrivyAnalyzer()
-    repo = MockRepo(repo_id, repo_slug)
-    repo_dir = f"/tmp/{repo['repo_slug']}"
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
+    }
+
     session = Session()
+    analyzer = TrivyAnalyzer(run_id="TRIVY_STANDALONE_RUN_001")
 
     try:
-        analyzer.logger.info(f"Starting standalone Trivy analysis for repo_id: {repo['repo_id']}")
+        analyzer.logger.info(f"Starting standalone Trivy analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone Trivy analysis result: {result}")
     except Exception as e:

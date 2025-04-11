@@ -179,27 +179,35 @@ class SemgrepAnalyzer(BaseLogger):
 
 
 
-if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "WebGoat"
+import sys
+import os
 
-    # Changed to dictionary
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
     repo = {
-        'repo_id': repo_id,
-        'repo_slug': repo_slug
+        "repo_id": repo_id,
+        "repo_slug": repo_slug
     }
 
-    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
-    analyzer = SemgrepAnalyzer()
+    analyzer = SemgrepAnalyzer(run_id="SEMGREP_STANDALONE_RUN_001")
 
     try:
-        analyzer.logger.info(f"Starting Semgrep analysis for repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo, repo_dir, session)
+        analyzer.logger.info(f"Starting Semgrep analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
+        result = analyzer.run_analysis(repo, repo_dir)
         analyzer.logger.info(f"Semgrep analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during Semgrep analysis: {e}")
     finally:
         session.close()
         analyzer.logger.info(f"Session closed for repo_id: {repo['repo_id']}")
+
 

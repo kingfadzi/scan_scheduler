@@ -150,17 +150,16 @@ class LizardAnalyzer(BaseLogger):
                 LizardSummary.repo_id == repo_id
             ).delete()
 
-            session.add(
-                LizardSummary(
-                    repo_id=repo_id,
-                    total_nloc=summary["total_nloc"],
-                    total_ccn=summary["total_ccn"],
-                    total_token_count=summary["total_token_count"],
-                    function_count=summary["function_count"],
-                    avg_ccn=summary["avg_ccn"]
-                )
+            lizard_summary = LizardSummary(
+                repo_id=repo_id,
+                total_nloc=summary["total_nloc"],
+                total_ccn=summary["total_ccn"],
+                total_token_count=summary["total_token_count"],
+                function_count=summary["function_count"],
+                avg_ccn=summary["avg_ccn"]
             )
 
+            session.add(lizard_summary)
             session.commit()
             self.logger.debug(f"Lizard summary metrics committed to the database for repo_id: {repo_id}")
         except Exception as e:
@@ -172,23 +171,30 @@ class LizardAnalyzer(BaseLogger):
 
 
 
+import sys
+import os
+
 if __name__ == "__main__":
-    repo_slug = "WebGoat"
-    repo_id = "WebGoat"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
 
-    class MockRepo:
-        def __init__(self, repo_id, repo_slug):
-            self.repo_id = repo_id
-            self.repo_slug = repo_slug
-            self.repo_name = repo_slug
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
 
-    repo = MockRepo(repo_id, repo_slug)
-    repo_dir = "/Users/fadzi/tools/python_projects/vuln_django_play"
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
+    }
+
     session = Session()
-    analyzer = LizardAnalyzer()
+    analyzer = LizardAnalyzer(run_id="LIZARD_STANDALONE_RUN_001")
 
     try:
-        analyzer.logger.info(f"Running lizard analysis for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
+        analyzer.logger.info(f"Running lizard analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone lizard analysis result: {result}")
     except Exception as e:
@@ -196,3 +202,5 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")
+
+

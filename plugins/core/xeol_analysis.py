@@ -156,29 +156,35 @@ class XeolAnalyzer(BaseLogger):
             if session:
                 session.close()
 
-
+import sys
+import os
 
 if __name__ == "__main__":
-    repo_slug = "javaspringvulny"
-    repo_id = "javaspringvulny"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
 
-    # Changed to dictionary format
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
     repo = {
         "repo_id": repo_id,
         "repo_slug": repo_slug,
-        "repo_name": repo_slug  # Assuming repo_name should match repo_slug
+        "repo_name": repo_name
     }
 
-    analyzer = XeolAnalyzer()
-    repo_dir = f"/tmp/{repo['repo_slug']}"
     session = Session()
+    analyzer = XeolAnalyzer(run_id="STANDALONE_RUN_001")
 
     try:
-        analyzer.logger.info(f"Starting standalone Xeol analysis for repo_id: {repo['repo_id']}.")
-        result = analyzer.run_analysis(repo_dir, repo=repo, session=session, run_id="STANDALONE_RUN_001")
+        analyzer.logger.info(f"Starting standalone Xeol analysis for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}.")
+        result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone Xeol analysis result: {result}")
     except Exception as e:
         analyzer.logger.error(f"Error during standalone Xeol analysis: {e}")
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}.")
+

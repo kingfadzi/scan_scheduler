@@ -28,6 +28,7 @@ class Repository(Base):
     tc_cluster = Column(String)
     tc = Column(String)
     clone_url_ssh = Column(String)
+    browse_url_ssh = Column(String)
     status = Column(String)
     comment = Column(String)
     updated_on = Column(DateTime)
@@ -92,12 +93,12 @@ class GrypeResult(Base):
     description = Column(Text)
     severity = Column(String, nullable=False)
     language = Column(String, nullable=False)
-    package = Column(String, nullable=False)  # Name of the affected package
-    version = Column(String, nullable=False)  # Version of the affected package
+    package = Column(String, nullable=False)
+    version = Column(String, nullable=False)
     fix_versions = Column(Text)
     fix_state = Column(Text)
-    file_path = Column(Text)  # File path of the affected artifact
-    cvss = Column(Text)  # CVSS scores, serialized as a JSON string
+    file_path = Column(Text)
+    cvss = Column(Text)
     __table_args__ = (
         UniqueConstraint("repo_id", "cve", "package", "version", name="grype_result_uc"),
     )

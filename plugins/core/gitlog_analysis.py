@@ -17,7 +17,6 @@ class GitLogAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Git Log Analysis")
     def run_analysis(self, repo_dir, repo):
-
         self.logger.info(f"Starting metrics calculation for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
         if not os.path.exists(repo_dir):
@@ -43,7 +42,6 @@ class GitLogAnalyzer(BaseLogger):
 
         self.logger.info(f"Calculating metrics from gitlog for repository directory: {repo_dir}")
 
-        # Calculate metrics
         total_size = sum(blob.size for blob in repo_obj.tree(default_branch).traverse() if blob.type == 'blob')
         file_count = sum(1 for blob in repo_obj.tree(default_branch).traverse() if blob.type == 'blob')
         total_commits = sum(1 for _ in repo_obj.iter_commits(default_branch))
@@ -52,51 +50,40 @@ class GitLogAnalyzer(BaseLogger):
         first_commit_date = min(commit.committed_datetime for commit in repo_obj.iter_commits(default_branch))
         repo_age_days = (datetime.now(timezone.utc) - first_commit_date).days
         active_branch_count = len(repo_obj.branches)
-
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
-
         commit_authors = [commit.author.email for commit in repo_obj.iter_commits(default_branch)]
-        self.logger.debug(f"Collected {len(commit_authors)} commits from branch '{default_branch}'.")
-
         author_commit_counts = Counter(commit_authors)
-        self.logger.debug(f"Author commit counts: {author_commit_counts}")
 
         if author_commit_counts:
             top_contributor_commits = author_commit_counts.most_common(1)[0][1]
-            self.logger.debug(f"Top contributor has {top_contributor_commits} commits.")
         else:
             top_contributor_commits = 0
-            self.logger.debug("No contributors found.")
 
         commits_by_top_3_contributors = sum(count for _, count in author_commit_counts.most_common(3))
-        self.logger.debug(f"Total commits by top 3 contributors: {commits_by_top_3_contributors}")
-
-        # Define the cutoff as 12 months ago
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=365)
-
-        # Collect commit dates from past 12 months
         recent_commit_dates = [
             commit.committed_datetime
             for commit in repo_obj.iter_commits(default_branch)
             if commit.committed_datetime >= cutoff_date
         ]
 
+        metrics = {
+            "repo_id": repo["repo_id"],
+            "repo_size_bytes": total_size,
+            "file_count": file_count,
+            "total_commits": total_commits,
+            "number_of_contributors": len(contributors),
+            "last_commit_date": last_commit_date,
+            "repo_age_days": repo_age_days,
+            "active_branch_count": active_branch_count,
+            "activity_status": activity_status,
+            "top_contributor_commits": top_contributor_commits,
+            "commits_by_top_3_contributors": commits_by_top_3_contributors,
+            "recent_commit_dates": recent_commit_dates,
+        }
 
-        self.logger.info(f"Metrics for {repo['repo_name']} (ID: {repo['repo_id']}):")
-        self.logger.info(f"  Total Size: {total_size} bytes")
-        self.logger.info(f"  File Count: {file_count}")
-        self.logger.info(f"  Total Commits: {total_commits}")
-        self.logger.info(f"  Number of Contributors: {len(contributors)}")
-        self.logger.info(f"  Last Commit Date: {last_commit_date}")
-        self.logger.info(f"  Repository Age: {repo_age_days} days")
-        self.logger.info(f"  Active Branch Count: {active_branch_count}")
-        self.logger.info(f"  Activity Status: {activity_status}")
-
-        self.logger.info(f"  commits_by_top_3_contributors: {commits_by_top_3_contributors}")
-        self.logger.info(f"  recent_commit_dates: {recent_commit_dates}")
-        self.logger.info(f"  top_contributor_commits: {top_contributor_commits}")
-
-        self.save_repo_metrics(repo)
+        self.persist_repo_metrics(metrics)
+        self.logger.info(f"Metrics saved for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
 
         return (
             f"{repo['repo_name']}: "
@@ -110,8 +97,38 @@ class GitLogAnalyzer(BaseLogger):
             f"last commit on {last_commit_date}."
         )
 
-    def get_repo_object(self, repo_dir):
+    def persist_repo_metrics(self, metrics):
+        session = Session()
+        try:
+            session.query(RepoMetrics).filter(
+                RepoMetrics.repo_id == metrics["repo_id"]
+            ).delete()
 
+            repo_metrics = RepoMetrics(
+                repo_id=metrics["repo_id"],
+                repo_size_bytes=metrics["repo_size_bytes"],
+                file_count=metrics["file_count"],
+                total_commits=metrics["total_commits"],
+                number_of_contributors=metrics["number_of_contributors"],
+                last_commit_date=metrics["last_commit_date"],
+                repo_age_days=metrics["repo_age_days"],
+                active_branch_count=metrics["active_branch_count"],
+                activity_status=metrics["activity_status"],
+                top_contributor_commits=metrics["top_contributor_commits"],
+                commits_by_top_3_contributors=metrics["commits_by_top_3_contributors"],
+                recent_commit_dates=metrics["recent_commit_dates"],
+                updated_at=datetime.now(timezone.utc)
+            )
+            session.add(repo_metrics)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.logger.exception(f"Error persisting repo metrics for repo_id {metrics['repo_id']}: {e}")
+            raise
+        finally:
+            session.close()
+
+    def get_repo_object(self, repo_dir):
         try:
             repo_obj = Repo(repo_dir)
             return repo_obj
@@ -123,56 +140,32 @@ class GitLogAnalyzer(BaseLogger):
             self.logger.error(f"An unexpected error occurred: {e}")
         return None
 
-    def save_repo_metrics(self, repo):
-        session = Session()
-        try:
-            session.query(RepoMetrics).filter(RepoMetrics.repo_id == repo['repo_id']).delete()
 
-            session.add(
-                RepoMetrics(
-                    repo_id=repo['repo_id'],
-                    repo_size_bytes=repo['total_size'],
-                    file_count=repo['file_count'],
-                    total_commits=repo['total_commits'],
-                    number_of_contributors=len(repo['contributors']),
-                    last_commit_date=repo['last_commit_date'],
-                    repo_age_days=repo['repo_age_days'],
-                    active_branch_count=repo['active_branch_count'],
-                    activity_status=repo['activity_status'],
-                    top_contributor_commits=repo['top_contributor_commits'],
-                    commits_by_top_3_contributors=repo['commits_by_top_3_contributors'],
-                    recent_commit_dates=repo['recent_commit_dates'],
-                    updated_at=datetime.now(timezone.utc)
-                )
-            )
-
-            session.commit()
-            self.logger.info(f"Repo metrics committed to the database for repo_id: {repo['repo_id']}")
-
-        except Exception as e:
-            session.rollback()
-            self.logger.exception(f"Error saving repo metrics for repo_id {repo['repo_id']}")
-            raise
-        finally:
-            session.close()
+import sys
+import os
 
 if __name__ == "__main__":
-    repo_slug = "AzureGoat"
-    repo_id = "AzureGoat"
+    if len(sys.argv) != 2:
+        print("Usage: python script.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
     activity_status = "ACTIVE"
-    repo_dir = f"/Users/fadzi/tools/python_projects/{repo_slug}"
 
     repo = {
         "repo_id": repo_id,
         "repo_slug": repo_slug,
-        "repo_name": repo_slug
+        "repo_name": repo_name
     }
 
     session = Session()
-    analyzer = GitLogAnalyzer( run_id="STANDALONE_RUN_001")
+    analyzer = GitLogAnalyzer(run_id="STANDALONE_RUN_ID_001")
 
     try:
-        analyzer.logger.info(f"Running metrics calculation for hardcoded repo_id: {repo['repo_id']}, repo_slug: {repo['repo_slug']}")
+        analyzer.logger.info(f"Running metrics calculation for repo_dir: {repo_dir}, repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
         analyzer.logger.info(f"Standalone metrics calculation result: {result}")
     except Exception as e:
