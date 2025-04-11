@@ -40,7 +40,6 @@ class GoEnryAnalysis(Base):
     language = Column(String, nullable=False)
     percent_usage = Column(Float, nullable=False)
     analysis_date = Column(DateTime, default=datetime.utcnow)
-    __table_args__ = (UniqueConstraint('repo_id', 'language', name='_repo_language_uc'),)
 
 #Gitlog data
 class RepoMetrics(Base):
@@ -80,10 +79,6 @@ class ClocMetric(Base):
     blank = Column(Integer)
     comment = Column(Integer)
     code = Column(Integer)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "language", name="cloc_metric_uc"),
-    )
-
 
 class GrypeResult(Base):
     __tablename__ = "grype_results"

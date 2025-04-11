@@ -72,11 +72,18 @@ class GoEnryAnalyzer(BaseLogger):
         return file_contents
 
     def parse_and_persist_enry_results(self, repo_id, analysis_file_path):
-
+        session = Session()
         try:
             self.logger.info(f"Reading analysis file at: {analysis_file_path}")
+
+            session.query(GoEnryAnalysis).filter(
+                GoEnryAnalysis.repo_id == repo_id
+            ).delete()
+            self.logger.info(f"Cleared previous GoEnryAnalysis records for repo_id: {repo_id}")
+
+            processed_languages = 0
+
             with open(analysis_file_path, "r") as f:
-                processed_languages = 0
                 for line in f:
                     parts = line.strip().split(maxsplit=1)
                     if len(parts) == 2:
@@ -87,43 +94,23 @@ class GoEnryAnalyzer(BaseLogger):
                             self.logger.warning(f"Invalid percentage format for language '{language}': {percent_usage}")
                             continue
 
-                        self.logger.debug(f"Parsed result - Language: {language}, Usage: {percent_usage}%")
-
-                        self.save_goenry_analysis( repo_id=repo_id,
-                                                   language=language.strip(),
-                                                   percent_usage=percent_usage)
-
+                        session.add(
+                            GoEnryAnalysis(
+                                repo_id=repo_id,
+                                language=language.strip(),
+                                percent_usage=percent_usage,
+                                analysis_date=datetime.now(timezone.utc)
+                            )
+                        )
                         processed_languages += 1
 
-            self.logger.info(f"Language analysis results saved to the database for repo_id: {repo_id}")
-            return processed_languages
-        except Exception as e:
-            self.logger.exception(f"Error while parsing or saving analysis results for repository ID {repo_id}: {e}")
-            raise
-
-
-    def save_goenry_analysis(self, repo_id, language, percent_usage):
-        session = Session()
-        try:
-            session.query(GoEnryAnalysis).filter(
-                GoEnryAnalysis.repo_id == repo_id,
-                GoEnryAnalysis.language == language.strip()
-            ).delete()
-
-            session.add(
-                GoEnryAnalysis(
-                    repo_id=repo_id,
-                    language=language.strip(),
-                    percent_usage=percent_usage,
-                    analysis_date=datetime.now(timezone.utc)
-                )
-            )
-
             session.commit()
-            self.logger.info(f"GoEnry analysis saved for repo_id: {repo_id}, language: {language.strip()}")
+            self.logger.info(f"Language analysis results saved successfully for repo_id: {repo_id}")
+            return processed_languages
+
         except Exception as e:
             session.rollback()
-            self.logger.exception(f"Error saving GoEnry analysis for repo_id {repo_id}, language {language.strip()}")
+            self.logger.exception(f"Error while parsing or saving analysis results for repository ID {repo_id}: {e}")
             raise
         finally:
             session.close()
