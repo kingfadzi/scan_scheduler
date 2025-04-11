@@ -69,8 +69,7 @@ class ClocAnalyzer(BaseLogger):
         session = Session()
         try:
             processed_languages = 0
-    
-            # Delete existing records for this repo_id
+
             self.logger.debug(f"Deleting existing CLOC metrics for repo_id: {repo_id}")
             session.query(ClocMetric).filter(ClocMetric.repo_id == repo_id).delete()
     
@@ -93,15 +92,14 @@ class ClocAnalyzer(BaseLogger):
                     )
                 )
                 processed_languages += 1
-    
-            # Only commit once all inserts are done
+
             session.commit()
             self.logger.debug(f"CLOC results committed to the database for repo_id: {repo_id}")
             return processed_languages
     
         except Exception as e:
             self.logger.exception(f"Error saving CLOC results for repo_id {repo_id}")
-            session.rollback()  # Important: rollback if any error happens
+            session.rollback()
             raise
         finally:
             session.close()

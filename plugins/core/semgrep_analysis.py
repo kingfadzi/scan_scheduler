@@ -139,48 +139,44 @@ class SemgrepAnalyzer(BaseLogger):
         return command
 
     def save_semgrep_results(self, repo_id, semgrep_data):
-
-        self.logger.info(f"Saving Semgrep findings for repo_id: {repo_id}")
-        total_upserts = 0
-
         session = Session()
+        total_upserts = 0
+        try:
+            session.query(SemgrepResult).filter(
+                SemgrepResult.repo_id == repo_id
+            ).delete()
 
-        for result in semgrep_data.get("results", []):
-            metadata = result["extra"].get("metadata", {})
-            finding = {
-                "repo_id": repo_id,
-                "path": result.get("path"),
-                "start_line": result["start"]["line"],
-                "end_line": result["end"]["line"],
-                "rule_id": result.get("check_id"),
-                "severity": result["extra"].get("severity"),
-                "message": result["extra"].get("message"),
-                "category": metadata.get("category", ""),
-                "subcategory": ", ".join(metadata.get("subcategory", [])),
-                "technology": ", ".join(metadata.get("technology", [])),
-                "cwe": ", ".join(metadata.get("cwe", [])),
-                "likelihood": metadata.get("likelihood", ""),
-                "impact": metadata.get("impact", ""),
-                "confidence": metadata.get("confidence", ""),
-            }
-
-            try:
-                stmt = insert(SemgrepResult).values(**finding)
-                stmt = stmt.on_conflict_do_update(
-                    index_elements=["repo_id", "path", "start_line", "rule_id"],
-                    set_={key: stmt.excluded[key] for key in finding.keys()}
+            for result in semgrep_data.get("results", []):
+                metadata = result["extra"].get("metadata", {})
+                finding = SemgrepResult(
+                    repo_id=repo_id,
+                    path=result.get("path"),
+                    start_line=result["start"]["line"],
+                    end_line=result["end"]["line"],
+                    rule_id=result.get("check_id"),
+                    severity=result["extra"].get("severity"),
+                    message=result["extra"].get("message"),
+                    category=metadata.get("category", ""),
+                    subcategory=", ".join(metadata.get("subcategory", [])),
+                    technology=", ".join(metadata.get("technology", [])),
+                    cwe=", ".join(metadata.get("cwe", [])),
+                    likelihood=metadata.get("likelihood", ""),
+                    impact=metadata.get("impact", ""),
+                    confidence=metadata.get("confidence", "")
                 )
-                session.execute(stmt)
-                session.commit()
+                session.add(finding)
                 total_upserts += 1
-            except Exception as e:
-                self.logger.error(f"Failed to upsert Semgrep finding: {finding}. Error: {e}")
-                raise RuntimeError(f"Failed to upsert findings: {e}")
-            finally:
-                session.close()
 
-        self.logger.info(f"Upserted {total_upserts} findings for repo_id: {repo_id}")
-        return total_upserts
+            session.commit()
+            self.logger.info(f"Upserted {total_upserts} findings for repo_id: {repo_id}")
+            return total_upserts
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Failed to save Semgrep findings for repo_id {repo_id}. Error: {e}")
+            raise
+        finally:
+            session.close()
+
 
 
 if __name__ == "__main__":

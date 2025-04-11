@@ -124,56 +124,47 @@ class TrivyAnalyzer(BaseLogger):
             self.logger.error(f"Unexpected error: {e}")
 
     def save_trivy_results(self, repo_id, results):
-        self.logger.debug(f"Processing Trivy vulnerabilities for repo_id: {repo_id}")
+        session = Session()
         try:
-
-            session = Session()
+            session.query(TrivyVulnerability).filter(
+                TrivyVulnerability.repo_id == repo_id
+            ).delete()
 
             total_vulnerabilities = 0
+
             for item in results.get("Results", []):
                 target = item.get("Target")
                 vulnerabilities = item.get("Vulnerabilities", [])
-                resource_class = item.get("Class", None)
-                resource_type = item.get("Type", None)
+                resource_class = item.get("Class")
+                resource_type = item.get("Type")
 
                 for vuln in vulnerabilities:
-                    total_vulnerabilities += 1
-                    session.execute(
-                        insert(TrivyVulnerability).values(
-                            repo_id=repo_id,
-                            target=target,
-                            resource_class=resource_class,
-                            resource_type=resource_type,
-                            vulnerability_id=vuln.get("VulnerabilityID"),
-                            pkg_name=vuln.get("PkgName"),
-                            installed_version=vuln.get("InstalledVersion"),
-                            fixed_version=vuln.get("FixedVersion"),
-                            severity=vuln.get("Severity"),
-                            primary_url=vuln.get("PrimaryURL"),
-                            description=vuln.get("Description"),
-                        ).on_conflict_do_update(
-                            index_elements=["repo_id", "vulnerability_id", "pkg_name"],
-                            set_={
-                                "resource_class": resource_class,
-                                "resource_type": resource_type,
-                                "installed_version": vuln.get("InstalledVersion"),
-                                "fixed_version": vuln.get("FixedVersion"),
-                                "severity": vuln.get("Severity"),
-                                "primary_url": vuln.get("PrimaryURL"),
-                                "description": vuln.get("Description"),
-                            }
-                        )
+                    vulnerability = TrivyVulnerability(
+                        repo_id=repo_id,
+                        target=target,
+                        resource_class=resource_class,
+                        resource_type=resource_type,
+                        vulnerability_id=vuln.get("VulnerabilityID"),
+                        pkg_name=vuln.get("PkgName"),
+                        installed_version=vuln.get("InstalledVersion"),
+                        fixed_version=vuln.get("FixedVersion"),
+                        severity=vuln.get("Severity"),
+                        primary_url=vuln.get("PrimaryURL"),
+                        description=vuln.get("Description"),
                     )
+                    session.add(vulnerability)
+                    total_vulnerabilities += 1
 
             session.commit()
-            session.close()
             self.logger.debug(f"Trivy vulnerabilities committed to the database for repo_id: {repo_id}")
             return total_vulnerabilities
-
         except Exception as e:
+            session.rollback()
             self.logger.exception(f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}")
-            error_message = f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}"
-            raise RuntimeError(error_message)
+            raise RuntimeError(f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}")
+        finally:
+            session.close()
+
 
 
 if __name__ == "__main__":

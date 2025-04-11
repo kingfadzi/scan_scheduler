@@ -4,29 +4,15 @@ from prefect import flow
 from prefect.client.orchestration import get_client
 from prefect.task_runners import ConcurrentTaskRunner
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from config.config import Config
+from shared.models import Session
 from shared.models import Repository, RepoMetrics
 
-
-DATABASE_URL = (
-    f"postgresql+psycopg2://{Config.METRICS_DATABASE_USER}:"
-    f"{Config.METRICS_DATABASE_PASSWORD}@"
-    f"{Config.METRICS_DATABASE_HOST}:"
-    f"{Config.METRICS_DATABASE_PORT}/"
-    f"{Config.METRICS_DATABASE_NAME}"
-)
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
 
 MAX_PARALLEL_BATCHES = 2
 REPOS_PER_BATCH = 100
 
 def fetch_repo_chunk(last_seen_repo_id: Optional[str], limit: int, activity_status: str) -> list[str]:
-    with SessionLocal() as session:
+    with Session() as session:
         query = (
             session.query(Repository.repo_id)
             .join(RepoMetrics, Repository.repo_id == RepoMetrics.repo_id)

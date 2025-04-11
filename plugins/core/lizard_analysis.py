@@ -144,38 +144,32 @@ class LizardAnalyzer(BaseLogger):
             raise
 
     def save_lizard_summary(self, repo_id, summary):
-
-        self.logger.debug(f"Saving lizard summary metrics for repo_id: {repo_id}")
-
         session = Session()
-
         try:
-            session.execute(
-                insert(LizardSummary).values(
+            session.query(LizardSummary).filter(
+                LizardSummary.repo_id == repo_id
+            ).delete()
+
+            session.add(
+                LizardSummary(
                     repo_id=repo_id,
                     total_nloc=summary["total_nloc"],
                     total_ccn=summary["total_ccn"],
                     total_token_count=summary["total_token_count"],
                     function_count=summary["function_count"],
                     avg_ccn=summary["avg_ccn"]
-                ).on_conflict_do_update(
-                    index_elements=["repo_id"],
-                    set_={
-                        "total_nloc": summary["total_nloc"],
-                        "total_ccn": summary["total_ccn"],
-                        "total_token_count": summary["total_token_count"],
-                        "function_count": summary["function_count"],
-                        "avg_ccn": summary["avg_ccn"]
-                    }
                 )
             )
+
             session.commit()
             self.logger.debug(f"Lizard summary metrics committed to the database for repo_id: {repo_id}")
         except Exception as e:
+            session.rollback()
             self.logger.exception(f"Error saving lizard summary metrics for repo_id {repo_id}: {e}")
             raise
         finally:
             session.close()
+
 
 
 if __name__ == "__main__":

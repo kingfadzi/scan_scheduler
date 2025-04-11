@@ -140,12 +140,12 @@ class CheckovAnalyzer(BaseLogger):
             raise RuntimeError(f"Unexpected error processing Checkov output for repo_id {repo_id}.") from e
 
     def save_checkov_results(self, repo_id, check_type, passed, failed, skipped, parsing_errors, resource_count):
-
+        session = Session()
         try:
+            session.query(CheckovSummary).filter(CheckovSummary.repo_id == repo_id).delete()
 
-            session = Session()
-            session.execute(
-                insert(CheckovSummary).values(
+            session.add(
+                CheckovSummary(
                     repo_id=repo_id,
                     check_type=check_type,
                     passed=passed,
@@ -153,15 +153,6 @@ class CheckovAnalyzer(BaseLogger):
                     skipped=skipped,
                     parsing_errors=parsing_errors,
                     resource_count=resource_count,
-                ).on_conflict_do_update(
-                    index_elements=["repo_id", "check_type"],
-                    set_={
-                        "passed": passed,
-                        "failed": failed,
-                        "skipped": skipped,
-                        "parsing_errors": parsing_errors,
-                        "resource_count": resource_count,
-                    },
                 )
             )
 
@@ -169,6 +160,7 @@ class CheckovAnalyzer(BaseLogger):
             self.logger.info(f"Checkov summary for {check_type} committed to the database for repo_id: {repo_id}")
 
         except Exception as e:
+            session.rollback()
             self.logger.exception(f"Error saving Checkov summary for repo_id {repo_id}, check_type {check_type}")
             raise
         finally:

@@ -73,8 +73,6 @@ class GoEnryAnalyzer(BaseLogger):
 
     def parse_and_persist_enry_results(self, repo_id, analysis_file_path):
 
-        session = Session()
-
         try:
             self.logger.info(f"Reading analysis file at: {analysis_file_path}")
             with open(analysis_file_path, "r") as f:
@@ -91,22 +89,13 @@ class GoEnryAnalyzer(BaseLogger):
 
                         self.logger.debug(f"Parsed result - Language: {language}, Usage: {percent_usage}%")
 
-                        session.execute(
-                            insert(GoEnryAnalysis).values(
-                                repo_id=repo_id,
-                                language=language.strip(),
-                                percent_usage=percent_usage,
-                                analysis_date=datetime.now(timezone.utc)
-                            ).on_conflict_do_update(
-                                index_elements=['repo_id', 'language'],
-                                set_={
-                                    'percent_usage': percent_usage,
-                                    'analysis_date': datetime.now(timezone.utc)
-                                }
-                            )
-                        )
+                        self.save_goenry_analysis( repo_id=repo_id,
+                                                   language=language.strip(),
+                                                   percent_usage=percent_usage,
+                                                   analysis_date=datetime.now(timezone.utc))
+
                         processed_languages += 1
-            session.commit()
+
             self.logger.info(f"Language analysis results saved to the database for repo_id: {repo_id}")
             return processed_languages
         except Exception as e:
@@ -114,6 +103,33 @@ class GoEnryAnalyzer(BaseLogger):
             raise
         finally:
             session.close()
+
+    def save_goenry_analysis(self, repo_id, language, percent_usage):
+        session = Session()
+        try:
+            session.query(GoEnryAnalysis).filter(
+                GoEnryAnalysis.repo_id == repo_id,
+                GoEnryAnalysis.language == language.strip()
+            ).delete()
+
+            session.add(
+                GoEnryAnalysis(
+                    repo_id=repo_id,
+                    language=language.strip(),
+                    percent_usage=percent_usage,
+                    analysis_date=datetime.now(timezone.utc)
+                )
+            )
+
+            session.commit()
+            self.logger.info(f"GoEnry analysis saved for repo_id: {repo_id}, language: {language.strip()}")
+        except Exception as e:
+            session.rollback()
+            self.logger.exception(f"Error saving GoEnry analysis for repo_id {repo_id}, language {language.strip()}")
+            raise
+        finally:
+            session.close()
+
 
 
 if __name__ == "__main__":

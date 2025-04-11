@@ -96,44 +96,7 @@ class GitLogAnalyzer(BaseLogger):
         self.logger.info(f"  recent_commit_dates: {recent_commit_dates}")
         self.logger.info(f"  top_contributor_commits: {top_contributor_commits}")
 
-        session = Session()
-
-        session.execute(
-            insert(RepoMetrics).values(
-                repo_id=repo['repo_id'],
-                repo_size_bytes=total_size,
-                file_count=file_count,
-                total_commits=total_commits,
-                number_of_contributors=len(contributors),
-                last_commit_date=last_commit_date,
-                repo_age_days=repo_age_days,
-                active_branch_count=active_branch_count,
-                activity_status=activity_status,
-                top_contributor_commits=top_contributor_commits,
-                commits_by_top_3_contributors=commits_by_top_3_contributors,
-                recent_commit_dates=recent_commit_dates
-            ).on_conflict_do_update(
-                index_elements=['repo_id'],
-                set_={
-                    "repo_size_bytes": total_size,
-                    "file_count": file_count,
-                    "total_commits": total_commits,
-                    "number_of_contributors": len(contributors),
-                    "last_commit_date": last_commit_date,
-                    "repo_age_days": repo_age_days,
-                    "active_branch_count": active_branch_count,
-                    "activity_status": activity_status,
-                    "commits_by_top_3_contributors": commits_by_top_3_contributors,
-                    "recent_commit_dates": recent_commit_dates,
-                    "top_contributor_commits": top_contributor_commits,
-                    "updated_at": datetime.now(timezone.utc)
-                }
-            )
-        )
-        session.commit()
-        session.close()
-
-        self.logger.info(f"Metrics saved for repository: {repo['repo_name']} (ID: {repo['repo_id']})")
+        self.save_repo_metrics(repo)
 
         return (
             f"{repo['repo_name']}: "
@@ -160,6 +123,38 @@ class GitLogAnalyzer(BaseLogger):
             self.logger.error(f"An unexpected error occurred: {e}")
         return None
 
+    def save_repo_metrics(self, repo):
+        session = Session()
+        try:
+            session.query(RepoMetrics).filter(RepoMetrics.repo_id == repo['repo_id']).delete()
+
+            session.add(
+                RepoMetrics(
+                    repo_id=repo['repo_id'],
+                    repo_size_bytes=repo['total_size'],
+                    file_count=repo['file_count'],
+                    total_commits=repo['total_commits'],
+                    number_of_contributors=len(repo['contributors']),
+                    last_commit_date=repo['last_commit_date'],
+                    repo_age_days=repo['repo_age_days'],
+                    active_branch_count=repo['active_branch_count'],
+                    activity_status=repo['activity_status'],
+                    top_contributor_commits=repo['top_contributor_commits'],
+                    commits_by_top_3_contributors=repo['commits_by_top_3_contributors'],
+                    recent_commit_dates=repo['recent_commit_dates'],
+                    updated_at=datetime.now(timezone.utc)
+                )
+            )
+
+            session.commit()
+            self.logger.info(f"Repo metrics committed to the database for repo_id: {repo['repo_id']}")
+
+        except Exception as e:
+            session.rollback()
+            self.logger.exception(f"Error saving repo metrics for repo_id {repo['repo_id']}")
+            raise
+        finally:
+            session.close()
 
 if __name__ == "__main__":
     repo_slug = "AzureGoat"

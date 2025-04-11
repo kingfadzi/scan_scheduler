@@ -46,7 +46,6 @@ class SyftDependencyAnalyzer(BaseLogger):
             raise RuntimeError(error_message)
 
     def parse_and_save_dependencies(self, sbom_file_path, repo_id):
-        self.logger.info(f"Reading SBOM from: {sbom_file_path}")
         session = None
         try:
             with open(sbom_file_path, "r") as file:
@@ -59,6 +58,10 @@ class SyftDependencyAnalyzer(BaseLogger):
                 return message
 
             session = Session()
+            session.query(SyftDependency).filter(
+                SyftDependency.repo_id == repo_id
+            ).delete()
+
             processed_count = 0
 
             for artifact in artifacts:
@@ -68,27 +71,18 @@ class SyftDependencyAnalyzer(BaseLogger):
                 licenses = ", ".join([l.get("value", "Unknown") for l in artifact.get("licenses", [])])
                 locations = ", ".join([loc.get("path", "Unknown") for loc in artifact.get("locations", [])])
                 language = artifact.get("language", "Unknown")
-                
-                session.execute(
-                    insert(SyftDependency).values(
-                        id=f"{repo_id}-{package_name}-{version}",  # still populate ID nicely
-                        repo_id=repo_id,
-                        package_name=package_name,
-                        version=version,
-                        package_type=package_type,
-                        licenses=licenses,
-                        locations=locations,
-                        language=language
-                    ).on_conflict_do_update(
-                        index_elements=['repo_id', 'package_name', 'version'],  # true uniqueness!
-                        set_={
-                            'package_type': package_type,
-                            'licenses': licenses,
-                            'locations': locations,
-                            'language': language
-                        }
-                    )
+
+                dependency = SyftDependency(
+                    id=f"{repo_id}-{package_name}-{version}",
+                    repo_id=repo_id,
+                    package_name=package_name,
+                    version=version,
+                    package_type=package_type,
+                    licenses=licenses,
+                    locations=locations,
+                    language=language
                 )
+                session.add(dependency)
                 processed_count += 1
 
             session.commit()
@@ -99,11 +93,14 @@ class SyftDependencyAnalyzer(BaseLogger):
             self.logger.error(f"Invalid JSON in SBOM file: {e}")
             raise
         except Exception as e:
+            if session:
+                session.rollback()
             self.logger.exception(f"Error processing dependencies for repo_id {repo_id}: {e}")
             raise
         finally:
             if session:
                 session.close()
+
 
 if __name__ == "__main__":
     repo_slug = "javaspringvulny"

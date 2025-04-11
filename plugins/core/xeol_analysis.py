@@ -90,7 +90,7 @@ class XeolAnalyzer(BaseLogger):
         return json.dumps(xeol_data)
 
     def parse_and_save_xeol_results(self, xeol_file_path, repo_id):
-        self.logger.info(f"Parsing Xeol results from: {xeol_file_path}")
+        session = None
         try:
             with open(xeol_file_path, "r") as file:
                 xeol_data = json.load(file)
@@ -98,15 +98,17 @@ class XeolAnalyzer(BaseLogger):
             matches = xeol_data.get("matches", [])
             eol_count = len(matches)
             message = f"Found {eol_count} EOL dependencies for repo_id: {repo_id}"
+
             if not matches:
                 self.logger.info(f"No matches found in EOL results for repo_id: {repo_id}")
                 return message
 
             session = Session()
+            session.query(XeolResult).filter(
+                XeolResult.repo_id == repo_id
+            ).delete()
 
-            self.logger.debug(f"Found {len(matches)} matches in EOL results for repo_id: {repo_id}.")
             for match in matches:
-                # Extract lifecycle info from "Cycle"
                 cycle = match.get("Cycle", {})
                 product_name = cycle.get("ProductName", "Unknown")
                 product_permalink = cycle.get("ProductPermalink", "Unknown")
@@ -116,7 +118,6 @@ class XeolAnalyzer(BaseLogger):
                 latest_release_date = cycle.get("LatestReleaseDate", "Unknown")
                 release_date = cycle.get("ReleaseDate", "Unknown")
 
-                # Extract artifact details
                 artifact = match.get("artifact", {})
                 artifact_name = artifact.get("name", "Unknown")
                 artifact_version = artifact.get("version", "Unknown")
@@ -125,47 +126,36 @@ class XeolAnalyzer(BaseLogger):
                 file_path = locations[0].get("path", "N/A") if locations else "N/A"
                 language = artifact.get("language", "Unknown")
 
-                self.logger.debug(f"Inserting Xeol result for artifact {artifact_name} version {artifact_version}.")
-
-                session.execute(
-                    insert(XeolResult).values(
-                        repo_id=repo_id,
-                        product_name=product_name,
-                        product_permalink=product_permalink,
-                        release_cycle=release_cycle,
-                        eol_date=eol_date,
-                        latest_release=latest_release,
-                        latest_release_date=latest_release_date,
-                        release_date=release_date,
-                        artifact_name=artifact_name,
-                        artifact_version=artifact_version,
-                        artifact_type=artifact_type,
-                        file_path=file_path,
-                        language=language,
-                    ).on_conflict_do_update(
-                        index_elements=["repo_id", "artifact_name", "artifact_version"],
-                        set_={
-                            "product_name": product_name,
-                            "product_permalink": product_permalink,
-                            "release_cycle": release_cycle,
-                            "eol_date": eol_date,
-                            "latest_release": latest_release,
-                            "latest_release_date": latest_release_date,
-                            "release_date": release_date,
-                            "artifact_type": artifact_type,
-                            "file_path": file_path,
-                            "language": language,
-                        },
-                    )
+                xeol_result = XeolResult(
+                    repo_id=repo_id,
+                    product_name=product_name,
+                    product_permalink=product_permalink,
+                    release_cycle=release_cycle,
+                    eol_date=eol_date,
+                    latest_release=latest_release,
+                    latest_release_date=latest_release_date,
+                    release_date=release_date,
+                    artifact_name=artifact_name,
+                    artifact_version=artifact_version,
+                    artifact_type=artifact_type,
+                    file_path=file_path,
+                    language=language,
                 )
+                session.add(xeol_result)
+
             session.commit()
-            session.close()
             self.logger.debug(f"EOL results successfully committed for repo_id: {repo_id}.")
             return message
 
         except Exception as e:
+            if session:
+                session.rollback()
             self.logger.exception(f"Error while parsing or saving EOL results for repository ID {repo_id}: {e}")
             raise
+        finally:
+            if session:
+                session.close()
+
 
 
 if __name__ == "__main__":

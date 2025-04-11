@@ -87,7 +87,7 @@ class GrypeAnalyzer(BaseLogger):
 
     def parse_and_save_grype_results(self, grype_file_path, repo_id):
         self.logger.info(f"Reading Grype results from: {grype_file_path}")
-        session = None
+
         try:
             with open(grype_file_path, "r") as file:
                 grype_data = json.load(file)
@@ -123,8 +123,41 @@ class GrypeAnalyzer(BaseLogger):
 
                 self.logger.debug(f"Extracted fix_versions for CVE {cve}: {fix_versions}")
 
-                session.execute(
-                    insert(GrypeResult).values(
+                self.save_grype_result(  repo_id=repo_id,
+                                         cve=cve,
+                                         description=description,
+                                         severity=severity,
+                                         package=package,
+                                         version=version,
+                                         file_path=file_path,
+                                         language=language,
+                                         fix_versions=fix_versions,
+                                         fix_state=fix_state)
+
+                processed_vulnerabilities += 1
+
+            self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
+            return f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}."
+
+        except Exception as e:
+            self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
+            raise
+        finally:
+            if session is not None:
+                session.close()
+
+        def save_grype_result(self, repo_id, cve, description, severity, package, version, file_path, language, fix_versions, fix_state):
+            session = Session()
+            try:
+                session.query(GrypeResult).filter(
+                    GrypeResult.repo_id == repo_id,
+                    GrypeResult.cve == cve,
+                    GrypeResult.package == package,
+                    GrypeResult.version == version
+                ).delete()
+
+                session.add(
+                    GrypeResult(
                         repo_id=repo_id,
                         cve=cve,
                         description=description,
@@ -135,29 +168,16 @@ class GrypeAnalyzer(BaseLogger):
                         language=language,
                         fix_versions=fix_versions,
                         fix_state=fix_state,
-                    ).on_conflict_do_update(
-                        index_elements=["repo_id", "cve", "package", "version"],
-                        set_={
-                            "description": description,
-                            "severity": severity,
-                            "file_path": file_path,
-                            "language": language,
-                            "fix_versions": fix_versions,
-                            "fix_state": fix_state,
-                        },
                     )
                 )
-                processed_vulnerabilities += 1
 
-            session.commit()
-            self.logger.debug(f"Grype results successfully committed for repo_id: {repo_id}.")
-            return f"Found {len(matches)} vulnerabilities for repo_id: {repo_id}."
-
-        except Exception as e:
-            self.logger.exception(f"Error while parsing or saving Grype results for repository ID {repo_id}: {e}")
-            raise
-        finally:
-            if session is not None:
+                session.commit()
+                self.logger.info(f"Grype result saved for repo_id: {repo_id}, cve: {cve}, package: {package}, version: {version}")
+            except Exception as e:
+                session.rollback()
+                self.logger.exception(f"Error saving Grype result for repo_id {repo_id}, cve {cve}, package {package}, version {version}")
+                raise
+            finally:
                 session.close()
 
 

@@ -5,9 +5,8 @@ from sqlalchemy import create_engine, func
 from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
-
-from config.config import Config
-from flows.profiles.runtime_version import extract_runtime_version
+from shared.models import Session
+from flows.profiles.helpers import extract_runtime_version, classify_repo, infer_build_tool
 from prefect.cache_policies import NO_CACHE
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
@@ -16,66 +15,10 @@ from shared.models import (
     XeolResult, SemgrepResult, CheckovSummary
 )
 
-DATABASE_URL = (
-    f"postgresql+psycopg2://{Config.METRICS_DATABASE_USER}:"
-    f"{Config.METRICS_DATABASE_PASSWORD}@"
-    f"{Config.METRICS_DATABASE_HOST}:"
-    f"{Config.METRICS_DATABASE_PORT}/"
-    f"{Config.METRICS_DATABASE_NAME}"
-)
-
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-
-def classify_repo(repo_size_bytes: float, total_loc: int) -> str:
-    if repo_size_bytes is None:
-        repo_size_bytes = 0
-    if total_loc is None:
-        total_loc = 0
-    if total_loc < 100:
-        return "Empty/Minimal" if repo_size_bytes < 1_000_000 else "Docs/Data"
-    if repo_size_bytes < 1_000_000:
-        return "Tiny"
-    if repo_size_bytes < 10_000_000:
-        return "Small"
-    if repo_size_bytes < 100_000_000:
-        return "Medium"
-    if repo_size_bytes < 1_000_000_000:
-        return "Large"
-    return "Massive"
-
-def infer_build_tool(syft_dependencies):
-    build_tool = None
-    for dependency in syft_dependencies:
-        name = (dependency.package_name or "").lower()
-        package_type = (dependency.package_type or "").lower()
-        version = (dependency.version or "").strip()
-        locations = (dependency.locations or "").lower()
-
-        if "gradle-wrapper" in name:
-            build_tool = f"gradle-wrapper:{version}" if version else "gradle-wrapper"
-            break
-        if "maven-wrapper" in name:
-            build_tool = f"maven-wrapper:{version}" if version else "maven-wrapper"
-            break
-        if package_type == "java-archive" and "pom.xml" in locations:
-            build_tool = "maven"
-        if not build_tool:
-            if package_type == "python":
-                build_tool = "python"
-            elif package_type == "npm":
-                build_tool = "node"
-            elif package_type == "go-module":
-                build_tool = "go"
-            elif package_type == "gem":
-                build_tool = "ruby"
-    return build_tool or "Unknown"
-
 
 @task
 async def fetch_basic_info(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         repository = session.query(Repository).filter_by(repo_id=repo_id).first()
         repo_metrics = session.query(RepoMetrics).filter_by(repo_id=repo_id).first()
         build_tool_metadata = session.query(BuildTool).filter_by(repo_id=repo_id).first()
@@ -86,39 +29,39 @@ async def fetch_basic_info(repo_id: str):
 
 @task
 async def fetch_languages(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         return session.query(GoEnryAnalysis).filter_by(repo_id=repo_id).all()
 
 @task
 async def fetch_cloc(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         return session.query(ClocMetric).filter_by(repo_id=repo_id).all()
 
 @task
 async def fetch_dependencies(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         return session.query(SyftDependency).filter_by(repo_id=repo_id).all()
 
 @task
 async def fetch_security(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         grype_results = session.query(GrypeResult).filter_by(repo_id=repo_id).all()
         trivy_results = session.query(TrivyVulnerability).filter_by(repo_id=repo_id).all()
         return grype_results, trivy_results
 
 @task
 async def fetch_eol(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         return session.query(XeolResult).filter_by(repo_id=repo_id).all()
 
 @task
 async def fetch_semgrep(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         return session.query(SemgrepResult).filter_by(repo_id=repo_id).all()
 
 @task
 async def fetch_modernization_signals(repo_id: str):
-    with SessionLocal() as session:
+    with Session() as session:
         dockerfile_present = session.query(GoEnryAnalysis).filter(
             func.lower(GoEnryAnalysis.language) == "dockerfile"
         ).filter_by(repo_id=repo_id).first()
@@ -309,7 +252,7 @@ async def cache_profile(repo_id: str, complete_profile: dict):
             return super().default(obj)
 
     try:
-        with SessionLocal() as session:
+        with Session() as session:
             sanitized_profile = json.loads(
                 json.dumps(complete_profile, cls=DateEncoder)
             )
@@ -362,7 +305,7 @@ async def build_profile_flow(repo_id: str):
         lang_info = assemble_languages_info.submit(languages)
         code_quality = assemble_code_quality_info.submit(lizard_summary, cloc_metrics)
         classification = assemble_classification_info.submit(repo_metrics, code_quality.result()["total_loc"])
-        with SessionLocal() as session:
+        with Session() as session:
             deps_info = assemble_dependencies_info.submit(session, repository.repo_id, dependencies)
         security_info = assemble_security_info.submit(grype, trivy, dependencies)
         eol_info = assemble_eol_info.submit(eol_results)
