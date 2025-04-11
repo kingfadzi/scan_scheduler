@@ -47,6 +47,7 @@ class RepoMetrics(Base):
     __tablename__ = "repo_metrics"
     repo_id = Column(String, primary_key=True)
     repo_size_bytes = Column(Float, nullable=False)
+    code_size_bytes = Column(Float, nullable=False)
     file_count = Column(Integer, nullable=False)
     total_commits = Column(Integer, nullable=False)
     number_of_contributors = Column(Integer, nullable=False)

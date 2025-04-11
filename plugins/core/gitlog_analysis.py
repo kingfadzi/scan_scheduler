@@ -42,7 +42,9 @@ class GitLogAnalyzer(BaseLogger):
 
         self.logger.info(f"Calculating metrics from gitlog for repository directory: {repo_dir}")
 
-        total_size = sum(blob.size for blob in repo_obj.tree(default_branch).traverse() if blob.type == 'blob')
+        total_size = self.get_repo_size(repo_dir)
+        code_size = self.get_repo_size(repo_dir, exclude_git=True)
+
         file_count = sum(1 for blob in repo_obj.tree(default_branch).traverse() if blob.type == 'blob')
         total_commits = sum(1 for _ in repo_obj.iter_commits(default_branch))
         contributors = set(commit.author.email for commit in repo_obj.iter_commits(default_branch))
@@ -70,6 +72,7 @@ class GitLogAnalyzer(BaseLogger):
         metrics = {
             "repo_id": repo["repo_id"],
             "repo_size_bytes": total_size,
+            "code_size_bytes": code_size,
             "file_count": file_count,
             "total_commits": total_commits,
             "number_of_contributors": len(contributors),
@@ -91,6 +94,7 @@ class GitLogAnalyzer(BaseLogger):
             f"{len(contributors)} contributors, "
             f"{file_count} files, "
             f"{total_size} bytes, "
+            f"{code_size} bytes, "
             f"{repo_age_days} days old, "
             f"{activity_status} status, "
             f"{active_branch_count} branches, "
@@ -107,6 +111,7 @@ class GitLogAnalyzer(BaseLogger):
             repo_metrics = RepoMetrics(
                 repo_id=metrics["repo_id"],
                 repo_size_bytes=metrics["repo_size_bytes"],
+                code_size_bytes=metrics["code_size_bytes"],
                 file_count=metrics["file_count"],
                 total_commits=metrics["total_commits"],
                 number_of_contributors=metrics["number_of_contributors"],
@@ -139,6 +144,19 @@ class GitLogAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.error(f"An unexpected error occurred: {e}")
         return None
+
+    def get_repo_size(self, repo_path, exclude_git=False):
+        total = 0
+        for root, dirs, files in os.walk(repo_path):
+            if exclude_git and '.git' in dirs:
+                dirs.remove('.git')
+            total += sum(
+                os.path.getsize(os.path.join(root, f))
+                for f in files
+                if os.path.exists(os.path.join(root, f))
+            )
+        return total
+
 
 
 import sys

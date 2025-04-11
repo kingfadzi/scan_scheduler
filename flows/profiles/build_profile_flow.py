@@ -103,6 +103,7 @@ async def assemble_basic_info(repository, repo_metrics):
         "Clone URL SSH": repository.clone_url_ssh,
         "Browse URL": repository.browse_url,
         "Repo Size (MB)": round(repo_metrics.repo_size_bytes / 1_000_000, 2),
+        "Code Size (MB)": round(repo_metrics.code_size_bytes / 1_000_000, 2),
         "File Count": repo_metrics.file_count,
         "Total Commits": repo_metrics.total_commits,
         "Contributors": repo_metrics.number_of_contributors,
