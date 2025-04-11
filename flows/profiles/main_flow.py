@@ -33,7 +33,7 @@ async def main_batch_orchestrator_flow(activity_status: str = "ACTIVE"):
 
     async with get_client() as client:
         deployment = await client.read_deployment_by_name(
-            "batch-build-profiles-flow/batch_build_profiles_flow"
+            "batch_build_profiles_flow/batch_build_profiles_flow"
         )
 
         while True:

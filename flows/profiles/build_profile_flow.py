@@ -98,6 +98,7 @@ async def assemble_basic_info(repository, repo_metrics):
         "Repo Name": repository.repo_name,
         "Status": repository.status or "Unknown",
         "VCS Hostname": repository.host_name,
+        "App ID": repository.app_id,
         "Last Updated": repository.updated_on.isoformat(),
         "Clone URL SSH": repository.clone_url_ssh,
         "Browse URL": repository.browse_url,
