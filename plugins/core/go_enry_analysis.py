@@ -100,8 +100,7 @@ class GoEnryAnalyzer(BaseLogger):
         except Exception as e:
             self.logger.exception(f"Error while parsing or saving analysis results for repository ID {repo_id}: {e}")
             raise
-        finally:
-            session.close()
+
 
     def save_goenry_analysis(self, repo_id, language, percent_usage):
         session = Session()
