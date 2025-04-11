@@ -1,3 +1,5 @@
+from pandas._libs import json
+
 from shared.models import BuildTool
 
 def extract_runtime_version(session, repo_id):
@@ -70,3 +72,22 @@ def infer_build_tool(syft_dependencies):
             elif package_type == "gem":
                 build_tool = "ruby"
     return build_tool or "Unknown"
+
+class DateSafeJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        from datetime import date, datetime
+        import numpy as np
+
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+
+        if isinstance(obj, (np.floating,)):
+            return float(obj)
+
+        if isinstance(obj, (np.bool_,)):
+            return bool(obj)
+
+        return super().default(obj)

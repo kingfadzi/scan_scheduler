@@ -48,6 +48,7 @@ class SyftDependencyAnalyzer(BaseLogger):
             self.logger.error(error_message)
             raise RuntimeError(error_message)
 
+
     def parse_and_save_dependencies(self, sbom_file_path, repo_id):
         session = None
         try:
@@ -66,11 +67,19 @@ class SyftDependencyAnalyzer(BaseLogger):
             ).delete()
 
             processed_count = 0
-
             seen = set()
 
             for artifact in artifacts:
-                package_name = artifact.get("name", "Unknown")
+                metadata = artifact.get("metadata", {})
+                pom_properties = metadata.get("pomProperties", {})
+                group_id = pom_properties.get("groupId")
+                artifact_id = pom_properties.get("artifactId")
+
+                if group_id and artifact_id:
+                    package_name = f"{group_id}:{artifact_id}"
+                else:
+                    package_name = artifact.get("name", "Unknown")
+
                 version = artifact.get("version", "Unknown")
                 key = (package_name, version)
 
@@ -111,10 +120,6 @@ class SyftDependencyAnalyzer(BaseLogger):
         finally:
             if session:
                 session.close()
-
-
-    def generate_dependency_id(self):
-        return str(uuid.uuid4())
 
 
 import sys

@@ -259,9 +259,3 @@ class SyftDependency(Base):
     category = Column(String)
     sub_category = Column(String)
     framework = Column(String)
-    __table_args__ = (
-        UniqueConstraint('repo_id', 'package_name', 'version', name='uq_syft_dependencies_repo_package_version'),
-    )
-
-    def __repr__(self):
-        return f"<SyftDependency(package='{self.package_name}', version='{self.version}', type='{self.package_type}')>"

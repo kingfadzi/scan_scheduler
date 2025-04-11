@@ -6,7 +6,7 @@ from prefect import flow, task
 from prefect.task_runners import ConcurrentTaskRunner
 from prefect.context import get_run_context
 from shared.models import Session
-from flows.profiles.helpers import extract_runtime_version, classify_repo, infer_build_tool
+from flows.profiles.helpers import extract_runtime_version, classify_repo, infer_build_tool, DateSafeJSONEncoder
 from prefect.cache_policies import NO_CACHE
 from shared.repo_profile_cache import RepoProfileCache
 from shared.models import (
@@ -299,10 +299,11 @@ async def cache_profile(repo_id: str, complete_profile: dict):
 
     try:
         with Session() as session:
+
             sanitized_profile = json.loads(
-                json.dumps(complete_profile, cls=DateEncoder)
+                json.dumps(complete_profile, cls=DateSafeJSONEncoder)
             )
-            
+
             existing = session.query(RepoProfileCache).filter_by(repo_id=repo_id).first()
             if existing:
                 existing.profile_json = json.dumps(sanitized_profile)
