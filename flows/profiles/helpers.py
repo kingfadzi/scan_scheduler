@@ -1,4 +1,4 @@
-from pandas._libs import json
+import json
 
 from shared.models import BuildTool
 
