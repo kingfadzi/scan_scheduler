@@ -3,13 +3,14 @@ import json
 import logging
 import subprocess
 import shutil
-from sqlalchemy.dialects.postgresql import insert
 
+from sqlalchemy.dialects.postgresql import insert
 from plugins.core.syft_analysis import SyftAnalyzer
 from shared.execution_decorator import analyze_execution
 from shared.models import Session, TrivyVulnerability
 from config.config import Config
 from shared.base_logger import BaseLogger
+
 
 class TrivyAnalyzer(BaseLogger):
 
@@ -19,37 +20,55 @@ class TrivyAnalyzer(BaseLogger):
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo):
-        self.logger.info(f"Starting Trivy analysis for repo_id: {repo['repo_id']} (repo_slug: {repo['repo_slug']}).")
+        self.logger.info(f"Starting Trivy analysis for repo_id: {repo['repo_id']}")
 
-        syft_analyzer = SyftAnalyzer(
-            logger=self.logger,
-            run_id=self.run_id
-        )
+        self.prepare_trivyignore(repo_dir)
+        self.generate_sbom(repo_dir, repo)
+        self.run_trivy_scan(repo_dir, repo)
+        trivy_data = self.parse_trivy_output(repo_dir, repo)
+        total_vulnerabilities = self.save_trivy_results(repo['repo_id'], trivy_data)
 
+        self.logger.info(f"Found {total_vulnerabilities} vulnerabilities for repo_id: {repo['repo_id']}")
+        return f"Found {total_vulnerabilities} vulnerabilities."
+
+    def prepare_trivyignore(self, repo_dir):
+
+        trivyignore_path = os.path.join(repo_dir, ".trivyignore")
+        if not os.path.exists(trivyignore_path):
+            try:
+                shutil.copy(Config.TRIVYIGNORE_TEMPLATE, trivyignore_path)
+                self.logger.info(f"Copied .trivyignore to {repo_dir}")
+            except Exception as e:
+                self.logger.error(f"Failed to copy .trivyignore: {e}")
+
+    def generate_sbom(self, repo_dir, repo):
+
+        syft_analyzer = SyftAnalyzer(logger=self.logger, run_id=self.run_id)
         syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
 
+    def run_trivy_scan(self, repo_dir, repo):
+
         if not os.path.exists(repo_dir):
-            error_message = f"Repository directory does not exist: {repo_dir}"
-            self.logger.error(error_message)
-            raise FileNotFoundError(error_message)
+            raise FileNotFoundError(f"Repository directory does not exist: {repo_dir}")
 
-        self.logger.info(f"Executing Trivy command in directory: {repo_dir}")
+        output_file = os.path.join(repo_dir, "trivy_report.json")
+        env = os.environ.copy()
+        env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
+
+        command = [
+            "trivy",
+            "repo",
+            "--skip-db-update",
+            "--skip-java-db-update",
+            "--offline-scan",
+            "--format", "json",
+            "--output", output_file,
+            repo_dir
+        ]
+
+        self.logger.debug(f"Running Trivy command: {' '.join(command)}")
+
         try:
-            env = os.environ.copy()
-            env['TRIVY_CACHE_DIR'] = Config.TRIVY_CACHE_DIR
-            self.logger.debug("Using TRIVY_CACHE_DIR: %s", env['TRIVY_CACHE_DIR'])
-
-            command = [
-                "trivy",
-                "repo",
-                "--skip-db-update",
-                "--skip-java-db-update",
-                "--offline-scan",
-                "--format", "json",
-                repo_dir
-            ]
-            self.logger.debug("Executing command: %s", " ".join(command))
-
             result = subprocess.run(
                 command,
                 env=env,
@@ -60,76 +79,36 @@ class TrivyAnalyzer(BaseLogger):
             )
 
             if result.returncode != 0:
-                error_message = (
-                    f"Trivy command failed for repo_id {repo['repo_id']}. "
-                    f"Return code: {result.returncode}. Error: {result.stderr.strip()}"
+                raise RuntimeError(
+                    f"Trivy scan failed. Return code {result.returncode}: {result.stderr.strip()}"
                 )
-                self.logger.error(error_message)
-                raise RuntimeError(error_message)
-
-            self.logger.debug(f"Trivy command completed successfully for repo_id: {repo['repo_id']}")
 
         except subprocess.TimeoutExpired as e:
-            error_message = f"Trivy command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
-            self.logger.error(error_message)
-            raise RuntimeError(error_message)
+            raise RuntimeError(f"Trivy scan timed out after {e.timeout} seconds.")
 
+        self.logger.info(f"Trivy scan completed successfully for repo_id: {repo['repo_id']}")
 
-        except subprocess.CalledProcessError as e:
-            self.logger.error("Trivy command execution encountered an error: %s", e)
+    def parse_trivy_output(self, repo_dir, repo):
 
-        except subprocess.TimeoutExpired as e:
-            error_message = f"Trivy command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
-            self.logger.error(error_message)
-            raise RuntimeError(error_message)
+        output_file = os.path.join(repo_dir, "trivy_report.json")
 
-        stdout_str = result.stdout.strip()
-        if not stdout_str:
-            error_message = f"No output from Trivy command for repo_id: {repo['repo_id']}"
-            self.logger.error(error_message)
-            raise ValueError(error_message)
-
-        self.logger.info(f"Parsing Trivy output for repo_id: {repo['repo_id']}")
         try:
-            trivy_data = json.loads(stdout_str)
+            with open(output_file, "r") as f:
+                data = json.load(f)
+            self.logger.info(f"Parsed Trivy output successfully for repo_id: {repo['repo_id']}")
+            return data
+
+        except FileNotFoundError:
+            raise RuntimeError(f"Trivy output file missing in {repo_dir}")
+
         except json.JSONDecodeError as e:
-            error_message = f"Error decoding Trivy JSON output: {str(e)}"
-            self.logger.error(error_message)
-            raise ValueError(error_message)
-
-        self.logger.info(f"Saving Trivy vulnerabilities to the database for repo_id: {repo['repo_id']}")
-        try:
-            total_vulnerabilities = self.save_trivy_results(repo['repo_id'], trivy_data)
-        except Exception as e:
-            error_message = f"Error saving Trivy vulnerabilities: {str(e)}"
-            self.logger.error(error_message)
-            raise RuntimeError(error_message)
-
-        message = f"Found {total_vulnerabilities} vulnerabilities for repo_id: {repo['repo_id']}"
-        self.logger.info(message)
-        return message
-
-
-    def prepare_trivyignore(self, repo_dir):
-
-        trivyignore_path = os.path.join(repo_dir, ".trivyignore")
-
-        if os.path.exists(trivyignore_path):
-            self.logger.info(f".trivyignore already exists in {repo_dir}")
-            return
-        try:
-            shutil.copy(Config.TRIVYIGNORE_TEMPLATE, trivyignore_path)
-            self.logger.info(f"Copied .trivyignore to {repo_dir}")
-        except Exception as e:
-            self.logger.error(f"Unexpected error: {e}")
+            raise ValueError(f"Invalid Trivy JSON format: {e}")
 
     def save_trivy_results(self, repo_id, results):
+
         session = Session()
         try:
-            session.query(TrivyVulnerability).filter(
-                TrivyVulnerability.repo_id == repo_id
-            ).delete()
-
+            session.query(TrivyVulnerability).filter_by(repo_id=repo_id).delete()
             total_vulnerabilities = 0
 
             for item in results.get("Results", []):
@@ -139,7 +118,7 @@ class TrivyAnalyzer(BaseLogger):
                 resource_type = item.get("Type")
 
                 for vuln in vulnerabilities:
-                    vulnerability = TrivyVulnerability(
+                    trivy_vuln = TrivyVulnerability(
                         repo_id=repo_id,
                         target=target,
                         resource_class=resource_class,
@@ -152,19 +131,19 @@ class TrivyAnalyzer(BaseLogger):
                         primary_url=vuln.get("PrimaryURL"),
                         description=vuln.get("Description"),
                     )
-                    session.add(vulnerability)
+                    session.add(trivy_vuln)
                     total_vulnerabilities += 1
 
             session.commit()
-            self.logger.debug(f"Trivy vulnerabilities committed to the database for repo_id: {repo_id}")
             return total_vulnerabilities
+
         except Exception as e:
             session.rollback()
-            self.logger.exception(f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}")
-            raise RuntimeError(f"Error saving Trivy vulnerabilities for repo_id {repo_id}: {e}")
+            self.logger.error(f"Failed saving Trivy vulnerabilities: {e}")
+            raise
+
         finally:
             session.close()
-
 
 
 import sys

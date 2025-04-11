@@ -1,5 +1,5 @@
 from datetime import date, datetime
-import json
+import pandas as pd
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func
 from prefect import flow, task
@@ -188,20 +188,63 @@ async def assemble_dependencies_info(session, repo_id, dependencies):
     }
 
 
+
 @task
 async def assemble_security_info(grype_results, trivy_results, dependencies):
-    vulnerabilities = [
-        {"package": g.package, "version": g.version, "severity": g.severity, "fix_version": g.fix_versions, "source": "G"}
-        for g in grype_results
-    ] + [
-        {"package": t.pkg_name, "version": t.installed_version, "severity": t.severity, "fix_version": t.fixed_version, "source": "T"}
-        for t in trivy_results if t.pkg_name
-    ]
+    # Combine Grype and Trivy vulnerabilities into one list
+    combined = []
+
+    for g in grype_results:
+        combined.append({
+            "package": g.package,
+            "version": g.version,
+            "severity": g.severity,
+            "fix_version": g.fix_versions,
+            "source": "Grype"
+        })
+
+    for t in trivy_results:
+        if t.pkg_name:
+            combined.append({
+                "package": t.pkg_name,
+                "version": t.installed_version,
+                "severity": t.severity,
+                "fix_version": t.fixed_version,
+                "source": "Trivy"
+            })
+
+    # If no vulnerabilities, return early
+    if not combined:
+        return {
+            "Vulnerabilities": [],
+            "Critical Vuln Count": 0,
+            "Vulnerable Dependencies %": 0.0
+        }
+
+    # Create a DataFrame for easier handling
+    df = pd.DataFrame(combined)
+
+    # Prefer Grype results if a vulnerability appears in both
+    df['source_order'] = df['source'].map({'Grype': 0, 'Trivy': 1})
+
+    # Deduplicate based on package, version, and severity
+    df = (
+        df.sort_values('source_order')
+        .drop_duplicates(subset=["package", "version", "severity"])
+        .drop(columns=["source_order"])
+    )
+
+    # Final metrics
+    vulnerabilities = df.to_dict(orient="records")
+    critical_count = (df['severity'] == "Critical").sum()
+    vuln_dependency_percent = round((len(df) / max(len(dependencies), 1)) * 100, 2)
+
     return {
         "Vulnerabilities": vulnerabilities,
-        "Critical Vuln Count": sum(1 for v in vulnerabilities if v["severity"] == "Critical"),
-        "Vulnerable Dependencies %": round((len(vulnerabilities) / (len(dependencies) or 1)) * 100, 2)
+        "Critical Vuln Count": critical_count,
+        "Vulnerable Dependencies %": vuln_dependency_percent
     }
+
 
 @task
 async def assemble_eol_info(eol_results):

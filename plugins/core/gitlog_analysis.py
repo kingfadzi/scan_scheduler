@@ -51,7 +51,11 @@ class GitLogAnalyzer(BaseLogger):
         last_commit_date = max(commit.committed_datetime for commit in repo_obj.iter_commits(default_branch))
         first_commit_date = min(commit.committed_datetime for commit in repo_obj.iter_commits(default_branch))
         repo_age_days = (datetime.now(timezone.utc) - first_commit_date).days
-        active_branch_count = len(repo_obj.branches)
+
+        origin = repo_obj.remotes.origin
+        active_branch_count = len(origin.refs)
+
+        #active_branch_count = len(repo_obj.branches)
         activity_status = "INACTIVE" if (datetime.now(timezone.utc) - last_commit_date).days > 365 else "ACTIVE"
         commit_authors = [commit.author.email for commit in repo_obj.iter_commits(default_branch)]
         author_commit_counts = Counter(commit_authors)
