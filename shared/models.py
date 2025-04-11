@@ -100,9 +100,6 @@ class GrypeResult(Base):
     fix_state = Column(Text)
     file_path = Column(Text)
     cvss = Column(Text)
-    __table_args__ = (
-        UniqueConstraint("repo_id", "cve", "package", "version", name="grype_result_uc"),
-    )
 
 class CheckovSummary(Base):
     __tablename__ = "checkov_summary"
@@ -116,9 +113,6 @@ class CheckovSummary(Base):
     resource_count = Column(Integer, default=0)
     parsing_errors = Column(Integer, default=0)
 
-    __table_args__ = (
-        UniqueConstraint("repo_id", "check_type", name="uq_repo_check"),
-    )
 
 
 class TrivyVulnerability(Base):
@@ -137,9 +131,6 @@ class TrivyVulnerability(Base):
     primary_url = Column(String, nullable=True)
     description = Column(Text, nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint('repo_id', 'vulnerability_id', 'pkg_name', name='uq_repo_vuln_pkg'),
-    )
 
 class AnalysisExecutionLog(Base):
     __tablename__ = "analysis_execution_log"
@@ -174,9 +165,7 @@ class SemgrepResult(Base):
     impact = Column(String, nullable=True)  # Added field for impact
     confidence = Column(String, nullable=True)  # Added field for confidence
 
-    __table_args__ = (
-        UniqueConstraint("repo_id", "path", "start_line", "rule_id", name="uq_semgrep_results"),
-    )
+
 
 class ComponentMapping(Base):
     __tablename__ = "component_mapping"
@@ -236,9 +225,6 @@ class XeolResult(Base):
     file_path = Column(String, nullable=True)
     language = Column(String, nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint('repo_id', 'artifact_name', 'artifact_version', name='_xeol_result_uc'),
-    )
 
 class BuildTool(Base):
     __tablename__ = 'build_tools'
