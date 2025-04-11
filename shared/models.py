@@ -28,7 +28,7 @@ class Repository(Base):
     tc_cluster = Column(String)
     tc = Column(String)
     clone_url_ssh = Column(String)
-    browse_url_ssh = Column(String)
+    browse_url = Column(String)
     status = Column(String)
     comment = Column(String)
     updated_on = Column(DateTime)
