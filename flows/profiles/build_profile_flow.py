@@ -164,9 +164,9 @@ async def assemble_classification_info(repo_metrics, total_loc):
 @task(cache_policy=NO_CACHE)
 async def assemble_dependencies_info(session, repo_id, dependencies):
     frameworks = [
-        dep.framework.strip()
+        f"{dep.framework.strip()}:{dep.version.strip()}"
         for dep in dependencies
-        if dep.framework and dep.framework.strip()
+        if dep.framework and dep.framework.strip() and dep.version and dep.version.strip()
     ]
 
     return {
