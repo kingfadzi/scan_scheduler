@@ -124,7 +124,7 @@ def create_analysis_flow(
             logger.error(f"Main flow failed: {str(e)}", exc_info=True)
             raise
         finally:
-            await refresh_views_task(flow_prefix)
+            #await refresh_views_task(flow_prefix)
             logger.info("Main flow cleanup completed")
 
     return main_flow
