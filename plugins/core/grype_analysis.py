@@ -9,25 +9,21 @@ from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
+from sbom_provider import SBOMProvider
 
 class GrypeAnalyzer(BaseLogger):
 
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+        self.sbom_provider = SBOMProvider(logger=self.logger, run_id=self.run_id) 
 
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
-        syft_analyzer = SyftAnalyzer(
-            logger=self.logger,
-            run_id=self.run_id
-        )
-
-        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
-
-        sbom_file_path = os.path.join(repo_dir, "sbom.json")
+        sbom_file_path = self.sbom_provider.get_sbom_path(repo_dir=repo_dir, repo=repo)
+        
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
 
         # Check if the SBOM file exists
