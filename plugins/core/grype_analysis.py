@@ -9,7 +9,7 @@ from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
-from sbom_provider import SBOMProvider
+from plugins.core.sbom_provider import SBOMProvider
 
 class GrypeAnalyzer(BaseLogger):
 
