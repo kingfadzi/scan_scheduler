@@ -1,9 +1,9 @@
 import sys
 import os
-import json
 import yaml
 import re
 import logging
+from pprint import pprint
 
 from config.config import Config
 from shared.base_logger import BaseLogger
@@ -98,10 +98,10 @@ class IaCScanner(BaseLogger):
 
         if not detections:
             self.logger.info("No IaC or platform components detected.")
-            return json.dumps({"matches": []})
+            return []
 
         self.logger.info(f"Detected IaC/platform components in {len(detections)} files.")
-        return json.dumps({"matches": detections})
+        return detections
 
 # --- Main entrypoint (standalone runner) ---
 if __name__ == "__main__":
@@ -127,10 +127,11 @@ if __name__ == "__main__":
         analyzer.logger.info(f"Starting standalone IaC scan for repo_id: {repo['repo_id']}")
         result = analyzer.run_analysis(repo_dir, repo=repo)
 
-        if isinstance(result, str):
-            analyzer.logger.info(result)
+        # Instead of JSON, we print the Python list of detections
+        if isinstance(result, list):
+            pprint(result)
         else:
-            analyzer.logger.info(f"IaC scan completed with {len(json.loads(result).get('matches', []))} findings")
+            analyzer.logger.info(result)
 
     except Exception as e:
         analyzer.logger.error(f"Error during standalone IaC scan: {e}")
