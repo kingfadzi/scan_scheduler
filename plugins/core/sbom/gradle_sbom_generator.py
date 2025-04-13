@@ -170,45 +170,63 @@ class GradleSbomGenerator(BaseLogger):
         self.logger.debug(f"Returning {len(deps)} dependencies from block")
         return deps
 
+    
     def _parse_string_style(self, match) -> Dict:
         coord = match.group("coord")
         self.logger.debug(f"Parsing string-style dependency: {coord}")
         
         parts = coord.split(':')
         self.logger.debug(f"Split into {len(parts)} parts: {parts}")
-        
+    
         version = "unknown"
+        group = "unknown"
+        artifact = "unknown"
+    
         if len(parts) >= 3:
-            version = parts[-1]
-            group = ':'.join(parts[0:-2])
-            artifact = parts[-2]
+            version = parts[-1].strip() or "unknown"
+            artifact = parts[-2].strip()
+            group = ':'.join(part.strip() for part in parts[:-2])
         elif len(parts) == 2:
-            group, artifact = parts
+            group = parts[0].strip()
+            artifact = parts[1].strip()
         else:
             error_msg = f"Invalid dependency format: {coord}"
             self.logger.error(error_msg)
             raise ValueError(error_msg)
-
+    
+        if version == "unknown":
+            self.logger.warning(f"No version specified for dependency: {group}:{artifact}, defaulting to 'unknown'.")
+    
         self.logger.info(f"Parsed string-style: {group}:{artifact}@{version}")
         return {
-            'group': group.strip(),
-            'artifact': artifact.strip(),
-            'version': version.strip()
+            'group': group,
+            'artifact': artifact,
+            'version': version
         }
-
+        return {
+            'group': group,
+            'artifact': artifact,
+            'version': version
+        }
+    
     def _parse_map_style(self, match) -> Dict:
         self.logger.debug("Parsing map-style dependency")
+        
         group = match.group("group").strip()
         artifact = match.group("name").strip()
         version = match.group("version").strip() if match.group("version") else "unknown"
-        
+    
+        if version == "unknown":
+            self.logger.warning(f"No version specified for dependency: {group}:{artifact}, defaulting to 'unknown'.")
+    
         self.logger.info(f"Parsed map-style: {group}:{artifact}@{version}")
         return {
             'group': group,
             'artifact': artifact,
             'version': version
         }
-
+    
+    
     def _generate_sbom(self, repo_dir: str, repo: dict, dependencies: List[Dict]) -> str:
         self.logger.info("Generating SBOM JSON structure")
         sbom_path = os.path.join(repo_dir, "sbom.json")
