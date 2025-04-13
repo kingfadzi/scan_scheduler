@@ -1,16 +1,13 @@
-import os
 import json
 import logging
 import subprocess
 import shutil
 
-from sqlalchemy.dialects.postgresql import insert
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.execution_decorator import analyze_execution
 from shared.models import Session, TrivyVulnerability
 from config.config import Config
 from shared.base_logger import BaseLogger
-from plugins.core.sbom_provider import SBOMProvider
+from plugins.core.sbom.sbom_provider import SBOMProvider
 
 
 

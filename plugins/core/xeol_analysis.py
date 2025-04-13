@@ -1,15 +1,12 @@
 import subprocess
-import os
 import json
-from sqlalchemy.dialects.postgresql import insert
 
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, XeolResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
-from plugins.core.sbom_provider import SBOMProvider
+from plugins.core.sbom.sbom_provider import SBOMProvider
 
 
 class XeolAnalyzer(BaseLogger):
