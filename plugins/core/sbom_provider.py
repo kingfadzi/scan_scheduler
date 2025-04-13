@@ -80,18 +80,22 @@ class SBOMProvider(BaseLogger):
     def _merge_sboms(self, sbom_paths: list, output_path: str):
         base_sbom = None
         artifacts = []
+        source_counts = {}
     
         for idx, sbom_path in enumerate(sbom_paths):
             with open(sbom_path, "r") as f:
                 sbom_data = json.load(f)
+                count = len(sbom_data.get("artifacts", []))
+                source_counts[sbom_path] = count
+    
                 if idx == 0:
-                    base_sbom = sbom_data  # Use first SBOM (Syft) as base (keep its "source", "schema", "descriptor")
+                    base_sbom = sbom_data  # First SBOM (Syft) is base
                 artifacts.extend(sbom_data.get("artifacts", []))
     
         if base_sbom is None:
             raise ValueError("No base SBOM found during merging.")
     
-        # De-duplicate artifacts
+        # Deduplicate artifacts
         seen = set()
         deduplicated_artifacts = []
         for artifact in artifacts:
@@ -100,18 +104,24 @@ class SBOMProvider(BaseLogger):
                 deduplicated_artifacts.append(artifact)
                 seen.add(purl)
     
-        # Sort artifacts by name for cleaner SBOM
+        # Sort artifacts
         sorted_artifacts = sorted(deduplicated_artifacts, key=lambda x: x.get("name", "").lower())
     
-        # Replace artifacts in base SBOM
+        # Replace artifacts
         base_sbom["artifacts"] = sorted_artifacts
     
         with open(output_path, "w") as f:
             json.dump(base_sbom, f, indent=2)
     
-        self.logger.info(f"Merged {len(sbom_paths)} SBOMs into final {output_path} ({len(sorted_artifacts)} unique artifacts).")
-        
-        
+        # --- New logging ---
+        self.logger.info("Artifact counts from SBOM sources:")
+        for path, count in source_counts.items():
+            self.logger.info(f"  {os.path.basename(path)}: {count} artifacts")
+    
+        self.logger.info(f"Total merged artifacts before deduplication: {len(artifacts)}")
+        self.logger.info(f"Total unique artifacts after deduplication: {len(deduplicated_artifacts)}")
+        self.logger.info(f"Final SBOM written to {output_path} with {len(sorted_artifacts)} sorted .")
+            
 import sys
 
 if __name__ == "__main__":
