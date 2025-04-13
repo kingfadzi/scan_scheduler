@@ -6,8 +6,8 @@ from pathlib import Path
 from filelock import FileLock
 
 from plugins.core.sbom.gradle_sbom_generator import GradleSbomGenerator
-from plugins.core.sbom.utils import has_gradle_lockfile, is_gradle_project
-from plugins.core.sbom.maven_utils import prepare_maven_project
+from plugins.core.sbom.sbom_utils import has_gradle_lockfile, is_gradle_project
+from plugins.core.sbom.maven_helper import prepare_maven_project
 from plugins.core.sbom.syft_runner import run_syft
 from shared.base_logger import BaseLogger
 
