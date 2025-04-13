@@ -22,7 +22,7 @@ class GrypeAnalyzer(BaseLogger):
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
      
-        sbom_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
+        sbom_file_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
 
