@@ -78,40 +78,39 @@ class SBOMProvider(BaseLogger):
         return gradle_dirs
 
     def _merge_sboms(self, sbom_paths: list, output_path: str):
-        merged_sbom = {
-            "artifacts": [],
-            "source": {
-                "type": "multi-repo",
-                "description": "Merged SBOM from multiple projects"
-            },
-            "descriptor": {
-                "name": "merged-sbom",
-                "version": "1.0.0",
-                "configuration": {}
-            },
-            "schema": {
-                "version": "16.0.24",
-                "url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.24.json"
-            }
-        }
-
-        seen = set()
-
-        for sbom_path in sbom_paths:
+        base_sbom = None
+        artifacts = []
+    
+        for idx, sbom_path in enumerate(sbom_paths):
             with open(sbom_path, "r") as f:
                 sbom_data = json.load(f)
-                artifacts = sbom_data.get("artifacts", [])
-                for artifact in artifacts:
-                    # Optional deduplication based on purl or name+version
-                    purl = artifact.get("purl") or f"{artifact.get('name')}@{artifact.get('version')}"
-                    if purl not in seen:
-                        merged_sbom["artifacts"].append(artifact)
-                        seen.add(purl)
-
+                if idx == 0:
+                    base_sbom = sbom_data  # Use first SBOM (Syft) as base (keep its "source", "schema", "descriptor")
+                artifacts.extend(sbom_data.get("artifacts", []))
+    
+        if base_sbom is None:
+            raise ValueError("No base SBOM found during merging.")
+    
+        # De-duplicate artifacts
+        seen = set()
+        deduplicated_artifacts = []
+        for artifact in artifacts:
+            purl = artifact.get("purl") or f"{artifact.get('name')}@{artifact.get('version')}"
+            if purl not in seen:
+                deduplicated_artifacts.append(artifact)
+                seen.add(purl)
+    
+        # Sort artifacts by name for cleaner SBOM
+        sorted_artifacts = sorted(deduplicated_artifacts, key=lambda x: x.get("name", "").lower())
+    
+        # Replace artifacts in base SBOM
+        base_sbom["artifacts"] = sorted_artifacts
+    
         with open(output_path, "w") as f:
-            json.dump(merged_sbom, f, indent=2)
-
-        self.logger.info(f"Merged {len(sbom_paths)} SBOMs into final {output_path} ({len(merged_sbom['artifacts'])} unique artifacts).")
+            json.dump(base_sbom, f, indent=2)
+    
+        self.logger.info(f"Merged {len(sbom_paths)} SBOMs into final {output_path} ({len(sorted_artifacts)} unique artifacts).")
+        
         
 import sys
 
