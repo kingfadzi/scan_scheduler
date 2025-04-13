@@ -272,15 +272,21 @@ class GradleSbomGenerator(BaseLogger):
                         }
                     }],
                     "purl": f"pkg:maven/{dep['group']}/{dep['artifact']}" +
-                           (f"@{dep['version']}" if dep['version'] != "unknown" else ""),
+                            (f"@{dep['version']}" if dep['version'] != "unknown" else ""),
                     "metadata": {
                         "gradle": {
                             "configuration": dep.get('configuration', 'implementation'),
                             "group": dep['group']
+                        },
+                        "pomProperties": {
+                            "groupId": dep['group'],
+                            "artifactId": dep['artifact'],
+                            "version": dep['version'] if dep['version'] != "unknown" else ""
                         }
                     },
                     "licenses": []
                 }
+
                 sbom_data["artifacts"].append(artifact_entry)
                 self.logger.debug(f"Added artifact: {artifact_entry['purl']}")
             except Exception as e:
