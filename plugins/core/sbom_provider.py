@@ -1,76 +1,119 @@
 import os
-from filelock import FileLock
+import json
+import subprocess
 from pathlib import Path
-from plugins.core.sbom.sbom_utils import is_gradle_project, has_gradle_lockfile, is_maven_project
+
+from filelock import FileLock
+
 from plugins.core.sbom.gradle_sbom_generator import GradleSbomGenerator
-from plugins.core.sbom.maven_helper import prepare_maven_project
-from plugins.core.sbom.syft_helper import run_syft
+from plugins.core.sbom.utils import has_gradle_lockfile, is_gradle_project
+from plugins.core.sbom.maven_utils import prepare_maven_project
+from plugins.core.sbom.syft_runner import run_syft
 from shared.base_logger import BaseLogger
-import logging
-import sys
 
 class SBOMProvider(BaseLogger):
+    """
+    Provides SBOM generation and merging for mixed-technology repositories.
+    Handles Gradle (manual), Maven (effective-pom), and others via Syft.
+    """
+
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(os.getenv('LOGLEVEL', 'DEBUG'))
 
     def ensure_sbom(self, repo_dir: str, repo: dict) -> str:
-
-        self.logger.info(f"Starting ensure_sbom for {repo['repo_id']}")
-
+        """
+        Ensures a unified SBOM exists for the given repository.
+        If missing, generates it by handling Gradle, Maven, and other tech stacks appropriately.
+        """
         sbom_path = os.path.join(repo_dir, "sbom.json")
-        lock_path = sbom_path + ".lock"
+        lock_path = os.path.join(repo_dir, "sbom.lock")
 
-        if os.path.exists(sbom_path):
-            self.logger.debug(f"SBOM exists at {sbom_path} (size: {os.path.getsize(sbom_path)} bytes, modified: {os.path.getmtime(sbom_path)})")
-            self.logger.info(f"Using existing SBOM for {repo['repo_id']}")
+        with FileLock(lock_path):
+            if os.path.exists(sbom_path):
+                self.logger.info(f"SBOM already exists for repo_id: {repo['repo_id']}. Skipping generation.")
+                return sbom_path
+
+            self.logger.info(f"Preparing unified SBOM for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
+
+            gradle_sbom_paths = []
+
+            # Step 1: Handle Gradle modules manually if needed
+            for gradle_dir in self._find_gradle_modules(repo_dir):
+                if not has_gradle_lockfile(gradle_dir):
+                    self.logger.info(f"Gradle project without lockfile detected at {gradle_dir}. Generating manual SBOM.")
+                    gradle_generator = GradleSbomGenerator(logger=self.logger, run_id=self.run_id)
+                    gradle_generator.run_analysis(gradle_dir, repo)
+
+                    gradle_sbom = os.path.join(gradle_dir, "sbom.json")
+                    if os.path.exists(gradle_sbom):
+                        gradle_sbom_paths.append(gradle_sbom)
+
+            # Step 2: Handle Maven (only root-level pom.xml)
+            root_pom = os.path.join(repo_dir, "pom.xml")
+            if os.path.exists(root_pom):
+                self.logger.info(f"Root-level Maven pom.xml detected at {repo_dir}. Running effective-pom preparation.")
+                prepare_maven_project(repo_dir, logger=self.logger)
+
+            # Step 3: Full repo Syft scan
+            syft_sbom_path = os.path.join(repo_dir, "sbom-syft.json")
+            self.logger.info(f"Running Syft full repo scan to capture all ecosystems.")
+            run_syft(repo_dir, output_path=syft_sbom_path, logger=self.logger)
+
+            if not os.path.exists(syft_sbom_path):
+                raise FileNotFoundError(f"Syft SBOM generation failed for repo_id {repo['repo_id']}.")
+
+            # Step 4: Merge all SBOMs (Gradle + Syft) into final sbom.json
+            self._merge_sboms([syft_sbom_path] + gradle_sbom_paths, sbom_path)
+
+            self.logger.info(f"Unified SBOM ready at {sbom_path} for repo_id: {repo['repo_id']}.")
+
             return sbom_path
 
-        self.logger.debug(f"Acquiring file lock: {lock_path}")
-        with FileLock(lock_path, timeout=60):
-            self.logger.debug(f"Lock acquired for {repo['repo_id']}")
+    def _find_gradle_modules(self, root_dir: str) -> list:
+        gradle_dirs = []
+        for path in Path(root_dir).rglob("build.gradle*"):
+            if path.is_file():
+                gradle_dirs.append(str(path.parent))
+        return gradle_dirs
 
-            if os.path.exists(sbom_path):
-                self.logger.warning(f"SBOM created by parallel process for {repo['repo_id']}")
-                return sbom_path
+    def _merge_sboms(self, sbom_paths: list, output_path: str):
+        merged_sbom = {
+            "artifacts": [],
+            "source": {
+                "type": "multi-repo",
+                "description": "Merged SBOM from multiple projects"
+            },
+            "descriptor": {
+                "name": "merged-sbom",
+                "version": "1.0.0",
+                "configuration": {}
+            },
+            "schema": {
+                "version": "16.0.24",
+                "url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.24.json"
+            }
+        }
 
-            self.logger.info(f"Starting SBOM generation for {repo['repo_id']}")
+        seen = set()
 
-            try:
-                if is_gradle_project(repo_dir):
-                    self._handle_gradle_project(repo_dir, repo)
-                elif is_maven_project(repo_dir):
-                    self._handle_maven_project(repo_dir)
-                else:
-                    self.logger.warning(f"Unknown project type for {repo['repo_id']}")
-                    run_syft(repo_dir)
+        for sbom_path in sbom_paths:
+            with open(sbom_path, "r") as f:
+                sbom_data = json.load(f)
+                artifacts = sbom_data.get("artifacts", [])
+                for artifact in artifacts:
+                    # Optional deduplication based on purl or name+version
+                    purl = artifact.get("purl") or f"{artifact.get('name')}@{artifact.get('version')}"
+                    if purl not in seen:
+                        merged_sbom["artifacts"].append(artifact)
+                        seen.add(purl)
 
-                if not os.path.exists(sbom_path):
-                    raise FileNotFoundError(f"SBOM file not created at {sbom_path}")
+        with open(output_path, "w") as f:
+            json.dump(merged_sbom, f, indent=2)
 
-                self.logger.debug(f"SBOM generation completed ({os.path.getsize(sbom_path)} bytes)")
-                return sbom_path
-
-            except Exception as e:
-                self.logger.error(f"SBOM generation failed for {repo['repo_id']}: {str(e)}", exc_info=True)
-                raise
-
-    def _handle_gradle_project(self, repo_dir: str, repo: dict):
-        if has_gradle_lockfile(repo_dir):
-            self.logger.debug(f"Found Gradle lockfile in {repo_dir}")
-            self.logger.info(f"Running Syft on Gradle project {repo['repo_id']}")
-            run_syft(repo_dir)
-        else:
-            self.logger.warning(f"No Gradle lockfile found in {repo_dir}")
-            self.logger.info(f"Starting manual Gradle SBOM generation for {repo['repo_id']}")
-            GradleSbomGenerator(logger=self.logger, run_id=self.run_id).run_analysis(repo_dir, repo)
-
-    def _handle_maven_project(self, repo_dir: str):
-        self.logger.debug("Preparing Maven effective POM")
-        self.logger.info(f"Processing Maven project in {repo_dir}")
-        prepare_maven_project(repo_dir)
-        self.logger.debug("Running Syft on Maven project")
-        run_syft(repo_dir)
+        self.logger.info(f"Merged {len(sbom_paths)} SBOMs into final {output_path} ({len(merged_sbom['artifacts'])} unique artifacts).")
+        
+import sys
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -78,23 +121,26 @@ if __name__ == "__main__":
         sys.exit(1)
 
     repo_dir = sys.argv[1]
+    if not os.path.exists(repo_dir):
+        print(f"Provided repo_dir does not exist: {repo_dir}")
+        sys.exit(1)
+
     repo_name = os.path.basename(os.path.normpath(repo_dir))
-    
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
     repo = {
-        "repo_id": f"standalone_test/{repo_name}",
-        "repo_slug": repo_name,
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
         "repo_name": repo_name
     }
 
     sbom_provider = SBOMProvider(run_id="STANDALONE_RUN_ID_001")
-    sbom_provider.logger.addHandler(logging.StreamHandler())
-    
+
     try:
-        sbom_provider.logger.debug(f"Starting SBOM process with args: {sys.argv}")
-        sbom_provider.logger.info(f"SBOM generation initiated for {repo_dir}")
+        sbom_provider.logger.info(f"Starting standalone SBOM preparation for repo_id: {repo['repo_id']}")
         sbom_path = sbom_provider.ensure_sbom(repo_dir, repo)
-        sbom_provider.logger.info(f"SBOM generation successful: {sbom_path}")
-        print(f"SBOM created at {sbom_path}")
+        sbom_provider.logger.info(f"Standalone SBOM prepared successfully at: {sbom_path}")
     except Exception as e:
-        sbom_provider.logger.critical(f"SBOM process failed: {str(e)}", exc_info=True)
+        sbom_provider.logger.error(f"Error during standalone SBOM preparation: {str(e)}", exc_info=True)
         sys.exit(1)

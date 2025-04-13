@@ -1,27 +1,39 @@
-# plugins/core/sbom/syft_helper.py
-
 import subprocess
 import os
-from config.config import Config
 
-def run_syft(repo_dir: str):
+def run_syft(repo_dir: str, output_path: str = None, logger=None):
     """
-    Runs Syft to generate an SBOM for the given repository directory.
-    Outputs the SBOM as JSON to sbom.json.
+    Runs Syft against the given directory to generate an SBOM.
     """
-    sbom_path = os.path.join(repo_dir, "sbom.json")
+    if not output_path:
+        output_path = os.path.join(repo_dir, "sbom.json")
 
-    command = [
-        "syft",
-        repo_dir,
-        "--output", "json",
-        "--file", sbom_path
-    ]
+    if logger:
+        logger.info(f"Running Syft for repo: {repo_dir}, output will be saved to {output_path}.")
 
-    subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=Config.DEFAULT_PROCESS_TIMEOUT
-    )
+    try:
+        command = [
+            "syft",
+            repo_dir,
+            "--output", "json",
+            "--file", output_path
+        ]
+        if logger:
+            logger.debug(f"Executing command: {' '.join(command)}")
+        subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=300
+        )
+        if logger:
+            logger.info(f"Syft SBOM generated successfully at {output_path}.")
+    except subprocess.CalledProcessError as e:
+        if logger:
+            logger.error(f"Syft command failed: {e.stderr}")
+        raise
+    except subprocess.TimeoutExpired:
+        if logger:
+            logger.error(f"Syft scan timed out after 300s for {repo_dir}")
+        raise
