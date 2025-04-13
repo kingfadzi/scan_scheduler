@@ -1,73 +1,86 @@
-import subprocess
 import os
 from filelock import FileLock
-from config.config import Config
-from shared.base_logger import BaseLogger
-import logging
 from pathlib import Path
 
-EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
+from plugins.core.sbom.sbom_utils import is_gradle_project, has_gradle_lockfile, is_maven_project
+from plugins.core.sbom.gradle_sbom_generator import GradleSbomGenerator
+from plugins.core.sbom.maven_helper import prepare_maven_project
+from plugins.core.sbom.syft_helper import run_syft
+from shared.base_logger import BaseLogger
 
 class SBOMProvider(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
-        self.logger.setLevel(logging.DEBUG)
 
-    def get_sbom_path(self, repo_dir, repo, prep_step=None):
-        self.logger.info(f"Ensuring SBOM exists for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
-        
-        if not os.path.exists(repo_dir):
-            error_message = f"Repository directory does not exist: {repo_dir}"
-            self.logger.error(error_message)
-            raise FileNotFoundError(error_message)
+    def ensure_sbom(self, repo_dir: str, repo: dict) -> str:
+        """
+        Ensures that an SBOM exists for the given repository.
+        Will generate it if missing, using the appropriate strategy.
+        """
+        with self._get_file_lock(repo_dir):
+            sbom_path = os.path.join(repo_dir, "sbom.json")
 
-        sbom_path = os.path.join(repo_dir, "sbom.json")
-        lock_path = sbom_path + ".lock"
-
-        # Fast path: if already exists, use immediately
-        if os.path.exists(sbom_path):
-            self.logger.debug(f"SBOM already exists at {sbom_path}")
-            return sbom_path
-
-        with FileLock(lock_path):
-            # Inside lock, recheck
             if os.path.exists(sbom_path):
-                self.logger.debug(f"SBOM already exists at {sbom_path} after lock acquisition")
+                self.logger.info(f"SBOM already exists for repo_id: {repo['repo_id']}. Skipping generation.")
                 return sbom_path
 
-            # Optional repo preparation (e.g., Maven effective-pom)
-            if prep_step:
-                self.logger.info(f"Running repo preparation step before SBOM generation for repo_id: {repo['repo_id']}.")
-                prep_step(repo_dir)
+            self.logger.info(f"Preparing SBOM for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
-            self.logger.info(f"Generating SBOM for repo_id: {repo['repo_id']}.")
+            if is_gradle_project(repo_dir):
+                if has_gradle_lockfile(repo_dir):
+                    self.logger.info(f"Gradle project with lockfile detected for {repo['repo_id']}. Running Syft.")
+                    run_syft(repo_dir)
+                else:
+                    self.logger.info(f"Gradle project without lockfile detected for {repo['repo_id']}. Generating manual SBOM.")
+                    GradleSbomGenerator(logger=self.logger, run_id=self.run_id).run_analysis(repo_dir, repo)
 
-            try:
-                command = [
-                    "syft",
-                    repo_dir,
-                    "--output", "json",
-                    "--file", sbom_path
-                ]
-                self.logger.debug("Executing command: %s", " ".join(command))
-                subprocess.run(
-                    command,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    timeout=Config.DEFAULT_PROCESS_TIMEOUT
-                )
-                self.logger.info(f"SBOM generated and saved at: {sbom_path}")
-            except subprocess.TimeoutExpired as e:
-                error_message = f"Syft command timed out for repo_id {repo['repo_id']} after {e.timeout} seconds."
-                self.logger.error(error_message)
-                raise RuntimeError(error_message)
-            except subprocess.CalledProcessError as e:
-                error_message = f"Syft command failed for repo_id {repo['repo_id']}: {e.stderr.strip()}"
-                self.logger.error(error_message)
-                raise RuntimeError(error_message)
+            elif is_maven_project(repo_dir):
+                self.logger.info(f"Maven project detected for {repo['repo_id']}. Preparing effective-pom and running Syft.")
+                prepare_maven_project(repo_dir)
+                run_syft(repo_dir)
 
-        return sbom_path
+            else:
+                self.logger.info(f"Unknown or other project type detected for {repo['repo_id']}. Running Syft.")
+                run_syft(repo_dir)
 
+            if not os.path.exists(sbom_path):
+                raise FileNotFoundError(f"SBOM generation failed for repo_id {repo['repo_id']}.")
 
+            self.logger.info(f"SBOM prepared at {sbom_path} for repo_id {repo['repo_id']}.")
+            return sbom_path
 
+    def _get_file_lock(self, repo_dir: str):
+        """
+        Returns a file lock object to prevent concurrent SBOM generation.
+        """
+        lock_file_path = os.path.join(repo_dir, "sbom.lock")
+        lock = FileLock(lock_file_path)
+        return lock
+        
+        
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: python sbom_provider.py /path/to/repo_dir")
+        sys.exit(1)
+
+    repo_dir = sys.argv[1]
+    repo_name = os.path.basename(os.path.normpath(repo_dir))
+    repo_slug = repo_name
+    repo_id = f"standalone_test/{repo_slug}"
+
+    repo = {
+        "repo_id": repo_id,
+        "repo_slug": repo_slug,
+        "repo_name": repo_name
+    }
+
+    sbom_provider = SBOMProvider(run_id="STANDALONE_RUN_ID_001")
+
+    try:
+        print(f"Starting standalone SBOM preparation for repo_id: {repo['repo_id']}")
+        sbom_path = sbom_provider.ensure_sbom(repo_dir, repo)
+        print(f"Standalone SBOM prepared successfully at: {sbom_path}")
+    except Exception as e:
+        print(f"Error during standalone SBOM preparation: {e}")
