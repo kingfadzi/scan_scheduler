@@ -261,7 +261,7 @@ class GradleSbomGenerator(BaseLogger):
             self.logger.debug(f"Processing dependency {idx}/{len(dependencies)}")
             try:
                 artifact_entry = {
-                    "type": "library",
+                    "type": "java-archive",
                     "name": dep['artifact'],
                     "version": dep['version'] if dep['version'] != "unknown" else None,
                     "language": "java",
