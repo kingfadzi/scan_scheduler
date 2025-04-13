@@ -28,6 +28,8 @@ class SyftDependencyAnalyzer(BaseLogger):
 
         sbom_file_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
+        self.logger.info(f"sbom_file_path for repo_id: {repo['repo_id']} : {sbom_file_path}).")
+
         if not os.path.exists(sbom_file_path):
             error_message = f"SBOM file not found for repository {repo['repo_name']} at path: {sbom_file_path}"
             self.logger.error(error_message)

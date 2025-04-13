@@ -15,6 +15,9 @@ class SBOMProvider(BaseLogger):
         self.logger.setLevel(logging.DEBUG)
 
     def ensure_sbom(self, repo_dir: str, repo: dict) -> str:
+
+        self.logger.info(f"Starting ensure_sbom for {repo['repo_id']}")
+
         sbom_path = os.path.join(repo_dir, "sbom.json")
         lock_path = sbom_path + ".lock"
 
