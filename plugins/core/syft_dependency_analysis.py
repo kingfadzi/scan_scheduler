@@ -20,7 +20,7 @@ class SyftDependencyAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
-        self.sbom_provider = SBOMProvider(logger=self.logger, run_id=self.run_id)
+        self.sbom_provider = SBOMProvider(logger=logger, run_id=run_id)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
