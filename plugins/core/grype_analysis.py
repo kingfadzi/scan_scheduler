@@ -3,8 +3,7 @@ import os
 import json
 from sqlalchemy.dialects.postgresql import insert
 
-from plugins.core.gradle_sbom_generator import GradleSbomGenerator
-from plugins.java.java_helper import is_gradle_project, has_gradle_lockfile, is_maven_project
+from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, GrypeResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
@@ -20,23 +19,11 @@ class GrypeAnalyzer(BaseLogger):
         self.sbom_provider = SBOMProvider(logger=self.logger, run_id=self.run_id) 
 
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
-    def run_analysis(self, repo_dir, repo, prepare_maven_project=None):
+    def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
+     
+        sbom_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
-        prep_step = None
-
-        if is_gradle_project(repo_dir):
-            if not has_gradle_lockfile(repo_dir):
-                self.logger.info(f"Gradle project detected without lockfile for repo_id: {repo['repo_id']}. Using GradleSbomGenerator.")
-                gradle_sbom_generator = GradleSbomGenerator(logger=self.logger, run_id=self.run_id)
-                prep_step = lambda repo_dir: gradle_sbom_generator.run_analysis(repo_dir, repo)
-        elif is_maven_project(repo_dir):
-            self.logger.info(f"Maven project detected for repo_id: {repo['repo_id']}. Preparing effective-pom.")
-            prep_step = prepare_maven_project
-
-
-        sbom_file_path = self.sbom_provider.get_sbom_path(repo_dir=repo_dir, repo=repo, prep_step=prep_step)
-        
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
 
         # Check if the SBOM file exists
@@ -233,4 +220,3 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")
-
