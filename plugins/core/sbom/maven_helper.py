@@ -11,10 +11,7 @@ def prepare_maven_project(repo_dir: str, logger=None):
     """
     if not os.path.exists(repo_dir):
         msg = f"Directory does not exist: {repo_dir}"
-        if logger:
-            logger.error(msg)
-        else:
-            logging.error(msg)
+        log_error(logger, msg)
         raise FileNotFoundError(msg)
 
     command = [
@@ -44,11 +41,19 @@ def prepare_maven_project(repo_dir: str, logger=None):
     except FileNotFoundError:
         log_warning(logger, "Maven executable not found. Is Maven installed and in PATH?")
     except CalledProcessError as e:
-        log_warning(logger, f"Maven command failed: {e.stderr.strip()}")
+        error_msg = e.stderr.strip() or e.stdout.strip()
+        debug_info = {
+            'command': ' '.join(e.cmd),
+            'returncode': e.returncode,
+            'stdout': e.stdout.strip(),
+            'stderr': e.stderr.strip()
+        }
+        log_msg = f"Maven command failed: {error_msg}" if error_msg else "Maven failed with no output"
+        log_warning(logger, f"{log_msg} | Debug: {debug_info}")
     except TimeoutExpired as e:
-        log_warning(logger, f"Maven command timed out after {e.timeout} seconds.")
+        log_warning(logger, f"Maven command timed out after {e.timeout} seconds. Partial output: {e.output.strip()}")
 
-# --- Small helpers to fallback logging ---
+# --- Logging helpers with fallback ---
 def log_info(logger, message):
     if logger:
         logger.info(message)
@@ -66,3 +71,9 @@ def log_warning(logger, message):
         logger.warning(message)
     else:
         logging.warning(message)
+
+def log_error(logger, message):
+    if logger:
+        logger.error(message)
+    else:
+        logging.error(message)
