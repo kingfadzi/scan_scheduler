@@ -4,11 +4,12 @@ import yaml
 import re
 import logging
 from pprint import pprint
+from datetime import datetime
 
 from config.config import Config
 from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
-from shared.models import Session
+from shared.models import Session, IacComponent  # IacComponent must be defined in shared.models
 
 class IaCScanner(BaseLogger):
     def __init__(self, logger=None, run_id=None):
@@ -59,7 +60,7 @@ class IaCScanner(BaseLogger):
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except Exception:
-            return False  # unreadable file
+            return False  # Unreadable file
         for pattern in framework["content_patterns"]:
             if re.search(pattern, content, flags=re.MULTILINE | re.IGNORECASE):
                 return True
@@ -89,6 +90,37 @@ class IaCScanner(BaseLogger):
                     "matches": matches
                 })
         return all_detections
+
+    def store_detections(self, detections, repo, session):
+        """
+        Delete all existing rows for the given repo_id, insert all new detections,
+        and commit the transaction. Rollback on exception.
+        """
+        try:
+            # Delete existing records for repo_id
+            deleted = session.query(IacComponent).filter(IacComponent.repo_id == repo.get("repo_id")).delete()
+            self.logger.info(f"Deleted {deleted} existing records for repo_id: {repo.get('repo_id')}")
+            
+            # Insert new detection records
+            for item in detections:
+                file_path = item.get("file")
+                for match in item.get("matches", []):
+                    component = IacComponent(
+                        repo_id=repo.get("repo_id"),
+                        repo_slug=repo.get("repo_slug"),
+                        repo_name=repo.get("repo_name"),
+                        file_path=file_path,
+                        category=match.get("category"),
+                        subcategory=match.get("subcategory"),
+                        framework=match.get("framework"),
+                        scan_timestamp=datetime.utcnow()
+                    )
+                    session.add(component)
+            session.commit()
+            self.logger.info(f"Stored {len(detections)} detection records to the database for repo {repo.get('repo_id')}.")
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Error storing detections for repo {repo.get('repo_id')}: {e}")
 
     @analyze_execution(session_factory=Session, stage="IaC Scan")
     def run_analysis(self, repo_dir, repo):
@@ -125,14 +157,15 @@ if __name__ == "__main__":
 
     try:
         analyzer.logger.info(f"Starting standalone IaC scan for repo_id: {repo['repo_id']}")
-        result = analyzer.run_analysis(repo_dir, repo=repo)
+        detections = analyzer.run_analysis(repo_dir, repo=repo)
 
-        # Instead of JSON, we print the Python list of detections
-        if isinstance(result, list):
-            pprint(result)
-        else:
-            analyzer.logger.info(result)
+        # Print the detections as a list for easy inspection
+        from pprint import pprint
+        pprint(detections)
 
+        # Store detections in the database (delete old ones first)
+        if detections:
+            analyzer.store_detections(detections, repo, session)
     except Exception as e:
         analyzer.logger.error(f"Error during standalone IaC scan: {e}")
     finally:
