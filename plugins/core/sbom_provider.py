@@ -4,6 +4,9 @@ from filelock import FileLock
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
+from pathlib import Path
+
+EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
 
 class SBOMProvider(BaseLogger):
     def __init__(self, logger=None, run_id=None):
@@ -65,3 +68,6 @@ class SBOMProvider(BaseLogger):
                 raise RuntimeError(error_message)
 
         return sbom_path
+
+
+

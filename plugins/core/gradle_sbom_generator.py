@@ -10,9 +10,24 @@ from shared.base_logger import BaseLogger
 class GradleSbomGenerator(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
     DEPENDENCY_PATTERNS = [
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation|compileOnly|annotationProcessor)\s*?\s*['\"]([^'\"]+:[^'\"]+:[^'\"]+)['\"]\s*?",
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation|compileOnly|annotationProcessor)\s*?\s*group\s*:\s*['\"](.*?)['\"],\s*name\s*:\s*['\"](.*?)['\"],\s*version\s*:\s*['\"](.*?)['\"]\s*?"
+
+        r"""(?x)
+        (?:implementation|api|compile|runtimeOnly|
+        testImplementation|compileOnly|annotationProcessor)
+        \s*\(?\s*['"](?P<coord>[^'":]+:[^'":]+(:[^'"]+)?)['"]\s*\)?
+        """,
+
+        r"""(?x)
+        (?:implementation|api|compile|runtimeOnly|
+        testImplementation|compileOnly|annotationProcessor)
+        \s+\{\s*
+            group\s*:\s*['"](?P<group>[^'"]+)['"]\s*,\s*
+            name\s*:\s*['"](?P<name>[^'"]+)['"]\s*
+            (?:,\s*version\s*:\s*['"](?P<version>[^'"]+)['"])?\s*
+        \}
+        """
     ]
+
 
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
@@ -104,59 +119,96 @@ class GradleSbomGenerator(BaseLogger):
                     self.logger.warning(f"Skipping invalid dependency: {str(e)}")
         return deps
 
-    def _parse_map_style(self, match) -> Dict:
+    def _parse_string_style(self, match) -> Dict:
+        coord = match.group("coord")
+        parts = coord.split(':')
+
+        version = "unknown"
+        if len(parts) >= 3:
+            version = parts[-1]
+            group = ':'.join(parts[0:-2])  # Handle group with colons
+            artifact = parts[-2]
+        elif len(parts) == 2:
+            group, artifact = parts
+        else:
+            raise ValueError(f"Invalid dependency format: {coord}")
+
         return {
-            'group': match.group(1).strip(),
-            'artifact': match.group(2).strip(),
-            'version': match.group(3).strip()
+            'group': group.strip(),
+            'artifact': artifact.strip(),
+            'version': version.strip()
         }
 
-    def _parse_string_style(self, match) -> Dict:
-        parts = match.group(1).split(':')
-        if len(parts) < 3:
-            raise ValueError(f"Invalid dependency: {match.group(1)}")
+    def _parse_map_style(self, match) -> Dict:
         return {
-            'group': parts[0].strip(),
-            'artifact': parts[1].strip(),
-            'version': parts[2].strip()
+            'group': match.group("group").strip(),
+            'artifact': match.group("name").strip(),
+            'version': match.group("version").strip() if match.group("version") else "unknown"
         }
+
 
     def _generate_sbom(self, repo_dir: str, repo: dict, dependencies: List[Dict]) -> str:
         sbom_path = os.path.join(repo_dir, "sbom.json")
 
-        artifacts = []
-        for dep in dependencies:
-            try:
-                purl = f"pkg:maven/{dep['group']}/{dep['artifact']}@{dep['version']}"
-                artifact_entry = {
-                    "name": dep['artifact'],
-                    "version": dep['version'],
-                    "type": "library",
-                    "purl": purl
-                }
-                artifacts.append(artifact_entry)
-            except Exception as e:
-                self.logger.warning(f"Skipping invalid dependency entry: {dep}: {str(e)}")
-
         sbom_data = {
-            "artifacts": artifacts,
+            "artifacts": [],
             "source": {
-                "type": "gradle-project",
-                "name": repo["repo_name"]
+                "type": "directory",
+                "target": {
+                    "path": repo_dir,
+                    "type": "application",
+                    "name": repo["repo_name"]
+                }
             },
             "distro": {},
             "descriptor": {
-                "name": "generated-gradle-sbom",
-                "version": "0.0.1"
+                "name": "gradle-sbom-generator",
+                "version": "0.1.0",
+                "configuration": {
+                    "excludePatterns": list(self.EXCLUDE_DIRS)
+                }
             },
-            "schema": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-1.0.1.json"
+            "schema": {
+                "version": "16.0.24",
+                "url": "https://raw.githubusercontent.com/anchore/syft/main/schema/json/schema-16.0.24.json"
+            }
         }
 
+        for dep in dependencies:
+            try:
+                artifact_entry = {
+                    "type": "library",
+                    "name": dep['artifact'],
+                    "version": dep['version'] if dep['version'] != "unknown" else None,
+                    "language": "java",
+                    "locations": [
+                        {
+                            "path": f"pkg:gradle/{dep['group']}/{dep['artifact']}",
+                            "annotations": {
+                                "scope": "dependencies"
+                            }
+                        }
+                    ],
+                    "purl": f"pkg:maven/{dep['group']}/{dep['artifact']}" +
+                            (f"@{dep['version']}" if dep['version'] != "unknown" else ""),
+                    "metadata": {
+                        "gradle": {
+                            "configuration": dep.get('configuration', 'implementation'),
+                            "group": dep['group']
+                        }
+                    },
+                    "licenses": []
+                }
+                sbom_data["artifacts"].append(artifact_entry)
+            except Exception as e:
+                self.logger.warning(f"Skipping invalid entry: {dep}: {str(e)}")
+
         with open(sbom_path, "w") as f:
-            json.dump(sbom_data, f, indent=2)
+            json.dump(sbom_data, f, indent=2, default=lambda o: None)
 
         return sbom_path
-        
+
+
 import sys
 import os
 
