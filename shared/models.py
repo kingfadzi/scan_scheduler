@@ -266,6 +266,6 @@ class IacComponent(Base):
     category = Column(String(255), nullable=False)
     subcategory = Column(String(255), nullable=False)
     framework = Column(String(255), nullable=False)
-    scan_timestamp = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    scan_timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     
