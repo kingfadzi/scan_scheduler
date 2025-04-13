@@ -10,10 +10,9 @@ from shared.base_logger import BaseLogger
 class GradleSbomGenerator(BaseLogger):
     EXCLUDE_DIRS = {'.gradle', 'build', 'out', 'target', '.git', '.idea', '.settings', 'bin'}
     DEPENDENCY_PATTERNS = [
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s+['\"](.*?:.*?:.*?)['\"]",
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation)\s*group:\s*['\"](.*?)['\"],\s*name:\s*['\"](.*?)['\"],\s*version:\s*['\"](.*?)['\"]",
-        r"(?:implementation|api|compile|runtimeOnly|testImplementation)[\s\n]*\"(.*?)\""
-    ]
+        r"(?:implementation|api|compile|runtimeOnly|testImplementation|compileOnly|annotationProcessor)\s*?['\"](.*?:.*?:.*?)['\"]?",
+        r"(?:implementation|api|compile|runtimeOnly|testImplementation|compileOnly|annotationProcessor)\s*?\s*group\s*:\s*['\"](.*?)['\"],\s*name\s*:\s*['\"](.*?)['\"],\s*version\s*:\s*['\"](.*?)['\"]\s*?"
+        ]
 
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
