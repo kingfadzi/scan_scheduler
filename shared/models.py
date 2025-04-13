@@ -246,7 +246,7 @@ class SyftDependency(Base):
     id = Column(String, primary_key=True)
     repo_id = Column(String, nullable=False)
     package_name = Column(String, nullable=False)
-    version = Column(String, nullable=False)
+    version = Column(String)
     package_type = Column(String, nullable=False)
     licenses = Column(Text)
     locations = Column(Text)
