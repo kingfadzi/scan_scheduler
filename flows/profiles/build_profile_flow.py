@@ -9,6 +9,7 @@ from shared.models import Session
 from flows.profiles.helpers import extract_runtime_version, classify_repo, infer_build_tool, DateSafeJSONEncoder
 from prefect.cache_policies import NO_CACHE
 from shared.repo_profile_cache import RepoProfileCache
+from shared.models import Session, IacComponent
 from shared.models import (
     Repository, RepoMetrics, LizardSummary, ClocMetric, BuildTool,
     GoEnryAnalysis, SyftDependency, GrypeResult, TrivyVulnerability,
@@ -62,32 +63,29 @@ async def fetch_semgrep(repo_id: str):
 @task
 async def fetch_modernization_signals(repo_id: str):
     with Session() as session:
-        dockerfile_present = session.query(GoEnryAnalysis).filter(
-            func.lower(GoEnryAnalysis.language) == "dockerfile"
-        ).filter_by(repo_id=repo_id).first()
+   
+        dockerfile_present = session.query(IacComponent).filter(
+            IacComponent.repo_id == repo_id,
+            IacComponent.framework.in_(["Dockerfile", "docker-compose"])
+        ).first()
+  
+        cicd_pipeline_present = session.query(IacComponent).filter(
+            IacComponent.repo_id == repo_id,
+            IacComponent.category == "Developer Platform and CI/CD"
+        ).first()
 
-        iac_check = session.query(CheckovSummary).filter(
-            CheckovSummary.repo_id == repo_id,
-            CheckovSummary.check_type.in_([
-                "cloudformation", "terraform", "terraform_plan", "kubernetes", "helm", "kustomize"
+        iac_config_present = session.query(IacComponent).filter(
+            IacComponent.repo_id == repo_id,
+            IacComponent.category.in_([
+                "Infrastructure Platform",
+                "Container Platform"
             ])
         ).first()
 
-        cicd_check = session.query(CheckovSummary).filter(
-            CheckovSummary.repo_id == repo_id,
-            CheckovSummary.check_type.in_(["gitlab_ci", "bitbucket_pipelines"])
-        ).first()
-
-        secrets_check = session.query(CheckovSummary).filter(
-            CheckovSummary.repo_id == repo_id,
-            CheckovSummary.check_type == "secrets"
-        ).first()
-
         return {
-            "Dockerfile": dockerfile_present is not None,
-            "IaC Config Present": iac_check is not None,
-            "CI/CD Present": cicd_check is not None,
-            "Hardcoded Secrets Found": secrets_check.failed if secrets_check else 0,
+            "Dockerfile Present": dockerfile_present is not None,
+            "CI/CD Pipeline Present": cicd_pipeline_present is not None,
+            "IaC Config Present": iac_config_present is not None,
         }
 
 
