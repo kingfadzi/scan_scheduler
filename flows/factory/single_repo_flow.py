@@ -6,7 +6,7 @@ import asyncio
 from typing import Dict
 from flows.factory.flow_config import FlowConfig
 from flows.tasks.base_tasks import clone_repository_task, cleanup_repo_task, update_status_task
-from flows.tasks.registry import task_registry
+from flows.tasks.registry.task_registry import task_registry
 
 METRIC_TASKS = [
     "core.lizard",
