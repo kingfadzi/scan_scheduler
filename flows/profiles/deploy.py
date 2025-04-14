@@ -7,7 +7,8 @@ os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
-    branch=Config.FLOW_GIT_BRANCH,
+    #branch=Config.FLOW_GIT_BRANCH,
+    branch="sboms"
 )
 
 DEPLOYMENT_VERSION = "1.0.0"

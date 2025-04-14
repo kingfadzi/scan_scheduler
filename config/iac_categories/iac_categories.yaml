@@ -224,7 +224,7 @@ categories:
               - 'services:\s*\n\s+[\w-]+:'
       - name: "Kubernetes Orchestration"
         frameworks:
-          - name: "Kubernetes Clusters (EKS, AKS, GKE)"
+          - name: "Kubernetes Clusters"
             file_patterns:
               - '\.yaml$'
               - '\.yml$'
