@@ -9,7 +9,8 @@ os.environ["GIT_SSH_COMMAND"] = "ssh -o StrictHostKeyChecking=no"
 # Define Git-backed storage so flows are loaded from git repository
 git_storage = GitRepository(
     url=Config.FLOW_GIT_STORAGE,
-    branch=Config.FLOW_GIT_BRANCH,  # Use the desired branch
+    #branch=Config.FLOW_GIT_BRANCH,  # Use the desired branch
+    branch="sboms"
 )
 
 DEPLOYMENT_VERSION = "3.2.1"

@@ -1,4 +1,4 @@
-from config.config import Config
+    from config.config import Config
 from tasks.registry import task_registry
 import asyncio
 from datetime import datetime
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
                 "activity_status": ['ACTIVE'],
-                # "main_language": ["Python"]  # Uncomment if needed
-            }
+                "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
+        }
         }
     ))

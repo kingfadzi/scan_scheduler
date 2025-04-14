@@ -57,3 +57,5 @@ class Config:
     DEFAULT_PROCESSING_BATCH_WORKERS = int(os.getenv("DEFAULT_PROCESSING_BATCH_WORKERS", 2))
     DEFAULT_PER_BATCH_WORKERS = int(os.getenv("DEFAULT_PER_BATCH_WORKERS", 5))
     DEFAULT_TASK_CONCURRENCY = int(os.getenv("DEFAULT_TASK_CONCURRENCY", 3))
+
+    IAC_RULES_PATH = os.getenv("IAC_RULES_PATH", "config/iac_categories")

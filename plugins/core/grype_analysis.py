@@ -1,15 +1,11 @@
 import subprocess
-import os
-import json
-from sqlalchemy.dialects.postgresql import insert
 
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, GrypeResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
-from plugins.core.sbom_provider import SBOMProvider
+from plugins.core.sbom.sbom_provider import SBOMProvider
 
 class GrypeAnalyzer(BaseLogger):
 
@@ -21,9 +17,9 @@ class GrypeAnalyzer(BaseLogger):
     @analyze_execution(session_factory=Session, stage="Grype Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Grype analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
+     
+        sbom_file_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
-        sbom_file_path = self.sbom_provider.get_sbom_path(repo_dir=repo_dir, repo=repo)
-        
         grype_file_path = os.path.join(repo_dir, "grype-results.json")
 
         # Check if the SBOM file exists
@@ -220,4 +216,3 @@ if __name__ == "__main__":
     finally:
         session.close()
         analyzer.logger.info(f"Database session closed for repo_id: {repo['repo_id']}")
-

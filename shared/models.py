@@ -246,7 +246,7 @@ class SyftDependency(Base):
     id = Column(String, primary_key=True)
     repo_id = Column(String, nullable=False)
     package_name = Column(String, nullable=False)
-    version = Column(String, nullable=False)
+    version = Column(String)
     package_type = Column(String, nullable=False)
     licenses = Column(Text)
     locations = Column(Text)
@@ -254,3 +254,18 @@ class SyftDependency(Base):
     category = Column(String)
     sub_category = Column(String)
     framework = Column(String)
+
+class IacComponent(Base):
+    __tablename__ = "iac_components"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    repo_id = Column(String(255), nullable=False)
+    repo_slug = Column(String(255), nullable=False)
+    repo_name = Column(String(255), nullable=False)
+    file_path = Column(String(1024), nullable=False)
+    category = Column(String(255), nullable=False)
+    subcategory = Column(String(255), nullable=False)
+    framework = Column(String(255), nullable=False)
+    scan_timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    

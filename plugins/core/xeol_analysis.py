@@ -1,20 +1,20 @@
 import subprocess
-import os
 import json
-from sqlalchemy.dialects.postgresql import insert
 
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, XeolResult
 from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
+from plugins.core.sbom.sbom_provider import SBOMProvider
+
 
 class XeolAnalyzer(BaseLogger):
 
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+        self.sbom_provider = SBOMProvider(logger=self.logger, run_id=self.run_id) 
 
     @analyze_execution(session_factory=Session, stage="Xeol Analysis")
     def run_analysis(self, repo_dir, repo, run_id=None):
@@ -22,19 +22,13 @@ class XeolAnalyzer(BaseLogger):
         self.logger.info(f"Repo slug: {repo['repo_slug']}.")
         self.logger.info(f"Starting Xeol analysis for repo_id: {repo['repo_id']}.")
 
-        syft_analyzer = SyftAnalyzer(
-            logger=self.logger,
-            run_id=self.run_id
-        )
-
-        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
+        sbom_file_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
         if not os.path.exists(repo_dir):
             error_message = f"Repository directory does not exist: {repo_dir}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
-
-        sbom_file_path = os.path.join(repo_dir, "sbom.json")
+      
         if not os.path.exists(sbom_file_path):
             error_message = f"SBOM file does not exist: {sbom_file_path}"
             self.logger.error(error_message)

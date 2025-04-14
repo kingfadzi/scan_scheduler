@@ -1,17 +1,11 @@
-import hashlib
-import subprocess
-import os
 import json
 import logging
 import uuid
 
-from sqlalchemy.dialects.postgresql import insert
-
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.models import Session, SyftDependency
 from shared.execution_decorator import analyze_execution
-from config.config import Config
 from shared.base_logger import BaseLogger
+from plugins.core.sbom.sbom_provider import SBOMProvider
 
 
 class SyftDependencyAnalyzer(BaseLogger):
@@ -19,19 +13,15 @@ class SyftDependencyAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+        self.sbom_provider = SBOMProvider(logger=logger, run_id=run_id)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting dependency analysis for repo_id: {repo['repo_id']} (repo slug: {repo['repo_slug']}).")
 
-        syft_analyzer = SyftAnalyzer(
-            logger=self.logger,
-            run_id=self.run_id
-        )
+        sbom_file_path = self.sbom_provider.ensure_sbom(repo_dir, repo)
 
-        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
-
-        sbom_file_path = os.path.join(repo_dir, "sbom.json")
+        self.logger.info(f"sbom_file_path for repo_id: {repo['repo_id']} : {sbom_file_path}).")
 
         if not os.path.exists(sbom_file_path):
             error_message = f"SBOM file not found for repository {repo['repo_name']} at path: {sbom_file_path}"

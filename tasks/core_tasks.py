@@ -2,6 +2,7 @@ from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from plugins.core.category_analysis import CategoryAnalyzer
 from plugins.core.checkov_analysis import CheckovAnalyzer
+from plugins.core.iac_analysis import IacComponentAnalyzer
 from plugins.core.semgrep_analysis import SemgrepAnalyzer
 from plugins.core.gitlog_analysis import GitLogAnalyzer
 from plugins.core.go_enry_analysis import GoEnryAnalyzer
@@ -13,6 +14,8 @@ from plugins.core.grype_analysis import GrypeAnalyzer
 from plugins.core.xeol_analysis import XeolAnalyzer
 
 from plugins.core.syft_dependency_analysis import SyftDependencyAnalyzer
+from shared.models import IacComponent
+
 
 @task(name="Category Analysis Task", cache_policy=NO_CACHE)
 async def run_catgeory_analysis_task(run_id):
@@ -157,4 +160,16 @@ async def run_syft_dependency_analysis_task(repo_dir, repo, run_id):
         logger.info(f"[Component Patterns] Completed Syft dependency analysis for repository: {repo['repo_id']}")
     except Exception as exc:
         logger.exception("Error during Syft dependency analysis")
+        raise exc
+
+@task(name="Run IaC Component Analysis Task", cache_policy=NO_CACHE)
+async def run_iac_component_analysis_task(repo_dir, repo, run_id):
+    logger = get_run_logger()
+    try:
+        logger.info(f"[Iac Components] Starting IaC component analysis for repository: {repo['repo_id']}")
+        analyzer = IacComponentAnalyzer(logger=logger, run_id=run_id)
+        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
+        logger.info(f"[Iac Components] Completed IaC component analysis for repository: {repo['repo_id']}")
+    except Exception as exc:
+        logger.exception("Error during IaC component analysis")
         raise exc

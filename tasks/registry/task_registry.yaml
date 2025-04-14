@@ -19,6 +19,7 @@ core:
   gitlog: tasks.core_tasks.run_gitlog_task
   goenry: tasks.core_tasks.run_goenry_task
   syft_dependency: tasks.core_tasks.run_syft_dependency_analysis_task
+  iac_components: tasks.core_tasks.run_iac_component_analysis_task
 
 languages:
   go:

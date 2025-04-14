@@ -1,15 +1,14 @@
-import os
 import json
 import logging
 import subprocess
 import shutil
 
-from sqlalchemy.dialects.postgresql import insert
-from plugins.core.syft_analysis import SyftAnalyzer
 from shared.execution_decorator import analyze_execution
 from shared.models import Session, TrivyVulnerability
 from config.config import Config
 from shared.base_logger import BaseLogger
+from plugins.core.sbom.sbom_provider import SBOMProvider
+
 
 
 class TrivyAnalyzer(BaseLogger):
@@ -17,13 +16,16 @@ class TrivyAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
+        self.sbom_provider = SBOMProvider(logger=self.logger, run_id=self.run_id) 
 
     @analyze_execution(session_factory=Session, stage="Trivy Analysis")
     def run_analysis(self, repo_dir, repo):
         self.logger.info(f"Starting Trivy analysis for repo_id: {repo['repo_id']}")
+        
+        self.sbom_provider.ensure_sbom(repo_dir, repo)
 
         self.prepare_trivyignore(repo_dir)
-        self.generate_sbom(repo_dir, repo)
+        
         self.run_trivy_scan(repo_dir, repo)
         trivy_data = self.parse_trivy_output(repo_dir, repo)
         total_vulnerabilities = self.save_trivy_results(repo['repo_id'], trivy_data)
@@ -41,11 +43,7 @@ class TrivyAnalyzer(BaseLogger):
             except Exception as e:
                 self.logger.error(f"Failed to copy .trivyignore: {e}")
 
-    def generate_sbom(self, repo_dir, repo):
-
-        syft_analyzer = SyftAnalyzer(logger=self.logger, run_id=self.run_id)
-        syft_analyzer.generate_sbom(repo_dir=repo_dir, repo=repo)
-
+    
     def run_trivy_scan(self, repo_dir, repo):
 
         if not os.path.exists(repo_dir):
