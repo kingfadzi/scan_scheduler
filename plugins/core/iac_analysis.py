@@ -11,7 +11,7 @@ from shared.base_logger import BaseLogger
 from shared.execution_decorator import analyze_execution
 from shared.models import Session, IacComponent  # IacComponent must be defined in shared.models
 
-class IaCScanner(BaseLogger):
+class IacComponentAnalyzer(BaseLogger):
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
@@ -138,7 +138,7 @@ class IaCScanner(BaseLogger):
 # --- Main entrypoint (standalone runner) ---
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python iac_scanner.py /path/to/repo_dir")
+        print("Usage: python iac_analysis.py /path/to/repo_dir")
         sys.exit(1)
 
     repo_dir = sys.argv[1]
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         "repo_name": repo_name
     }
 
-    analyzer = IaCScanner(run_id="IAC_STANDALONE_001")
+    analyzer = IacComponentAnalyzer(run_id="IAC_STANDALONE_001")
     session = Session()
 
     try:

@@ -5,7 +5,7 @@ from datetime import datetime
 from flows.factory.main_flow import create_analysis_flow
 
 VALID_SECURITY_TASKS = [
-    "core.checkov",
+    "core.iac_components",
     "core.semgrep"
 ]
 
