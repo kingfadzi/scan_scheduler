@@ -1,4 +1,4 @@
-    from config.config import Config
+from config.config import Config
 from tasks.registry import task_registry
 import asyncio
 from datetime import datetime
