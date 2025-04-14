@@ -92,16 +92,11 @@ class IacComponentAnalyzer(BaseLogger):
         return all_detections
 
     def store_detections(self, detections, repo, session):
-        """
-        Delete all existing rows for the given repo_id, insert all new detections,
-        and commit the transaction. Rollback on exception.
-        """
+
         try:
-            # Delete existing records for repo_id
             deleted = session.query(IacComponent).filter(IacComponent.repo_id == repo.get("repo_id")).delete()
             self.logger.info(f"Deleted {deleted} existing records for repo_id: {repo.get('repo_id')}")
-            
-            # Insert new detection records
+
             for item in detections:
                 file_path = item.get("file")
                 for match in item.get("matches", []):
@@ -134,7 +129,7 @@ class IacComponentAnalyzer(BaseLogger):
 
         self.logger.info(f"Detected IaC/platform components in {len(detections)} files.")
 
-        analyzer.store_detections(detections, repo, session)
+        self.store_detections(detections, repo, session)
 
         return detections
 
