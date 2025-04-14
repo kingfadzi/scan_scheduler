@@ -133,6 +133,9 @@ class IacComponentAnalyzer(BaseLogger):
             return []
 
         self.logger.info(f"Detected IaC/platform components in {len(detections)} files.")
+
+        analyzer.store_detections(detections, repo, session)
+
         return detections
 
 # --- Main entrypoint (standalone runner) ---
@@ -163,9 +166,6 @@ if __name__ == "__main__":
         from pprint import pprint
         pprint(detections)
 
-        # Store detections in the database (delete old ones first)
-        if detections:
-            analyzer.store_detections(detections, repo, session)
     except Exception as e:
         analyzer.logger.error(f"Error during standalone IaC scan: {e}")
     finally:
