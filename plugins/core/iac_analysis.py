@@ -91,7 +91,9 @@ class IacComponentAnalyzer(BaseLogger):
                 })
         return all_detections
 
-    def store_detections(self, detections, repo, session):
+    def store_detections(self, detections, repo):
+
+        session = Session()
 
         try:
             deleted = session.query(IacComponent).filter(IacComponent.repo_id == repo.get("repo_id")).delete()
@@ -129,7 +131,7 @@ class IacComponentAnalyzer(BaseLogger):
 
         self.logger.info(f"Detected IaC/platform components in {len(detections)} files.")
 
-        self.store_detections(detections, repo, session)
+        self.store_detections(detections, repo)
 
         return detections
 
