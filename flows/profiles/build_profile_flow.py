@@ -83,9 +83,9 @@ async def fetch_modernization_signals(repo_id: str):
         ).first()
 
         return {
-            "Dockerfile Present": dockerfile_present is not None,
-            "CI/CD Pipeline Present": cicd_pipeline_present is not None,
-            "IaC Config Present": iac_config_present is not None,
+            "Dockerfile": dockerfile_present is not None,
+            "CI/CD Pipeline": cicd_pipeline_present is not None,
+            "IaC Config": iac_config_present is not None,
         }
 
 
