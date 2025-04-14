@@ -5,7 +5,7 @@ from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
 from flows.factory.flow_config import FlowConfig
-from tasks.base_tasks import fetch_repositories_task, start_task, refresh_views_task
+from flows.tasks.base_tasks import fetch_repositories_task, start_task
 from prefect.client import get_client
 
 

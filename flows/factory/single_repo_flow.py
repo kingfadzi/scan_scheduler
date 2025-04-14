@@ -1,4 +1,3 @@
-import traceback
 from functools import partial
 from prefect.cache_policies import NO_CACHE
 from prefect import flow, task, get_run_logger
@@ -6,8 +5,8 @@ from prefect.context import get_run_context
 import asyncio
 from typing import Dict
 from flows.factory.flow_config import FlowConfig
-from tasks.base_tasks import clone_repository_task, cleanup_repo_task, update_status_task
-from tasks.registry.task_registry import task_registry
+from flows.tasks.base_tasks import clone_repository_task, cleanup_repo_task, update_status_task
+from tasks.registry import task_registry
 
 METRIC_TASKS = [
     "core.lizard",

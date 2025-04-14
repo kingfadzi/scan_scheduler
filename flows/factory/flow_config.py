@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field, validator
-from tasks.registry.task_registry import task_registry
+from tasks.registry import task_registry
 
 class FlowConfig(BaseModel):
     sub_dir: str = Field(..., min_length=1)

@@ -159,12 +159,11 @@ async def assemble_classification_info(repo_metrics, total_loc):
         "Classification Label": classify_repo(repo_metrics.repo_size_bytes, total_loc)
     }
 
-@task(cache_policy=NO_CACHE)
-async def assemble_dependencies_info(session, repo_id, dependencies):
+def assemble_dependencies_info(session, repo_id, dependencies):
     frameworks = [
-        f"{dep.framework.strip()}:{dep.version.strip()}"
+        dep.framework.strip()
         for dep in dependencies
-        if dep.framework and dep.framework.strip() and dep.version and dep.version.strip()
+        if dep.framework and dep.framework.strip()
     ]
 
     return {
@@ -184,7 +183,6 @@ async def assemble_dependencies_info(session, repo_id, dependencies):
         "Build Tool": infer_build_tool(dependencies),
         "Runtime Version": extract_runtime_version(session, repo_id)
     }
-
 
 
 @task
