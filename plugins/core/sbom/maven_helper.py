@@ -5,10 +5,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 import os
 
 def prepare_maven_project(repo_dir: str, logger=None):
-    """
-    Runs 'mvn help:effective-pom' in the given directory to prepare the Maven project.
-    Supports optional injected logger; falls back to default logging if none.
-    """
+
     if not os.path.exists(repo_dir):
         msg = f"Directory does not exist: {repo_dir}"
         log_error(logger, msg)
@@ -53,7 +50,6 @@ def prepare_maven_project(repo_dir: str, logger=None):
     except TimeoutExpired as e:
         log_warning(logger, f"Maven command timed out after {e.timeout} seconds. Partial output: {e.output.strip()}")
 
-# --- Logging helpers with fallback ---
 def log_info(logger, message):
     if logger:
         logger.info(message)

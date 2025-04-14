@@ -55,12 +55,12 @@ class IacComponentAnalyzer(BaseLogger):
 
     def content_matches_framework(self, file_path, framework):
         if not framework.get("content_patterns"):
-            return True  # No content patterns needed
+            return True
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except Exception:
-            return False  # Unreadable file
+            return False
         for pattern in framework["content_patterns"]:
             if re.search(pattern, content, flags=re.MULTILINE | re.IGNORECASE):
                 return True
@@ -135,7 +135,6 @@ class IacComponentAnalyzer(BaseLogger):
 
         return detections
 
-# --- Main entrypoint (standalone runner) ---
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python iac_analysis.py /path/to/repo_dir")
@@ -159,7 +158,6 @@ if __name__ == "__main__":
         analyzer.logger.info(f"Starting standalone IaC scan for repo_id: {repo['repo_id']}")
         detections = analyzer.run_analysis(repo_dir, repo=repo)
 
-        # Print the detections as a list for easy inspection
         from pprint import pprint
         pprint(detections)
 

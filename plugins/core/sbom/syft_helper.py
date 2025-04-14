@@ -2,9 +2,7 @@ import subprocess
 import os
 
 def run_syft(repo_dir: str, output_path: str = None, logger=None):
-    """
-    Runs Syft against the given directory to generate an SBOM.
-    """
+
     if not output_path:
         output_path = os.path.join(repo_dir, "sbom.json")
 

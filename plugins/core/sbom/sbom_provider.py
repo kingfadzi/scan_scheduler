@@ -12,20 +12,13 @@ from plugins.core.sbom.syft_helper import run_syft
 from shared.base_logger import BaseLogger
 
 class SBOMProvider(BaseLogger):
-    """
-    Provides SBOM generation and merging for mixed-technology repositories.
-    Handles Gradle (manual), Maven (effective-pom), and others via Syft.
-    """
 
     def __init__(self, logger=None, run_id=None):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(os.getenv('LOGLEVEL', 'DEBUG'))
 
     def ensure_sbom(self, repo_dir: str, repo: dict) -> str:
-        """
-        Ensures a unified SBOM exists for the given repository.
-        If missing, generates it by handling Gradle, Maven, and other tech stacks appropriately.
-        """
+
         sbom_path = os.path.join(repo_dir, "sbom.json")
         lock_path = os.path.join(repo_dir, "sbom.lock")
 
@@ -89,7 +82,7 @@ class SBOMProvider(BaseLogger):
                 source_counts[sbom_path] = count
     
                 if idx == 0:
-                    base_sbom = sbom_data  # First SBOM (Syft) is base
+                    base_sbom = sbom_data
                 artifacts.extend(sbom_data.get("artifacts", []))
     
         if base_sbom is None:
@@ -112,8 +105,7 @@ class SBOMProvider(BaseLogger):
     
         with open(output_path, "w") as f:
             json.dump(base_sbom, f, indent=2)
-    
-        # --- New logging ---
+
         self.logger.info("Artifact counts from SBOM sources:")
         for path, count in source_counts.items():
             self.logger.info(f"  {os.path.basename(path)}: {count} artifacts")
