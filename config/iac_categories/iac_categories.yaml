@@ -79,7 +79,7 @@ categories:
             content_patterns:
               - 'resource\s+"aws_lambda_function"'
               - 'AWS::Lambda::Function'
-          - name: "Google Cloud Run"
+          - name: "Knative/Serverless"
             file_patterns:
               - '\.yaml$'
             content_patterns:
@@ -222,28 +222,48 @@ categories:
               - 'docker-compose\.ya?ml$'
             content_patterns:
               - 'services:\s*\n\s+[\w-]+:'
+          - name: "Dockerfile"
+            file_patterns:
+              - '(?i).*dockerfile.*'
+            content_patterns:
+              - '^FROM '
+              - '^RUN '
+              - '^EXPOSE \d+'
+          - name: "docker-compose"
+            file_patterns:
+              - '(?i)docker-compose.*\.ya?ml$'
+              - '(?i)compose[-_].*\.ya?ml$'
+            content_patterns:
+              - '^services:'
+              - '\n  [\w-]+:'
+              - 'image: '
       - name: "Kubernetes Orchestration"
         frameworks:
-          - name: "Kubernetes Clusters"
+          - name: "Kubernetes Deployment"
             file_patterns:
-              - '\.yaml$'
-              - '\.yml$'
+              - '\.ya?ml$'
             content_patterns:
               - 'apiVersion:\s+apps/v1\nkind:\s+Deployment'
-              - 'kind:\s+Cluster'
-          - name: "Workload Types (Deployment, StatefulSet, DaemonSet)"
+              - 'kind:\s+Deployment'
+          - name: "StatefulSet"
             file_patterns:
               - '\.yaml$'
             content_patterns:
-              - 'kind:\s+Deployment'
               - 'kind:\s+StatefulSet'
+          - name: "DaemonSet"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
               - 'kind:\s+DaemonSet'
-          - name: "Application Packaging (Helm, Kustomize)"
+          - name: "Helm Charts"
             file_patterns:
               - 'Chart\.yaml$'
-              - 'kustomization\.yaml$'
             content_patterns:
               - 'apiVersion:\s+v2\nname:\s+'
+          - name: "Kustomize"
+            file_patterns:
+              - 'kustomization\.yaml$'
+            content_patterns:
               - 'resources:\s*\n-\s+'
           - name: "OpenShift Templates"
             file_patterns:
@@ -274,12 +294,19 @@ categories:
             content_patterns:
               - 'hosts:'
               - 'tasks:'
-          - name: "Chef"
+          - name: "Chef Infrastructure"
             file_patterns:
               - '\.rb$'
+              - 'metadata\.rb$'
+              - 'Berksfile$'
+              - 'Policyfile\.rb$'
+              - '\.kitchen\.yml$'
             content_patterns:
-              - 'node\.run_list\s+'
-              - 'apt_package\s+"'
+              - 'node\.(run_list|override|default)'
+              - '(apt_package|package|service)\s+["'']'
+              - 'include_recipe\s+["'']'
+              - 'name\s+["''].*["'']\nversion'
+              - 'chef_gem\s+["'']'
           - name: "SaltStack"
             file_patterns:
               - '\.sls$'
@@ -383,12 +410,31 @@ categories:
     subcategories:
       - name: "Logging Systems"
         frameworks:
-          - name: "ELK Stack (Elasticsearch, Logstash, Kibana)"
+          - name: "Elasticsearch Configuration"
             file_patterns:
-              - '\.yaml$'
+              - '\.ya?ml$'
             content_patterns:
-              - 'image:\s+elasticsearch:\d'
-              - 'image:\s+logstash:\d'
+              - 'image:\s+.*elasticsearch[:]'
+              - 'apiVersion:\s+elasticsearch\.k8s\.elastic\.co/v1'
+              - '9200:9200'
+          - name: "Logstash Configuration"
+            file_patterns:
+              - '\.ya?ml$'
+              - 'logstash\.conf$'
+            content_patterns:
+              - 'image:\s+.*logstash[:]'
+              - 'input\s*{'
+              - 'output\s*{'
+
+          - name: "Kibana Configuration"
+            file_patterns:
+              - '\.ya?ml$'
+              - 'kibana\.yml$'
+            content_patterns:
+              - 'image:\s+.*kibana[:]'
+              - '5601:5601'
+              - 'elasticsearch\.hosts:.*9200'
+
           - name: "AWS CloudWatch Logs"
             file_patterns:
               - '\.tf$'
@@ -399,6 +445,7 @@ categories:
               - '\.yaml$'
             content_patterns:
               - 'image:\s+grafana/loki:\d'
+              -
       - name: "Metrics and Monitoring Systems"
         frameworks:
           - name: "Prometheus"
@@ -495,12 +542,12 @@ categories:
               - 'path\s+"transit/"'
       - name: "Policy as Code Systems"
         frameworks:
-          - name: "Open Policy Agent (OPA)"
+          - name: "Open Policy Agent"
             file_patterns:
               - '\.rego$'
             content_patterns:
               - 'package\s+policy'
-          - name: "AWS Service Control Policies (SCPs)"
+          - name: "AWS Service Control Policies"
             file_patterns:
               - '\.json$'
             content_patterns:
@@ -550,7 +597,7 @@ categories:
               - '\.tf$'
             content_patterns:
               - 'resource\s+"aws_autoscaling_group"'
-          - name: "Kubernetes Horizontal Pod Autoscalers (HPA)"
+          - name: "Kubernetes Horizontal Pod Autoscalers"
             file_patterns:
               - '\.yaml$'
             content_patterns:
