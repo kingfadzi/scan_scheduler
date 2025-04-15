@@ -19,7 +19,7 @@ categories:
               - '\.yaml$'
             content_patterns:
               - 'import pulumi'
-              - 'new pulumi.Config'
+              - 'new pulumi.Config'
           - name: "AWS CloudFormation"
             file_patterns:
               - '\.cfn\.ya?ml$'
@@ -211,17 +211,6 @@ categories:
     subcategories:
       - name: "Container Build and Management"
         frameworks:
-          - name: "Dockerfile"
-            file_patterns:
-              - 'Dockerfile$'
-              - 'Dockerfile\..*'
-            content_patterns:
-              - 'FROM\s+[\w./-]+'
-          - name: "docker-compose"
-            file_patterns:
-              - 'docker-compose\.ya?ml$'
-            content_patterns:
-              - 'services:\s*\n\s+[\w-]+:'
           - name: "Dockerfile"
             file_patterns:
               - '(?i).*dockerfile.*'
@@ -445,7 +434,6 @@ categories:
               - '\.yaml$'
             content_patterns:
               - 'image:\s+grafana/loki:\d'
-              -
       - name: "Metrics and Monitoring Systems"
         frameworks:
           - name: "Prometheus"
