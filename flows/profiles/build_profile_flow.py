@@ -163,7 +163,6 @@ async def assemble_classification_info(repo_metrics, total_loc):
 @task
 async def fetch_iac_frameworks(repo_id: str):
     with Session() as session:
-
         results = (
             session.query(IacComponent.framework)
             .filter_by(repo_id=repo_id)
@@ -172,10 +171,9 @@ async def fetch_iac_frameworks(repo_id: str):
         )
 
         framework_list = [row.framework for row in results if row.framework]
-
         unique_frameworks = sorted(set(framework_list))
 
-        return {"IaC Frameworks": unique_frameworks}
+        return unique_frameworks
 
 
 @task(cache_policy=NO_CACHE)
@@ -293,6 +291,15 @@ async def assemble_semgrep_info(semgrep_findings):
 async def assemble_modernization_info(modernization_signals):
     return {"Modernization Signals": modernization_signals}
 
+
+@task
+async def assemble_iac_frameworks_info(iac_frameworks_raw: dict):
+    frameworks = iac_frameworks_raw.get("IaC Frameworks", [])
+    return {
+        "IaC Frameworks": sorted(set(frameworks)) if frameworks else []
+    }
+
+
 @task
 async def merge_profile_sections(*sections):
     profile = {}
@@ -362,7 +369,7 @@ async def build_profile_flow(repo_id: str):
         eol_results = eol_future.result()
         semgrep_findings = semgrep_future.result()
         modernization_signals = modern_future.result()
-        iac_frameworks_future.result()
+        iac_frameworks_raw = iac_frameworks_future.result()
 
         repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
 
@@ -376,6 +383,7 @@ async def build_profile_flow(repo_id: str):
         eol_info = assemble_eol_info.submit(eol_results)
         semgrep_info = assemble_semgrep_info.submit(semgrep_findings)
         modern_info = assemble_modernization_info.submit(modernization_signals)
+        iac_frameworks_info = assemble_iac_frameworks_info.submit(iac_frameworks_raw)
 
         complete_profile = merge_profile_sections.submit(
             basic_info.result(),
@@ -386,7 +394,8 @@ async def build_profile_flow(repo_id: str):
             security_info.result(),
             eol_info.result(),
             semgrep_info.result(),
-            modern_info.result()
+            modern_info.result(),
+            iac_frameworks_info.result()
         )
 
         cache_profile.submit(repo_id, complete_profile.result()).result()
