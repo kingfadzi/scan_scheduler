@@ -293,11 +293,10 @@ async def assemble_modernization_info(modernization_signals):
 
 
 @task
-async def assemble_iac_frameworks_info(iac_frameworks_raw: dict):
-    frameworks = iac_frameworks_raw.get("IaC Frameworks", [])
-    return {
-        "IaC Frameworks": sorted(set(frameworks)) if frameworks else []
-    }
+async def assemble_iac_frameworks_info(iac_frameworks_raw: list[str]):
+    unique_frameworks = sorted(set(iac_frameworks_raw)) if iac_frameworks_raw else []
+    return {"IaC Frameworks": unique_frameworks}
+
 
 
 @task
