@@ -159,6 +159,25 @@ async def assemble_classification_info(repo_metrics, total_loc):
         "Classification Label": classify_repo(repo_metrics.repo_size_bytes, total_loc)
     }
 
+
+@task
+async def fetch_iac_frameworks(repo_id: str):
+    with Session() as session:
+
+        results = (
+            session.query(IacComponent.framework)
+            .filter_by(repo_id=repo_id)
+            .distinct()
+            .all()
+        )
+
+        framework_list = [row.framework for row in results if row.framework]
+
+        unique_frameworks = sorted(set(framework_list))
+
+        return {"IaC Frameworks": unique_frameworks}
+
+
 @task(cache_policy=NO_CACHE)
 async def assemble_dependencies_info(session, repo_id, dependencies):
     frameworks = [
@@ -333,6 +352,7 @@ async def build_profile_flow(repo_id: str):
         eol_future = fetch_eol.submit(repo_id)
         semgrep_future = fetch_semgrep.submit(repo_id)
         modern_future = fetch_modernization_signals.submit(repo_id)
+        iac_frameworks_future = fetch_iac_frameworks.submit(repo_id)
 
         repo_data = basic_future.result()
         languages = lang_future.result()
@@ -342,6 +362,7 @@ async def build_profile_flow(repo_id: str):
         eol_results = eol_future.result()
         semgrep_findings = semgrep_future.result()
         modernization_signals = modern_future.result()
+        iac_frameworks_future.result()
 
         repository, repo_metrics, build_tool_metadata, lizard_summary = repo_data
 
