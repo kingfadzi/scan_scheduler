@@ -19,8 +19,7 @@ def create_analysis_flow(
         default_processing_batch_size: int,
         default_processing_batch_workers: int,
         default_per_batch_workers: int,
-        default_task_concurrency: int,
-        strategy_type: str
+        default_task_concurrency: int
 ):
     @flow(
         name=flow_name,
@@ -82,8 +81,7 @@ def create_analysis_flow(
                                 config,
                                 current_batch.copy(),
                                 parent_time_str,
-                                batch_counter,
-                                strategy_type
+                                batch_counter
                             )
                         )
                     )
@@ -103,8 +101,7 @@ def create_analysis_flow(
                             config,
                             current_batch,
                             parent_time_str,
-                            batch_counter,
-                            strategy_type
+                            batch_counter
                         )
                     )
                 )
@@ -120,8 +117,7 @@ def create_analysis_flow(
             return {
                 "processed_repos": repo_count,
                 "batches": len(batch_futures),
-                "parent_run_time": parent_time_str,
-                "strategy_type": strategy_type
+                "parent_run_time": parent_time_str
             }
 
         except Exception as e:
@@ -138,8 +134,7 @@ async def submit_batch_subflow(
         config: FlowConfig,
         batch: List[Dict],
         parent_start_time: str,
-        batch_number: int,
-        strategy_type: str 
+        batch_number: int
 ) -> str:
 
     logger = get_run_logger()
@@ -157,8 +152,7 @@ async def submit_batch_subflow(
                 parameters={
                     "config": config.model_dump(),
                     "parent_run_id": config.parent_run_id,
-                    "repos": [json.loads(json.dumps(r, default=str)) for r in batch], 
-                    "strategy_type": strategy_type
+                    "repos": [json.loads(json.dumps(r, default=str)) for r in batch]
                 },
                 name=flow_run_name
             )

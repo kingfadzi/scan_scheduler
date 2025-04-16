@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 
+from config.category_rules.category_rules_loader import RuleLoader
 from shared.models import Session, SyftDependency
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
@@ -14,6 +15,7 @@ class SyftDependencyAnalyzer(BaseLogger):
         super().__init__(logger=logger, run_id=run_id)
         self.logger.setLevel(logging.DEBUG)
         self.sbom_provider = SBOMProvider(logger=logger, run_id=run_id)
+        self.rule_loader = RuleLoader(logger=self.logger)
 
     @analyze_execution(session_factory=Session, stage="Dependency Analysis")
     def run_analysis(self, repo_dir, repo):
@@ -82,6 +84,9 @@ class SyftDependencyAnalyzer(BaseLogger):
                 locations = ", ".join([loc.get("path", "Unknown") for loc in artifact.get("locations", [])])
                 language = artifact.get("language", "Unknown")
 
+                # --- Categorize before saving ---
+                category, sub_category, framework = self.categorize_dependency(package_name, package_type)
+
                 dependency = SyftDependency(
                     id=str(uuid.uuid4()),
                     repo_id=repo_id,
@@ -90,7 +95,10 @@ class SyftDependencyAnalyzer(BaseLogger):
                     package_type=package_type,
                     licenses=licenses,
                     locations=locations,
-                    language=language
+                    language=language,
+                    category=category,
+                    sub_category=sub_category,
+                    framework=framework
                 )
                 session.add(dependency)
                 processed_count += 1
@@ -99,17 +107,30 @@ class SyftDependencyAnalyzer(BaseLogger):
             self.logger.debug(f"Successfully processed {processed_count} dependencies for repo_id: {repo_id}")
             return processed_count
 
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Invalid JSON in SBOM file: {e}")
-            raise
         except Exception as e:
             if session:
                 session.rollback()
-            self.logger.exception(f"Error processing dependencies for repo_id {repo_id}: {e}")
+            self.logger.error(f"Error processing dependencies: {str(e)}", exc_info=True)
             raise
         finally:
             if session:
                 session.close()
+
+
+    def categorize_dependency(self, package_name, package_type):
+
+        if not hasattr(self, "_rules_cache"):
+            self._rules_cache = {}
+        ptype_lower = package_type.lower()
+        if ptype_lower not in self._rules_cache:
+            self._rules_cache[ptype_lower] = self.rule_loader.load_rules(ptype_lower)
+        rules = self._rules_cache[ptype_lower]
+
+        for regex, top_cat, sub_cat, framework in rules:
+            if regex.search(package_name):
+                return top_cat, sub_cat, framework
+        return "Other", "", ""
+
 
 
 import sys

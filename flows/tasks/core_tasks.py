@@ -1,5 +1,6 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
+from plugins.core.category_analysis import CategoryAnalyzer
 from plugins.core.checkov_analysis import CheckovAnalyzer
 from plugins.core.iac_analysis import IacComponentAnalyzer
 from plugins.core.semgrep_analysis import SemgrepAnalyzer
