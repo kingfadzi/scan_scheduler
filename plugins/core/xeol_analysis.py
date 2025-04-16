@@ -6,7 +6,7 @@ from shared.execution_decorator import analyze_execution
 from config.config import Config
 from shared.base_logger import BaseLogger
 import logging
-from plugins.core.sbom.sbom_provider import SBOMProvider
+from plugins.sbom.sbom_provider import SBOMProvider
 
 
 class XeolAnalyzer(BaseLogger):

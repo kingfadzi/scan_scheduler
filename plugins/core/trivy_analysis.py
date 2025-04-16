@@ -7,7 +7,7 @@ from shared.execution_decorator import analyze_execution
 from shared.models import Session, TrivyVulnerability
 from config.config import Config
 from shared.base_logger import BaseLogger
-from plugins.core.sbom.sbom_provider import SBOMProvider
+from plugins.sbom.sbom_provider import SBOMProvider
 
 
 

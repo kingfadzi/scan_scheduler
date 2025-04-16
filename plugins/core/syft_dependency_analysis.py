@@ -6,7 +6,7 @@ from config.category_rules.category_rules_loader import RuleLoader
 from shared.models import Session, SyftDependency
 from shared.execution_decorator import analyze_execution
 from shared.base_logger import BaseLogger
-from plugins.core.sbom.sbom_provider import SBOMProvider
+from plugins.sbom.sbom_provider import SBOMProvider
 
 
 class SyftDependencyAnalyzer(BaseLogger):
