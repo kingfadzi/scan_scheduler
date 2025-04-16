@@ -1,6 +1,5 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-from plugins.core.category_analysis import CategoryAnalyzer
 from plugins.core.checkov_analysis import CheckovAnalyzer
 from plugins.core.iac_analysis import IacComponentAnalyzer
 from plugins.core.semgrep_analysis import SemgrepAnalyzer
@@ -16,18 +15,6 @@ from plugins.core.xeol_analysis import XeolAnalyzer
 from plugins.core.syft_dependency_analysis import SyftDependencyAnalyzer
 from shared.models import IacComponent
 
-
-@task(name="Category Analysis Task", cache_policy=NO_CACHE)
-async def run_catgeory_analysis_task(run_id):
-    logger = get_run_logger()
-    try:
-        logger.info("[Component Patterns] Starting Category analysis")
-        analyzer = CategoryAnalyzer(logger=logger, run_id=run_id)
-        analyzer.run_analysis()
-        logger.info("[Component Patterns] Completed Category analysis.")
-    except Exception as exc:
-        logger.exception("Error during Category analysis")
-        raise exc
 
 @task(name="Run Checkov Analysis Task", cache_policy=NO_CACHE)
 async def run_checkov_analysis_task(repo_dir, repo, run_id):
