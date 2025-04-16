@@ -8,19 +8,9 @@ ALL_TASKS = [
     "core.goenry",
     "core.gitlog",
 
-    "languages.go.build",
-    "languages.java.gradle.build",
-    "languages.java.maven.build",
-    "languages.javascript.build",
-    "languages.python.build",
+    "core.syft_dependency"
 
-    "languages.go.dependencies",
-    "languages.java.gradle.dependencies",
-    "languages.java.maven.dependencies",
-    "languages.javascript.dependencies",
-    "languages.python.dependencies",
-
-    "core.checkov",
+    "core.iac_components",
     "core.semgrep",
 
     "core.trivy",
