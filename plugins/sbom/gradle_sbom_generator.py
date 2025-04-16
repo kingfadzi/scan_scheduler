@@ -64,24 +64,41 @@ class GradleSbomGenerator(BaseLogger):
     def _find_gradle_files(self, root: Path) -> List[Path]:
         self.logger.debug(f"Scanning for Gradle files in: {root}")
         build_files = []
-        
+
+        # Find settings.gradle* files
         settings_files = list(root.glob("settings.gradle*"))
         self.logger.info(f"Found {len(settings_files)} settings files")
-        
+
         module_paths = self._parse_settings_files(settings_files, root)
         search_paths = [root] + module_paths
-        
-        self.logger.debug(f"Searching in {len(search_paths)} locations for build files")
+
+        self.logger.debug(f"Searching in {len(search_paths)} locations for Gradle files")
+
+        search_patterns = [
+            "*.gradle*",
+            "gradle.properties*",
+            "gradle/libs.versions.toml"
+        ]
+
         for path in search_paths:
             self.logger.debug(f"Scanning directory: {path}")
-            for build_file in path.glob("build.gradle*"):
-                if any(part in self.EXCLUDE_DIRS for part in build_file.parts):
-                    self.logger.debug(f"Skipping excluded file: {build_file}")
-                    continue
-                self.logger.info(f"Found build file: {build_file}")
-                build_files.append(build_file)
-        
-        self.logger.debug(f"Total build files found: {len(build_files)}")
+            for pattern in search_patterns:
+                for gradle_file in path.glob(pattern):
+                    if any(part in self.EXCLUDE_DIRS for part in gradle_file.parts):
+                        self.logger.debug(f"Skipping excluded file: {gradle_file}")
+                        continue
+                    self.logger.info(f"Found Gradle file: {gradle_file}")
+                    build_files.append(gradle_file)
+
+        # Also explicitly check gradle/libs.versions.toml in root/gradle directory
+        gradle_dir = root / "gradle"
+        if gradle_dir.exists():
+            version_catalog = gradle_dir / "libs.versions.toml"
+            if version_catalog.exists() and version_catalog not in build_files:
+                self.logger.info(f"Found version catalog file: {version_catalog}")
+                build_files.append(version_catalog)
+
+        self.logger.debug(f"Total Gradle files found: {len(build_files)}")
         return build_files
 
     def _parse_settings_files(self, settings_files: List[Path], root: Path) -> List[Path]:
