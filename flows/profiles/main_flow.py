@@ -33,7 +33,7 @@ async def main_batch_profile_orchestrator_flow(payload: dict):
                             "repo_ids": [r["repo_id"] for r in current_batch],
                             "batch_number": batch_number,
                         },
-                        name=f"batch-{batch_number:04d}"
+                        name=f"build_profiles_batch-{batch_number:04d}"
                     )
                 )
                 batch_futures.append(future)
