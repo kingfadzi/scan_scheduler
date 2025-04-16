@@ -1,10 +1,10 @@
 import asyncio
 
 from config.config import Config
-from flows.profiles.main_flow import main_batch_profile_flow
+from flows.profiles.main_flow import main_batch_profile_orchestrator_flow
 
 if __name__ == "__main__":
-    asyncio.run(main_batch_profile_flow(
+    asyncio.run(main_batch_profile_orchestrator_flow(
         payload={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],

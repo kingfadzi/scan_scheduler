@@ -9,8 +9,8 @@ MAX_PARALLEL_BATCHES = 2
 REPOS_PER_BATCH = 100
 DB_FETCH_BATCH_SIZE = 1000
 
-@flow(name="main_batch_profile_flow", task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
-async def main_batch_profile_flow(payload: dict):
+@flow(name="main_batch_profile_orchestrator_flow", task_runner=ConcurrentTaskRunner(max_workers=MAX_PARALLEL_BATCHES))
+async def main_batch_profile_orchestrator_flow(payload: dict):
     processed = 0
     current_batch = []
     batch_futures = []
