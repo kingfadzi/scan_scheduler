@@ -1,7 +1,7 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from plugins.javascript.javascript_dependencies import JavaScriptDependencyAnalyzer
-from plugins.javascript.javascript_tools import JavaScriptBuildToolAnalyzer
+from plugins.build_tools.javascript_tools import JavaScriptBuildToolAnalyzer
 
 
 @task(name="Run JavaScript Dependency Analysis Task", cache_policy=NO_CACHE)

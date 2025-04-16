@@ -2,7 +2,7 @@ from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 
 from plugins.go.go_dependencies import GoDependencyAnalyzer
-from plugins.go.go_tools import GoBuildToolAnalyzer
+from plugins.build_tools.go_tools import GoBuildToolAnalyzer
 
 
 @task(name="Run Go Dependency Analysis Task", cache_policy=NO_CACHE)

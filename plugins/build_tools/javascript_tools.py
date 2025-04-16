@@ -1,9 +1,8 @@
 import os
 import json
 import logging
-from sqlalchemy.dialects.postgresql import insert
-from plugins.javascript.js_utls import detect_js_build_tool
-from shared.models import Session, BuildTool
+from plugins.build_tools.js_utls import detect_js_build_tool
+from shared.models import Session
 from shared.execution_decorator import analyze_execution
 from shared.utils import Utils
 from shared.base_logger import BaseLogger

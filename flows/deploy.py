@@ -57,12 +57,6 @@ DEPLOYMENTS = [
         "fundamentals-pool",
         ["vulnerabilities_flow", f"v{DEPLOYMENT_VERSION}"]
     ),
-     (
-        "flows/categories.py:categories_flow",
-        "categories_flow",
-        "fundamentals-pool",
-        ["categories_flow", f"v{DEPLOYMENT_VERSION}"]
-    ),
     (
         "flows/uber.py:uber_flow",
         "uber_flow",

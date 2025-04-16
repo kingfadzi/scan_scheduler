@@ -1,7 +1,7 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
 from plugins.python.python_dependencies import PythonDependencyAnalyzer
-from plugins.python.python_tools import PythonBuildToolAnalyzer
+from plugins.build_tools.python_tools import PythonBuildToolAnalyzer
 
 
 @task(name="Run Python Dependency Analysis Task", cache_policy=NO_CACHE)
