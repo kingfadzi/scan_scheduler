@@ -38,7 +38,7 @@ uber_flow = create_analysis_flow(
     default_processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
     default_per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
     default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY,
-    strategy_type="repository"
+    strategy_type="clone_and_process"
 )
 
 if __name__ == "__main__":
