@@ -1,0 +1,365 @@
+categories:
+  - name: "Database & Persistence"
+    subcategories:
+      - name: "Database Libraries"
+        frameworks:
+          - name: "SQLAlchemy"
+            patterns:
+              - ".*sqlalchemy.*"
+          - name: "psycopg2"
+            patterns:
+              - ".*psycopg2.*"
+          - name: "MySQLClient"
+            patterns:
+              - ".*mysqlclient.*"
+          - name: "PyMongo"
+            patterns:
+              - ".*pymongo.*"
+          - name: "Cassandra Driver"
+            patterns:
+              - ".*cassandra-driver.*"
+          - name: "Tortoise ORM"
+            patterns:
+              - ".*tortoise-orm.*"
+          - name: "Peewee ORM"
+            patterns:
+              - ".*peewee.*"
+
+  - name: "Messaging & Event Streaming"
+    subcategories:
+      - name: "Messaging Libraries"
+        frameworks:
+          - name: "Kafka"
+            patterns:
+              - ".*kafka.*"
+          - name: "RabbitMQ"
+            patterns:
+              - ".*rabbitmq.*"
+          - name: "Celery"
+            patterns:
+              - ".*celery.*"
+          - name: "Kombu"
+            patterns:
+              - ".*kombu.*"
+          - name: "Pika"
+            patterns:
+              - ".*pika.*"
+
+  - name: "Web & Application Frameworks"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Django"
+            patterns:
+              - ".*django.*"
+          - name: "Flask"
+            patterns:
+              - ".*flask.*"
+          - name: "FastAPI"
+            patterns:
+              - ".*fastapi.*"
+          - name: "Tornado"
+            patterns:
+              - ".*tornado.*"
+          - name: "Pyramid"
+            patterns:
+              - ".*pyramid.*"
+          - name: "Starlette"
+            patterns:
+              - ".*starlette.*"
+          - name: "Sanic"
+            patterns:
+              - ".*sanic.*"
+
+  - name: "Application Servers & Runtime Containers"
+    subcategories:
+      - name: "Runtime Servers"
+        frameworks:
+          - name: "Gunicorn"
+            patterns:
+              - ".*gunicorn.*"
+          - name: "uWSGI"
+            patterns:
+              - ".*uwsgi.*"
+          - name: "Waitress"
+            patterns:
+              - ".*waitress.*"
+
+  - name: "Security & Authentication"
+    subcategories:
+      - name: "Security Libraries"
+        frameworks:
+          - name: "Authlib"
+            patterns:
+              - ".*authlib.*"
+          - name: "PyJWT"
+            patterns:
+              - ".*pyjwt.*"
+          - name: "bcrypt"
+            patterns:
+              - ".*bcrypt.*"
+          - name: "Passlib"
+            patterns:
+              - ".*passlib.*"
+
+  - name: "Caching & In-Memory Data Stores"
+    subcategories:
+      - name: "Caching Libraries"
+        frameworks:
+          - name: "Redis"
+            patterns:
+              - ".*redis.*"
+          - name: "Memcached"
+            patterns:
+              - ".*memcached.*"
+          - name: "Pylibmc"
+            patterns:
+              - ".*pylibmc.*"
+          - name: "Dogpile Cache"
+            patterns:
+              - ".*dogpile\\.cache.*"
+
+  - name: "Logging, Monitoring & Observability"
+    subcategories:
+      - name: "Logging & Monitoring Tools"
+        frameworks:
+          - name: "Loguru"
+            patterns:
+              - ".*loguru.*"
+          - name: "Structlog"
+            patterns:
+              - ".*structlog.*"
+          - name: "Sentry"
+            patterns:
+              - ".*sentry.*"
+          - name: "Prometheus Client"
+            patterns:
+              - ".*prometheus_client.*"
+          - name: "OpenTelemetry"
+            patterns:
+              - ".*opentelemetry.*"
+
+  - name: "Testing, Quality Assurance & Mocking"
+    subcategories:
+      - name: "Testing Libraries"
+        frameworks:
+          - name: "Pytest"
+            patterns:
+              - ".*pytest.*"
+          - name: "Nose"
+            patterns:
+              - ".*nose.*"
+          - name: "Unittest"
+            patterns:
+              - ".*unittest.*"
+          - name: "tox"
+            patterns:
+              - ".*tox.*"
+          - name: "Hypothesis"
+            patterns:
+              - ".*hypothesis.*"
+          - name: "pytest-django"
+            patterns:
+              - ".*pytest-django.*"
+          - name: "pytest-asyncio"
+            patterns:
+              - ".*pytest-asyncio.*"
+
+  - name: "Cloud, Containerization & Orchestration"
+    subcategories:
+      - name: "Cloud & DevOps Tools"
+        frameworks:
+          - name: "Boto3"
+            patterns:
+              - ".*boto3.*"
+          - name: "Google Cloud"
+            patterns:
+              - ".*google-cloud.*"
+          - name: "Azure SDK"
+            patterns:
+              - ".*azure.*"
+          - name: "Docker SDK"
+            patterns:
+              - ".*docker.*"
+          - name: "Kubernetes SDK"
+            patterns:
+              - ".*kubernetes.*"
+          - name: "Moto"
+            patterns:
+              - ".*moto.*"
+          - name: "S3Transfer"
+            patterns:
+              - ".*s3transfer.*"
+
+  - name: "Build, Dependency Management & Deployment Tools"
+    subcategories:
+      - name: "Build Tools"
+        frameworks:
+          - name: "pip"
+            patterns:
+              - ".*pip.*"
+          - name: "Setuptools"
+            patterns:
+              - ".*setuptools.*"
+          - name: "Wheel"
+            patterns:
+              - ".*wheel.*"
+          - name: "Poetry"
+            patterns:
+              - ".*poetry.*"
+          - name: "Flit"
+            patterns:
+              - ".*flit.*"
+          - name: "PBR"
+            patterns:
+              - ".*pbr.*"
+          - name: "pip-tools"
+            patterns:
+              - ".*pip-tools.*"
+
+  - name: "Data Serialization, Transformation & Processing"
+    subcategories:
+      - name: "Serialization & Data Processing"
+        frameworks:
+          - name: "Pandas"
+            patterns:
+              - ".*pandas.*"
+          - name: "NumPy"
+            patterns:
+              - ".*numpy.*"
+          - name: "PyYAML"
+            patterns:
+              - ".*pyyaml.*"
+          - name: "JSON Schema Validator"
+            patterns:
+              - ".*jsonschema.*"
+          - name: "XMLtodict"
+            patterns:
+              - ".*xmltodict.*"
+          - name: "Pydantic"
+            patterns:
+              - ".*pydantic.*"
+          - name: "Marshmallow"
+            patterns:
+              - ".*marshmallow.*"
+          - name: "Cerberus"
+            patterns:
+              - ".*cerberus.*"
+
+  - name: "Networking & Communication"
+    subcategories:
+      - name: "Networking Libraries"
+        frameworks:
+          - name: "Requests"
+            patterns:
+              - ".*requests.*"
+          - name: "HTTPX"
+            patterns:
+              - ".*httpx.*"
+          - name: "urllib3"
+            patterns:
+              - ".*urllib3.*"
+          - name: "AioHTTP"
+            patterns:
+              - ".*aiohttp.*"
+
+  - name: "Utility & Helper Libraries"
+    subcategories:
+      - name: "Utility Libraries"
+        frameworks:
+          - name: "python-dateutil"
+            patterns:
+              - ".*python-dateutil.*"
+          - name: "Click"
+            patterns:
+              - ".*click.*"
+          - name: "pytz"
+            patterns:
+              - ".*pytz.*"
+          - name: "Toolz"
+            patterns:
+              - ".*toolz.*"
+          - name: "Boltons"
+            patterns:
+              - ".*boltons.*"
+          - name: "Rich"
+            patterns:
+              - ".*rich.*"
+          - name: "Typer"
+            patterns:
+              - ".*typer.*"
+
+  - name: "User Interface & Client-Side"
+    subcategories:
+      - name: "UI Libraries"
+        frameworks:
+          - name: "Tkinter"
+            patterns:
+              - ".*tkinter.*"
+          - name: "PyQt"
+            patterns:
+              - ".*pyqt.*"
+          - name: "Kivy"
+            patterns:
+              - ".*kivy.*"
+          - name: "wxPython"
+            patterns:
+              - ".*wxpython.*"
+
+  - name: "Documentation, Code Generation & Development Tools"
+    subcategories:
+      - name: "Documentation Tools"
+        frameworks:
+          - name: "Sphinx"
+            patterns:
+              - ".*sphinx.*"
+          - name: "MkDocs"
+            patterns:
+              - ".*mkdocs.*"
+          - name: "Pdoc"
+            patterns:
+              - ".*pdoc.*"
+          - name: "Black"
+            patterns:
+              - ".*black.*"
+          - name: "isort"
+            patterns:
+              - ".*isort.*"
+
+  - name: "Analytics, Machine Learning & Big Data"
+    subcategories:
+      - name: "ML & Data Libraries"
+        frameworks:
+          - name: "Scikit-Learn"
+            patterns:
+              - ".*scikit-learn.*"
+          - name: "TensorFlow"
+            patterns:
+              - ".*tensorflow.*"
+          - name: "Keras"
+            patterns:
+              - ".*keras.*"
+          - name: "PyTorch"
+            patterns:
+              - ".*pytorch.*"
+          - name: "Dask"
+            patterns:
+              - ".*dask.*"
+          - name: "PySpark"
+            patterns:
+              - ".*pyspark.*"
+          - name: "XGBoost"
+            patterns:
+              - ".*xgboost.*"
+          - name: "LightGBM"
+            patterns:
+              - ".*lightgbm.*"
+          - name: "Transformers"
+            patterns:
+              - ".*transformers.*"
+          - name: "Sentence-Transformers"
+            patterns:
+              - ".*sentence-transformers.*"
+          - name: "LightAutoML"
+            patterns:
+              - ".*lightautoml.*"

@@ -1,0 +1,282 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+        frameworks:
+          - name: "Micronaut Kubernetes Support"
+            patterns:
+              - ".*micronaut\\.kubernetes.*"
+          - name: "Micronaut Testcontainers Integration"
+            patterns:
+              - ".*micronaut\\.testresources.*testcontainers.*"
+          - name: "Micronaut GraalVM Support"
+            patterns:
+              - ".*micronaut-graal.*"
+
+      - name: "Cloud Platforms"
+        frameworks:
+          - name: "Micronaut AWS Integration"
+            patterns:
+              - ".*micronaut\\.aws.*"
+          - name: "Micronaut GCP Integration"
+            patterns:
+              - ".*micronaut\\.gcp.*"
+          - name: "Micronaut Azure Integration"
+            patterns:
+              - ".*micronaut\\.azure.*"
+          - name: "Micronaut Oracle Cloud Integration"
+            patterns:
+              - ".*micronaut\\.oraclecloud.*"
+
+      - name: "Application Servers"
+        frameworks:
+          - name: "Micronaut HTTP Server"
+            patterns:
+              - ".*micronaut-http-server.*"
+              - ".*micronaut-http-netty.*"
+          - name: "Micronaut Runtime"
+            patterns:
+              - ".*micronaut-runtime.*"
+          - name: "Micronaut Servlet Support"
+            patterns:
+              - ".*micronaut\\.servlet.*"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        frameworks:
+          - name: "Micronaut Data JDBC/JPA/R2DBC/Hibernate"
+            patterns:
+              - ".*micronaut\\.data.*(jdbc|jpa|r2dbc|hibernate|spring-jpa).*"
+          - name: "Micronaut SQL Support"
+            patterns:
+              - ".*micronaut\\.sql:micronaut-jdbc-.*"
+          - name: "Micronaut Jasync Database Integration"
+            patterns:
+              - ".*micronaut\\.jasync.*"
+          - name: "Micronaut Flyway"
+            patterns:
+              - ".*micronaut\\.flyway.*"
+          - name: "Micronaut Liquibase"
+            patterns:
+              - ".*micronaut\\.liquibase.*"
+
+      - name: "NoSQL & Big Data"
+        frameworks:
+          - name: "Micronaut MongoDB Integration"
+            patterns:
+              - ".*micronaut\\.mongodb.*"
+          - name: "Micronaut Redis Integration"
+            patterns:
+              - ".*micronaut\\.redis.*"
+          - name: "Micronaut Cassandra Integration"
+            patterns:
+              - ".*micronaut\\.cassandra.*"
+          - name: "Micronaut Coherence Integration"
+            patterns:
+              - ".*micronaut\\.coherence.*"
+          - name: "Micronaut EclipseStore Integration"
+            patterns:
+              - ".*micronaut\\.eclipsestore.*"
+          - name: "Micronaut Data MongoDB/Cosmos/Redis"
+            patterns:
+              - ".*micronaut\\.data.*(mongodb|cosmos|redis).*"
+
+      - name: "Caching"
+        frameworks:
+          - name: "Micronaut Cache"
+            patterns:
+              - ".*micronaut\\.cache.*"
+          - name: "Micronaut MicroStream Caching"
+            patterns:
+              - ".*micronaut\\.microstream.*"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        frameworks:
+          - name: "Micronaut Kafka Support"
+            patterns:
+              - ".*micronaut\\.kafka.*"
+          - name: "Micronaut RabbitMQ Support"
+            patterns:
+              - ".*micronaut\\.rabbitmq.*"
+          - name: "Micronaut NATS Support"
+            patterns:
+              - ".*micronaut\\.nats.*"
+          - name: "Micronaut MQTT Support"
+            patterns:
+              - ".*micronaut\\.mqtt.*"
+          - name: "Micronaut JMS Support"
+            patterns:
+              - ".*micronaut\\.jms.*"
+
+      - name: "API Gateways & REST/GraphQL"
+        frameworks:
+          - name: "Micronaut HTTP Client/Server"
+            patterns:
+              - ".*micronaut-http.*"
+          - name: "Micronaut GraphQL Support"
+            patterns:
+              - ".*micronaut\\.graphql.*"
+          - name: "Micronaut OpenAPI / Swagger"
+            patterns:
+              - ".*micronaut\\.openapi.*"
+
+      - name: "Event Streaming"
+        frameworks:
+          - name: "Micronaut Pulsar Support"
+            patterns:
+              - ".*micronaut\\.pulsar.*"
+
+      - name: "Networking"
+        frameworks:
+          - name: "Micronaut Discovery & Networking"
+            patterns:
+              - ".*micronaut.*discovery.*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Micronaut WebSocket, Router, Views"
+            patterns:
+              - ".*micronaut-(websocket|router|views).*"
+
+      - name: "Spring: Boot"
+        frameworks: []
+
+      - name: "Spring: Framework"
+        frameworks:
+          - name: "Micronaut Spring Framework Interop"
+            patterns:
+              - ".*micronaut\\.spring.*"
+
+      - name: "Reactive Libraries"
+        frameworks: []
+
+      - name: "Dependency Injection"
+        frameworks:
+          - name: "Micronaut Dependency Injection Core"
+            patterns:
+              - ".*micronaut-(inject|context|aop).*"
+          - name: "Micronaut Guice Integration"
+            patterns:
+              - ".*micronaut\\.guice.*"
+
+      - name: "Template Engines"
+        frameworks:
+          - name: "Micronaut Views (Thymeleaf, Freemarker, Handlebars, Pebble)"
+            patterns:
+              - ".*micronaut\\.views.*(thymeleaf|freemarker|handlebars|pebble).*"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        frameworks:
+          - name: "Micronaut JSON Schema Support"
+            patterns:
+              - ".*micronaut\\.jsonschema.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        frameworks:
+          - name: "Micronaut gRPC"
+            patterns:
+              - ".*micronaut\\.grpc.*"
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        frameworks:
+          - name: "Micronaut Security JWT/OAuth2/LDAP"
+            patterns:
+              - ".*micronaut\\.security.*(jwt|oauth2|ldap).*"
+
+      - name: "Security Layers"
+        frameworks:
+          - name: "Micronaut Session Security"
+            patterns:
+              - ".*micronaut\\.security.*session.*"
+          - name: "Micronaut Vault Integration"
+            patterns:
+              - ".*micronaut\\.vault.*"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        frameworks:
+          - name: "Micronaut Logging"
+            patterns:
+              - ".*micronaut\\.logging.*"
+
+      - name: "Metrics & Distributed Tracing"
+        frameworks:
+          - name: "Micronaut Micrometer Metrics"
+            patterns:
+              - ".*micronaut\\.micrometer.*"
+          - name: "Micronaut Distributed Tracing"
+            patterns:
+              - ".*micronaut\\.tracing.*"
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        frameworks:
+          - name: "Micronaut Build Tools"
+            patterns:
+              - ".*micronaut\\.build.*"
+              - ".*micronaut\\.gradle.*"
+              - ".*micronaut\\.maven.*"
+              - ".*micronaut\\.sourcegen.*"
+
+      - name: "Testing"
+        frameworks:
+          - name: "Micronaut TCK and Test Modules"
+            patterns:
+              - ".*-tck.*"
+              - ".*-test.*"
+              - ".*micronaut\\.test.*"
+
+      - name: "Utilities & Libraries"
+        subcategories:
+          - name: "General-Purpose"
+            frameworks:
+              - name: "Micronaut Core"
+                patterns:
+                  - ".*micronaut-core.*"
+              - name: "Micronaut Validation"
+                patterns:
+                  - ".*micronaut-validation.*"
+              - name: "Micronaut Retry"
+                patterns:
+                  - ".*micronaut-retry.*"
+              - name: "Micronaut Email"
+                patterns:
+                  - ".*micronaut\\.email.*"
+              - name: "Micronaut LangChain4j Integration"
+                patterns:
+                  - ".*micronaut\\.langchain4j.*"
+              - name: "Micronaut Object Storage Integration"
+                patterns:
+                  - ".*micronaut\\.objectstorage.*"
+              - name: "Micronaut Groovy Extensions"
+                patterns:
+                  - ".*micronaut\\.groovy.*"
+              - name: "Micronaut Kotlin Extensions"
+                patterns:
+                  - ".*micronaut\\.kotlin.*"
+
+
+  - name: "Miscellaneous"
+    subcategories:
+      - name: "Other Micronaut Artifacts"
+        frameworks:
+          - name: "Micronaut Chatbots"
+            patterns:
+              - ".*micronaut\\.chatbots.*"
+          - name: "Micronaut JAX-RS Interop"
+            patterns:
+              - ".*micronaut\\.jaxrs.*"
+          - name: "Catch-all for other Micronaut artifacts"
+            patterns:
+              - ".*micronaut.*"

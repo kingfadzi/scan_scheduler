@@ -1,0 +1,139 @@
+categories:
+  - name: "Utilities & Libraries"
+    subcategories:
+
+      - name: "General Purpose"
+        frameworks:
+          - name: "CGLIB"
+            patterns:
+              - ".*cglib.*"
+          - name: "Sun XML, Activation, Mail"
+            patterns:
+              - ".*sun\\.(?:xml|activation|mail).*"
+          - name: "Apache Commons (BeanUtils, Codec, FileUpload, Lang)"
+            patterns:
+              - ".*commons-(beanutils|codec|fileupload|lang).*"
+          - name: "Samskivert Utilities"
+            patterns:
+              - ".*samskivert.*"
+          - name: "SendGrid Java Libraries"
+            patterns:
+              - ".*sendgrid.*"
+          - name: "Picocli"
+            patterns:
+              - ".*picocli.*"
+          - name: "LangChain4j"
+            patterns:
+              - ".*langchain4j.*"
+          - name: "Miku Utilities"
+            patterns:
+              - ".*miku.*"
+          - name: "Cryptomatric"
+            patterns:
+              - ".*cryptomatric.*"
+          - name: "Joda-Time"
+            patterns:
+              - ".*joda-time.*"
+          - name: "ByteBuddy"
+            patterns:
+              - ".*bytebuddy.*"
+          - name: "Loaniq Libraries"
+            patterns:
+              - ".*loaniq\\.lib.*"
+          - name: "Snowdrop Utilities"
+            patterns:
+              - ".*snowdrop.*"
+          - name: "BouncyCastle Crypto"
+            patterns:
+              - ".*bouncycastle.*"
+          - name: "Drools"
+            patterns:
+              - ".*drools.*"
+          - name: "Ultrag Libraries"
+            patterns:
+              - ".*ultrag.*"
+          - name: "JetBrains Kotlin Stdlib"
+            patterns:
+              - ".*kotlin.*"
+          - name: "Javassist"
+            patterns:
+              - ".*javassist.*"
+          - name: "Jsoup"
+            patterns:
+              - ".*jsoup.*"
+          - name: "Jobkia"
+            patterns:
+              - ".*jobkia.*"
+          - name: "MapStruct"
+            patterns:
+              - ".*mapstruct.*"
+          - name: "OptaPlanner"
+            patterns:
+              - ".*optaplanner.*"
+          - name: "OSGi"
+            patterns:
+              - ".*osgi.*"
+          - name: "Quartz Scheduler"
+            patterns:
+              - ".*quartz-scheduler.*"
+          - name: "Objenesis"
+            patterns:
+              - ".*objenesis.*"
+          - name: "OW2 ASM"
+            patterns:
+              - ".*ow2\\.asm.*"
+          - name: "Skyscreamer JSONAssert"
+            patterns:
+              - ".*skyscreamer.*"
+          - name: "WebJars"
+            patterns:
+              - ".*webjars.*"
+          - name: "Tmatesoft Libraries"
+            patterns:
+              - ".*tmatesoft.*"
+          - name: "ProjectionHok"
+            patterns:
+              - ".*projectionhok.*"
+          - name: "Groovy"
+            patterns:
+              - ".*codehaus\\.groovy.*"
+              - "^org\\.codehaus(\\..+)?$"
+          - name: "Plexus"
+            patterns:
+              - ".*codehaus\\.plexus.*"
+          - name: "Eclipse Angus"
+            patterns:
+              - ".*eclipse\\.angus.*"
+          - name: "Guava"
+            patterns:
+              - ".*guava.*"
+          - name: "Apache HttpClient"
+            patterns:
+              - ".*httpclient.*"
+          - name: "Lombok"
+            patterns:
+              - ".*lombok.*"
+          - name: "Vavr"
+            patterns:
+              - ".*vavr.*"
+          - name: "Typesafe Config"
+            patterns:
+              - ".*typesafe.*"
+          - name: "JCommander"
+            patterns:
+              - ".*jcommander.*"
+          - name: "ThreeTen-Extra"
+            patterns:
+              - ".*threeten.*"
+          - name: "Simple XML"
+            patterns:
+              - ".*simple-xml.*"
+          - name: "Everit JSON Schema"
+            patterns:
+              - ".*everit.*"
+          - name: "Apache Commons Lang"
+            patterns:
+              - ".*commons-lang.*"
+          - name: "Apache Commons Math"
+            patterns:
+              - ".*commons-math.*"

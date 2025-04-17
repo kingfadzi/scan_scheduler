@@ -1,0 +1,77 @@
+categories:
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Ktor"
+            patterns:
+              - ".*ktor.*"
+          - name: "Java Template Engine"
+            patterns:
+              - ".*jte.*"
+          - name: "Searchbox"
+            patterns:
+              - ".*searchbox.*"
+          - name: "Specto"
+            patterns:
+              - ".*specto.*"
+          - name: "Grails Framework"
+            patterns:
+              - ".*grails.*"
+          - name: "Vaadin Framework"
+            patterns:
+              - ".*vaadin.*"
+          - name: "Dropwizard"
+            patterns:
+              - ".*dropwizard.*"
+
+      - name: "Reactive Libraries"
+        frameworks:
+          - name: "Project Reactor"
+            patterns:
+              - ".*projectreactor.*"
+          - name: "Reactor Spring Addons"
+            patterns:
+              - ".*projectreactor\\.spring.*"
+          - name: "Reactor Kafka Addons"
+            patterns:
+              - ".*projectreactor\\.kafka.*"
+          - name: "Reactor Netty Addons"
+            patterns:
+              - ".*projectreactor\\.netty.*"
+          - name: "Reactor Addons"
+            patterns:
+              - ".*projectreactor\\.addons.*"
+          - name: "RxJava 2"
+            patterns:
+              - ".*rxjava2.*"
+          - name: "RxJava 3"
+            patterns:
+              - ".*rxjava3.*"
+          - name: "Vert.x"
+            patterns:
+              - ".*vertx.*"
+          - name: "Reactive Streams"
+            patterns:
+              - ".*reactivesteams.*"
+
+      - name: "Dependency Injection"
+        frameworks:
+          - name: "Micronaut Spring Support"
+            patterns:
+              - ".*micronaut-spring.*"
+
+      - name: "Template Engines"
+        frameworks:
+          - name: "QueryDSL"
+            patterns:
+              - ".*querydsl.*"
+          - name: "FreeMarker"
+            patterns:
+              - ".*freemarker.*"
+          - name: "Thymeleaf Extras"
+            patterns:
+              - ".*thymeleaf\\.extras.*"
+          - name: "SpringDoc OpenAPI"
+            patterns:
+              - ".*springdoc.*"

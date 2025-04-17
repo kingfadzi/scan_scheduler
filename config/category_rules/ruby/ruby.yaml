@@ -1,0 +1,185 @@
+categories:
+  - name: "Database & Persistence"
+    subcategories:
+      - name: "Database Libraries"
+        frameworks:
+          - name: "ActiveRecord"
+            patterns:
+              - "activerecord.*"
+          - name: "Sequel"
+            patterns:
+              - "sequel.*"
+          - name: "ROM-RB"
+            patterns:
+              - "rom.*"
+          - name: "Mongoid"
+            patterns:
+              - "mongoid.*"
+          - name: "Datamapper"
+            patterns:
+              - "datamapper.*"
+          - name: "Ohm"
+            patterns:
+              - "ohm.*"
+
+  - name: "Messaging & Event Streaming"
+    subcategories:
+      - name: "Messaging Libraries"
+        frameworks:
+          - name: "Sneakers"
+            patterns:
+              - "sneakers.*"
+          - name: "Racecar"
+            patterns:
+              - "racecar.*"
+          - name: "Karafka"
+            patterns:
+              - "karafka.*"
+          - name: "March Hare"
+            patterns:
+              - "march_hare.*"
+
+  - name: "Web & Application Frameworks"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Rails"
+            patterns:
+              - "rails.*"
+          - name: "Sinatra"
+            patterns:
+              - "sinatra.*"
+          - name: "Hanami"
+            patterns:
+              - "hanami.*"
+          - name: "Padrino"
+            patterns:
+              - "padrino.*"
+          - name: "Grape"
+            patterns:
+              - "grape.*"
+
+  - name: "Security & Authentication"
+    subcategories:
+      - name: "Security Libraries"
+        frameworks:
+          - name: "Devise"
+            patterns:
+              - "devise.*"
+          - name: "OmniAuth"
+            patterns:
+              - "omniauth.*"
+          - name: "Pundit"
+            patterns:
+              - "pundit.*"
+          - name: "CanCanCan"
+            patterns:
+              - "cancancan.*"
+
+  - name: "Caching & In-Memory Data Stores"
+    subcategories:
+      - name: "Caching Libraries"
+        frameworks:
+          - name: "Redis"
+            patterns:
+              - "redis.*"
+          - name: "Dalli"
+            patterns:
+              - "dalli.*"
+          - name: "Memcached"
+            patterns:
+              - "memcached.*"
+
+  - name: "Logging, Monitoring & Observability"
+    subcategories:
+      - name: "Logging Libraries"
+        frameworks:
+          - name: "Lograge"
+            patterns:
+              - "lograge.*"
+          - name: "Bugsnag"
+            patterns:
+              - "bugsnag.*"
+          - name: "Honeybadger"
+            patterns:
+              - "honeybadger.*"
+          - name: "Airbrake"
+            patterns:
+              - "airbrake.*"
+
+  - name: "Testing, Quality Assurance & Mocking"
+    subcategories:
+      - name: "Testing Frameworks"
+        frameworks:
+          - name: "RSpec"
+            patterns:
+              - "rspec.*"
+          - name: "Minitest"
+            patterns:
+              - "minitest.*"
+          - name: "Capybara"
+            patterns:
+              - "capybara.*"
+          - name: "FactoryBot"
+            patterns:
+              - "factory_bot.*"
+          - name: "Shoulda"
+            patterns:
+              - "shoulda.*"
+          - name: "Cucumber"
+            patterns:
+              - "cucumber.*"
+          - name: "VCR"
+            patterns:
+              - "vcr.*"
+          - name: "WebMock"
+            patterns:
+              - "webmock.*"
+
+  - name: "Cloud, Containerization & Orchestration"
+    subcategories:
+      - name: "Cloud SDKs"
+        frameworks:
+          - name: "Fog"
+            patterns:
+              - "fog.*"
+          - name: "AWS SDK"
+            patterns:
+              - "aws-sdk.*"
+          - name: "Google Cloud SDK"
+            patterns:
+              - "google-cloud.*"
+          - name: "Terraform Ruby SDK"
+            patterns:
+              - "terraform.*"
+
+  - name: "Build, Dependency Management & Deployment Tools"
+    subcategories:
+      - name: "Build Tools"
+        frameworks:
+          - name: "Bundler"
+            patterns:
+              - "bundler.*"
+          - name: "Rake"
+            patterns:
+              - "rake.*"
+          - name: "Thor"
+            patterns:
+              - "thor.*"
+
+  - name: "Analytics, Machine Learning & Big Data"
+    subcategories:
+      - name: "Analytics Libraries"
+        frameworks:
+          - name: "Ruby TensorFlow"
+            patterns:
+              - "tensorflow.*"
+          - name: "Statsample"
+            patterns:
+              - "statsample.*"
+          - name: "Daru"
+            patterns:
+              - "daru.*"
+          - name: "RubyPlot"
+            patterns:
+              - "rubyplot.*"

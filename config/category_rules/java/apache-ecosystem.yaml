@@ -1,0 +1,270 @@
+categories:
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "NoSQL & Big Data"
+        frameworks:
+          - name: "HBase"
+            patterns:
+              - ".*hbase.*"
+          - name: "Hive"
+            patterns:
+              - ".*hive.*"
+          - name: "Flume"
+            patterns:
+              - ".*flume.*"
+          - name: "Accumulo"
+            patterns:
+              - ".*accumulo.*"
+          - name: "Omid"
+            patterns:
+              - ".*omid.*"
+          - name: "Oozie"
+            patterns:
+              - ".*oozie.*"
+          - name: "NiFi"
+            patterns:
+              - ".*nifi.*"
+          - name: "Solr"
+            patterns:
+              - ".*solr.*"
+          - name: "Lucene"
+            patterns:
+              - ".*lucene.*"
+          - name: "Derby"
+            patterns:
+              - ".*derby.*"
+          - name: "Parquet"
+            patterns:
+              - ".*parquet.*"
+          - name: "Phoenix"
+            patterns:
+              - ".*phoenix.*"
+          - name: "Pig"
+            patterns:
+              - ".*pig.*"
+          - name: "Spark"
+            patterns:
+              - ".*spark.*"
+          - name: "Sqoop"
+            patterns:
+              - ".*sqoop.*"
+          - name: "Tez"
+            patterns:
+              - ".*tez.*"
+          - name: "Cassandra"
+            patterns:
+              - ".*cassandra.*"
+          - name: "Hadoop"
+            patterns:
+              - ".*hadoop.*"
+
+      - name: "Relational Databases"
+        frameworks:
+          - name: "iBATIS"
+            patterns:
+              - ".*ibatis.*"
+          - name: "OpenJPA"
+            patterns:
+              - ".*openjpa.*"
+          - name: "Sqoop"
+            patterns:
+              - ".*sqoop.*"
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        frameworks:
+          - name: "Kerby"
+            patterns:
+              - ".*kerby.*"
+          - name: "Shiro"
+            patterns:
+              - ".*shiro.*"
+
+      - name: "Authorization & Access Control"
+        frameworks:
+          - name: "Ranger"
+            patterns:
+              - ".*ranger.*"
+          - name: "Sentry"
+            patterns:
+              - ".*sentry.*"
+
+      - name: "Security Layers"
+        frameworks:
+          - name: "BCEL"
+            patterns:
+              - ".*bcel.*"
+
+      - name: "Identity Management"
+        frameworks:
+          - name: "Apache Directory"
+            patterns:
+              - ".*directory.*"
+          - name: "Oltu"
+            patterns:
+              - ".*oltu.*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Click"
+            patterns:
+              - ".*click.*"
+          - name: "Cocoon"
+            patterns:
+              - ".*cocoon.*"
+          - name: "MyFaces"
+            patterns:
+              - ".*myfaces.*"
+          - name: "Wicket"
+            patterns:
+              - ".*wicket.*"
+          - name: "Causeway"
+            patterns:
+              - ".*causeway.*"
+          - name: "Sling"
+            patterns:
+              - ".*sling.*"
+          - name: "Struts"
+            patterns:
+              - ".*struts.*"
+          - name: "Taglibs"
+            patterns:
+              - ".*taglibs.*"
+          - name: "Tuscany"
+            patterns:
+              - ".*tuscany.*"
+
+      - name: "Template Engines"
+        frameworks:
+          - name: "Velocity"
+            patterns:
+              - ".*velocity.*"
+          - name: "Tiles"
+            patterns:
+              - ".*tiles.*"
+
+      - name: "Dependency Injection"
+        frameworks:
+          - name: "XBean"
+            patterns:
+              - ".*xbean.*"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        frameworks:
+          - name: "Axiom"
+            patterns:
+              - ".*axiom.*"
+          - name: "XMLBeans"
+            patterns:
+              - ".*xmlbeans.*"
+          - name: "Abdera"
+            patterns:
+              - ".*abdera.*"
+          - name: "Johnzon"
+            patterns:
+              - ".*johnzon.*"
+          - name: "XMLGraphics"
+            patterns:
+              - ".*xmlgraphics.*"
+          - name: "Xalan"
+            patterns:
+              - ".*xalan.*"
+          - name: "Xerces"
+            patterns:
+              - ".*xerces.*"
+          - name: "XML"
+            patterns:
+              - ".*XML.*"
+          - name: "XML-RPC"
+            patterns:
+              - ".*xmlrpc.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        frameworks:
+          - name: "Thrift"
+            patterns:
+              - ".*thrift.*"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        frameworks:
+          - name: "ActiveMQ"
+            patterns:
+              - ".*activemq.*"
+          - name: "Camel"
+            patterns:
+              - ".*camel.*"
+
+      - name: "Networking"
+        frameworks:
+          - name: "Mina"
+            patterns:
+              - ".*mina.*"
+          - name: "FTPServer"
+            patterns:
+              - ".*ftpserver.*"
+          - name: "SSH"
+            patterns:
+              - ".*ssh.*"
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        frameworks:
+          - name: "Apache Commons"
+            patterns:
+              - ".*commons.*"
+          - name: "Lang3"
+            patterns:
+              - ".*lang3.*"
+          - name: "Codec"
+            patterns:
+              - ".*codec.*"
+          - name: "Jackrabbit"
+            patterns:
+              - ".*jackrabbit.*"
+          - name: "Any23"
+            patterns:
+              - ".*any23.*"
+          - name: "Curator"
+            patterns:
+              - ".*curator.*"
+          - name: "Methi"
+            patterns:
+              - ".*methi.*"
+          - name: "POI"
+            patterns:
+              - ".*poi.*"
+          - name: "OpenNLP"
+            patterns:
+              - ".*opennlp.*"
+          - name: "PDFBox"
+            patterns:
+              - ".*pdfbox.*"
+          - name: "Tika"
+            patterns:
+              - ".*tika.*"
+          - name: "Wooden"
+            patterns:
+              - ".*wooden.*"
+          - name: "SLS"
+            patterns:
+              - ".*sls.*"
+          - name: "Zookeeper"
+            patterns:
+              - ".*zookeeper.*"
+          - name: "Guava"
+            patterns:
+              - ".*guava.*"
+          - name: "Google Code Commons"
+            patterns:
+              - ".*code\\..*"
+          - name: "Groovy"
+            patterns:
+              - ".*groovy.*"

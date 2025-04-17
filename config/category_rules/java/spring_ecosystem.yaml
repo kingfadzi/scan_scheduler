@@ -1,0 +1,437 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Containerization & Orchestration"
+        frameworks:
+          - name: "Spring Cloud Kubernetes"
+            patterns:
+              - ".*springframework\\.cloud\\.kubernetes.*"
+          - name: "Spring Boot Docker"
+            patterns:
+              - ".*springframework\\.boot\\.docker.*"
+
+      - name: "Cloud Platforms"
+        frameworks:
+          - name: "Spring Cloud AWS"
+            patterns:
+              - ".*springframework\\.cloud\\.aws.*"
+          - name: "Spring Cloud Azure"
+            patterns:
+              - ".*springframework\\.cloud\\.azure.*"
+          - name: "Spring Cloud GCP"
+            patterns:
+              - ".*springframework\\.cloud\\.gcp.*"
+          - name: "Spring Cloud Config"
+            patterns:
+              - ".*springframework\\.cloud\\.config.*"
+
+      - name: "Application Servers"
+        frameworks:
+          - name: "Spring Boot Tomcat"
+            patterns:
+              - ".*springframework\\.boot\\.tomcat.*"
+          - name: "Spring Boot Jetty"
+            patterns:
+              - ".*springframework\\.boot\\.jetty.*"
+          - name: "Spring Boot Undertow"
+            patterns:
+              - ".*springframework\\.boot\\.undertow.*"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        frameworks:
+          - name: "Spring Data JPA"
+            patterns:
+              - ".*spring-data-jpa.*"
+          - name: "Spring Data JDBC"
+            patterns:
+              - ".*spring-data-jdbc.*"
+          - name: "Spring Data R2DBC"
+            patterns:
+              - ".*spring-data-r2dbc.*"
+          - name: "Spring Data Relational"
+            patterns:
+              - ".*spring-data-relational.*"
+          - name: "Spring JDBC"
+            patterns:
+              - ".*spring-jdbc.*"
+          - name: "Spring ORM"
+            patterns:
+              - ".*spring-orm.*"
+          - name: "Spring TX"
+            patterns:
+              - ".*spring-tx.*"
+          - name: "Spring R2DBC"
+            patterns:
+              - ".*spring-r2dbc.*"
+          - name: "Spring iBatis"
+            patterns:
+              - ".*spring-ibatis.*"
+
+      - name: "NoSQL & Big Data"
+        frameworks:
+          - name: "Spring Data Cassandra"
+            patterns:
+              - ".*spring-data-cassandra.*"
+          - name: "Spring Data Couchbase"
+            patterns:
+              - ".*spring-data-couchbase.*"
+          - name: "Spring Data Elasticsearch"
+            patterns:
+              - ".*spring-data-elasticsearch.*"
+          - name: "Spring Data Envers"
+            patterns:
+              - ".*spring-data-envers.*"
+          - name: "Spring Data Gemfire"
+            patterns:
+              - ".*spring-data-gemfire.*"
+          - name: "Spring Data Geode"
+            patterns:
+              - ".*spring-data-geode.*"
+          - name: "Spring Data KeyValue"
+            patterns:
+              - ".*spring-data-keyvalue.*"
+          - name: "Spring Data LDAP"
+            patterns:
+              - ".*spring-data-ldap.*"
+          - name: "Spring Data MongoDB"
+            patterns:
+              - ".*spring-data-mongodb.*"
+          - name: "Spring Data Neo4j"
+            patterns:
+              - ".*spring-data-neo4j.*"
+          - name: "Spring Data Redis"
+            patterns:
+              - ".*spring-data-redis.*"
+          - name: "Spring Data Solr"
+            patterns:
+              - ".*spring-data-solr.*"
+
+      - name: "Caching"
+        frameworks:
+          - name: "Spring Cache"
+            patterns:
+              - ".*springframework\\.cache.*"
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        frameworks:
+          - name: "Spring AMQP"
+            patterns:
+              - ".*springframework\\.amqp.*"
+          - name: "Spring JMS"
+            patterns:
+              - ".*springframework\\.jms.*"
+          - name: "Spring Kafka"
+            patterns:
+              - ".*springframework\\.kafka.*"
+          - name: "Spring Integration"
+            patterns:
+              - ".*springframework\\.integration.*"
+          - name: "Spring Batch"
+            patterns:
+              - ".*springframework\\.batch.*"
+          - name: "Spring LDAP"
+            patterns:
+              - ".*springframework\\.ldap.*"
+          - name: "Spring Pulsar"
+            patterns:
+              - ".*springframework\\.pulsar.*"
+          - name: "Spring Messaging"
+            patterns:
+              - ".*spring-messaging.*"
+
+      - name: "API Gateways & REST/GraphQL"
+        frameworks:
+          - name: "Spring Web REST"
+            patterns:
+              - ".*springframework\\.web\\.rest.*"
+          - name: "Spring Web MVC"
+            patterns:
+              - ".*springframework\\.web\\.mvc.*"
+          - name: "Spring Web Servlet"
+            patterns:
+              - ".*springframework\\.web\\.servlet.*"
+          - name: "Spring GraphQL"
+            patterns:
+              - ".*springframework\\.graphql.*"
+          - name: "Spring Data REST"
+            patterns:
+              - ".*spring-data-rest.*"
+          - name: "Spring HATEOAS"
+            patterns:
+              - ".*spring-hateoas.*"
+          - name: "Spring REST Docs"
+            patterns:
+              - ".*spring-restdocs.*"
+          - name: "Spring Web Services (WS)"
+            patterns:
+              - ".*spring-ws.*"
+
+      - name: "Event Streaming"
+        frameworks:
+          - name: "Spring Cloud Stream"
+            patterns:
+              - ".*springframework\\.cloud\\.stream.*"
+
+      - name: "Networking"
+        frameworks:
+          - name: "Spring Web Client"
+            patterns:
+              - ".*springframework\\.web\\.client.*"
+          - name: "Spring Web Socket"
+            patterns:
+              - ".*springframework\\.web\\.socket.*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Spring Web"
+            patterns:
+              - ".*spring-web.*"
+          - name: "Spring WebFlux"
+            patterns:
+              - ".*spring-webflux.*"
+          - name: "Spring WebSocket"
+            patterns:
+              - ".*spring-websocket.*"
+          - name: "Spring Webflow"
+            patterns:
+              - ".*springframework\\.webflow.*"
+
+      - name: "Spring Boot"
+        frameworks:
+          - name: "Spring Boot Core"
+            patterns:
+              - ".*springframework\\.boot.*"
+              - ".*spring-boot-starter-.*"
+
+      - name: "Spring Framework Core"
+        frameworks:
+          - name: "Spring Core"
+            patterns:
+              - ".*spring-core.*"
+          - name: "Spring Beans"
+            patterns:
+              - ".*spring-beans.*"
+          - name: "Spring Context"
+            patterns:
+              - ".*spring-context.*"
+          - name: "Spring AOP"
+            patterns:
+              - ".*spring-aop.*"
+          - name: "Spring Expression"
+            patterns:
+              - ".*spring-expression.*"
+          - name: "Spring Instrumentation"
+            patterns:
+              - ".*spring-instrument.*"
+          - name: "Spring JCL"
+            patterns:
+              - ".*spring-jcl.*"
+          - name: "Spring Aspects"
+            patterns:
+              - ".*spring-aspects.*"
+          - name: "Spring ASM"
+            patterns:
+              - ".*spring-asm.*"
+
+      - name: "Reactive Libraries"
+        frameworks:
+          - name: "Project Reactor"
+            patterns:
+              - ".*projectreactor.*"
+
+      - name: "Dependency Injection"
+        frameworks:
+          - name: "Spring Beans"
+            patterns:
+              - ".*spring-beans.*"
+          - name: "Spring Context"
+            patterns:
+              - ".*spring-context.*"
+
+      - name: "Template Engines"
+        frameworks:
+          - name: "Spring Servlet View"
+            patterns:
+              - ".*springframework\\.web\\.servlet\\.view.*"
+          - name: "Thymeleaf"
+            patterns:
+              - ".*thymeleaf.*"
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        frameworks:
+          - name: "Spring HTTP Converter JSON"
+            patterns:
+              - ".*springframework\\.http\\.converter\\.json.*"
+          - name: "Spring HTTP Converter XML"
+            patterns:
+              - ".*springframework\\.http\\.converter\\.xml.*"
+          - name: "Spring OXM"
+            patterns:
+              - ".*spring-oxm.*"
+          - name: "Spring WS XML"
+            patterns:
+              - ".*spring-ws.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        frameworks: []
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        frameworks:
+          - name: "Spring Security OAuth2"
+            patterns:
+              - ".*spring-security-oauth2.*"
+          - name: "Spring Security SAML2"
+            patterns:
+              - ".*spring-security-saml2.*"
+          - name: "Spring Security OpenID"
+            patterns:
+              - ".*spring-security-openid.*"
+          - name: "Spring Security CAS"
+            patterns:
+              - ".*spring-security-cas.*"
+          - name: "Spring Security LDAP"
+            patterns:
+              - ".*spring-security-ldap.*"
+          - name: "Spring Security Remoting"
+            patterns:
+              - ".*spring-security-remoting.*"
+          - name: "Spring Security RSocket"
+            patterns:
+              - ".*spring-security-rsocket.*"
+
+      - name: "Security Layers"
+        frameworks:
+          - name: "Spring Security Core"
+            patterns:
+              - ".*spring-security-core.*"
+          - name: "Spring Security Config"
+            patterns:
+              - ".*spring-security-config.*"
+          - name: "Spring Security Crypto"
+            patterns:
+              - ".*spring-security-crypto.*"
+          - name: "Spring Security Messaging"
+            patterns:
+              - ".*spring-security-messaging.*"
+          - name: "Spring Security Web"
+            patterns:
+              - ".*spring-security-web.*"
+          - name: "Spring Security Test"
+            patterns:
+              - ".*spring-security-test.*"
+          - name: "Spring Security Aspects"
+            patterns:
+              - ".*spring-security-aspects.*"
+          - name: "Spring CredHub"
+            patterns:
+              - ".*spring-credhub-core.*"
+
+      - name: "Transport & Data Security"
+        frameworks:
+          - name: "Spring Security SSL"
+            patterns:
+              - ".*spring-security-ssl.*"
+          - name: "Spring Security Headers"
+            patterns:
+              - ".*spring-security-headers.*"
+          - name: "Spring Vault"
+            patterns:
+              - ".*spring-vault-core.*"
+          - name: "Spring Security RSA"
+            patterns:
+              - ".*spring-security-rsa.*"
+
+      - name: "Identity Management"
+        frameworks:
+          - name: "Spring Security LDAP/SAML"
+            patterns:
+              - ".*spring-security-ldap.*"
+              - ".*spring-security-saml.*"
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        frameworks:
+          - name: "Spring Boot Actuator"
+            patterns:
+              - ".*springframework\\.boot\\.actuate.*"
+
+      - name: "Metrics & Distributed Tracing"
+        frameworks:
+          - name: "Micrometer Spring"
+            patterns:
+              - ".*micrometer\\.spring.*"
+          - name: "Spring Cloud Sleuth"
+            patterns:
+              - ".*springframework\\.cloud\\.sleuth.*"
+
+      - name: "Circuit Breakers & Rate Limiting"
+        frameworks:
+          - name: "Spring Cloud CircuitBreaker"
+            patterns:
+              - ".*springframework\\.cloud\\.circuitbreaker.*"
+          - name: "Spring Cloud Resilience4J"
+            patterns:
+              - ".*springframework\\.cloud\\.resilience4j.*"
+          - name: "Spring Retry"
+            patterns:
+              - ".*springframework\\.retry.*"
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        frameworks:
+          - name: "Spring Boot Gradle Plugin"
+            patterns:
+              - ".*springframework\\.boot\\.gradle.*"
+          - name: "Spring Boot Maven Plugin"
+            patterns:
+              - ".*springframework\\.boot\\.maven.*"
+
+      - name: "Testing"
+        frameworks:
+          - name: "Spring Test"
+            patterns:
+              - ".*spring-test.*"
+          - name: "Spring Mock"
+            patterns:
+              - ".*spring-mock.*"
+
+      - name: "Code Quality & Profiling"
+        frameworks: []
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "Functional/Reactive Libraries"
+        frameworks: []
+
+      - name: "General Purpose"
+        frameworks:
+          - name: "Spring Util"
+            patterns:
+              - ".*springframework\\.util.*"
+          - name: "Spring Session"
+            patterns:
+              - ".*springframework\\.session.*"
+          - name: "Spring Shell"
+            patterns:
+              - ".*springframework\\.shell.*"
+          - name: "Spring Special"
+            patterns:
+              - ".*springframework\\.special.*"
+          - name: "Spring Plugin"
+            patterns:
+              - ".*spring-plugin.*"
+          - name: "Spring Data Commons"
+            patterns:
+              - ".*spring-data-commons.*"

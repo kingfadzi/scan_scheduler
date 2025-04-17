@@ -1,79 +1,67 @@
+from prefect import flow
+from prefect.automations import Automation
+from prefect.events.schemas.automations import EventTrigger
+from prefect.events.actions import RunDeployment
+from prefect.client import get_client
 import asyncio
-import aiohttp
-from prefect import flow, get_client
-from prefect.deployments import run_deployment
-from config.config import Config
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
 
-DEPLOYMENTS = [
-    "fundamental-metrics-flow/fundamentals",
-    "component-patterns-flow/component-patterns",
-    "standards-assessment-flow/standards-assessment",
-    "vulnerabilities-flow/vulnerabilities"
+DEPLOYMENT_VERSION = "3.2.1"
+WORK_POOL_NAME = "fundamentals-pool"
+
+FLOW_SEQUENCE = [
+    ("fundamental_metrics_flow", "fundamental_metrics_flow"),
+    ("build_tools_flow", "build_tools_flow"),
+    ("dependencies_flow", "dependencies_flow-deployment"),
+    ("categories_flow", "categories_flow"),
+    ("standards_assessment_flow", "standards_assessment_flow"),
+    ("vulnerabilities_flow", "vulnerabilities_flow")
 ]
 
-example_payload = {
-    "payload": {
-        "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-        "activity_status": ["ACTIVE"]
-    }
-}
+async def get_deployment_id(flow_name: str, deployment_name: str) -> str:
 
+    async with get_client() as client:
+        deployment = await client.read_deployment_by_name(
+            f"{flow_name}/{deployment_name}"
+        )
+        return str(deployment.id)
 
-async def wait_for_flow_completion(flow_run_id):
+async def create_chain_automation(source: tuple, target: tuple) -> Automation:
 
-    client = get_client()
+    source_flow, _ = source
+    target_flow, target_deployment = target
 
-    while True:
-        try:
-            flow_run = await client.read_flow_run(flow_run_id)
-            status = flow_run.state_name
+    deployment_id = await get_deployment_id(target_flow, target_deployment)
 
-            print(f"Flow run {flow_run_id} status: {status}")
+    return Automation(
+        name=f"{source_flow}-to-{target_flow}",
+        trigger=EventTrigger(
+            expect={"prefect.flow-run.Completed"},
+            match_related={
+                "prefect.resource.name": source_flow,
+                "prefect.resource.role": "flow"
+            },
+            posture="Reactive",
+            threshold=1
+        ),
+        actions=[
+            RunDeployment(
+                parameters={"payload": "{{ event.payload }}"},
+                deployment_id=deployment_id
+            )
+        ]
+    )
 
-            if status in ["Completed", "Failed", "Cancelled"]:
-                if status != "Completed":
-                    raise RuntimeError(f"Flow {flow_run_id} failed with status: {status}")
-                return status
+async def main():
 
-        except aiohttp.ClientError as e:
-            print(f"Error while polling flow {flow_run_id}: {e}")
+    automations = []
+    for i in range(len(FLOW_SEQUENCE)-1):
+        source = FLOW_SEQUENCE[i]
+        target = FLOW_SEQUENCE[i+1]
 
-        await asyncio.sleep(5)  # Poll every 5 seconds
-
-async def run_deployment_with_retries(deployment_name, payload, retries=3):
-
-    for attempt in range(retries):
-        try:
-            print(f"Attempt {attempt + 1}: Triggering deployment {deployment_name}...")
-            flow_run_metadata = await run_deployment(name=deployment_name, parameters=payload)
-            return flow_run_metadata.id
-
-        except Exception as e:
-            print(f"Error triggering {deployment_name}: {e}")
-            if attempt < retries - 1:
-                print("Retrying...")
-                await asyncio.sleep(5)  # Backoff before retrying
-            else:
-                raise RuntimeError(f"Deployment {deployment_name} failed after {retries} attempts.")
-
-@flow(name="Flow Orchestrator", flow_run_name=generate_main_flow_run_name)
-async def flow_orchestrator():
-
-    client = get_client()
-
-    for deployment_name in DEPLOYMENTS:
-        flow_run_id = await run_deployment_with_retries(deployment_name, example_payload)
-
-        print(f"Triggered deployment {deployment_name}, waiting for completion (Flow Run ID: {flow_run_id})")
-
-        await wait_for_flow_completion(flow_run_id)
+        automation = await create_chain_automation(source, target)
+        await automation.create()
+        automations.append(automation)
+        print(f"Created automation: {source[0]} → {target[0]}")
 
 if __name__ == "__main__":
-    print("Starting Flow Orchestrator...")
-    try:
-        asyncio.run(flow_orchestrator())
-        print("All flows completed successfully.")
-    except Exception as e:
-        print(f"Orchestration failed: {e}")
-        exit(1)
+    asyncio.run(main())

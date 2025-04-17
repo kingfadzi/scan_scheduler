@@ -1,88 +1,32 @@
-import asyncio
-from prefect import flow, task, get_run_logger
-from prefect.cache_policies import NO_CACHE
 from config.config import Config
+import asyncio
+from flows.factory.main_flow import create_analysis_flow
 
-from modular.analyzer.trivy_analysis import TrivyAnalyzer
-from modular.analyzer.syft_grype_analysis import SyftAndGrypeAnalyzer
-from modular.shared.models import Session
-from modular.shared.tasks import (
-    generic_main_flow,
-    generic_single_repo_processing_flow
+VALID_VULN_TASKS = [
+    "core.trivy",
+    "core.grype",
+    "core.xeol"
+]
+
+vulnerabilities_flow = create_analysis_flow(
+    flow_name="vulnerabilities_flow",
+    default_sub_dir="vulnerabilities",
+    default_flow_prefix="VULN",
+    default_additional_tasks=VALID_VULN_TASKS,
+    default_db_fetch_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
+    default_processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
+    default_processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
+    default_per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
+    default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
 )
-from modular.shared.utils import generate_repo_flow_run_name, generate_main_flow_run_name
-
-
-@flow(flow_run_name=generate_main_flow_run_name)
-async def vulnerabilities_flow(payload: dict):
-
-    await generic_main_flow(
-        payload=payload,
-        single_repo_processing_flow=vulnerabilities_repo_processing_flow,
-        flow_prefix="Vulnerabilities",
-        batch_size=1000,
-        num_partitions=10,
-        concurrency_limit=10
-    )
-
-@flow(flow_run_name=generate_repo_flow_run_name)
-def vulnerabilities_repo_processing_flow(repo, repo_slug, run_id):
-
-    sub_tasks = [
-        run_trivy_analysis_task
-    ]
-
-    generic_single_repo_processing_flow(
-        repo=repo,
-        run_id=run_id,
-        sub_tasks=sub_tasks,
-        sub_dir="analyze_vulnerabilities",
-        flow_prefix="Vulnerabilities"
-    )
-
-
-@task(name="Run Trivy Analysis Task", cache_policy=NO_CACHE)
-def run_trivy_analysis_task(repo_dir, repo, session, run_id):
-
-    logger = get_run_logger()
-    logger.info(f"[Vulnerabilities] Starting Trivy analysis for repository: {repo.repo_id}")
-
-    analyzer = TrivyAnalyzer(logger=logger)
-    analyzer.run_analysis(
-        repo_dir=repo_dir,
-        repo=repo,
-        session=session,
-        run_id=run_id
-    )
-
-    logger.info(f"[Vulnerabilities] Completed Trivy analysis for repository: {repo.repo_id}")
-
-
-@task(name="Run Syft+Grype Analysis Task", cache_policy=NO_CACHE)
-def run_syft_grype_analysis_task(repo_dir, repo, session, run_id):
-
-    logger = get_run_logger()
-    logger.info(f"[Vulnerabilities] Starting Syft+Grype analysis for repository: {repo.repo_id}")
-
-    analyzer = SyftAndGrypeAnalyzer(logger=logger)
-    analyzer.run_analysis(
-        repo_dir=repo_dir,
-        repo=repo,
-        session=session,
-        run_id=run_id
-    )
-
-    logger.info(f"[Vulnerabilities] Completed Syft+Grype analysis for repository: {repo.repo_id}")
-
 
 if __name__ == "__main__":
-
-    example_payload = {
-        "payload": {
-            "host_name": [Config.GITLAB_HOSTNAME],
-            "activity_status": ["ACTIVE"],
-            "main_language": ["Python"]
+    asyncio.run(vulnerabilities_flow(
+        payload={
+            "payload": {
+                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
+                "activity_status": ['ACTIVE'],
+                "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
         }
-    }
-
-    asyncio.run(vulnerabilities_flow(payload=example_payload))
+        }
+    ))

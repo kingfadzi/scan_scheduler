@@ -1,0 +1,592 @@
+categories:
+  - name: "Infrastructure Platform"
+    subcategories:
+      - name: "Provisioning Systems"
+        frameworks:
+          - name: "Terraform"
+            file_patterns:
+              - '\.tf$'
+              - '\.tfvars$'
+            content_patterns:
+              - 'resource\s+"[\w-]+"\s+"[\w-]+"'
+              - 'provider\s+"[\w-]+"'
+          - name: "Pulumi"
+            file_patterns:
+              - '\.ts$'
+              - '\.py$'
+              - '\.go$'
+              - '\.java$'
+              - '\.yaml$'
+            content_patterns:
+              - 'import pulumi'
+              - 'new pulumi.Config'
+          - name: "AWS CloudFormation"
+            file_patterns:
+              - '\.cfn\.ya?ml$'
+              - 'cloudformation\.ya?ml$'
+            content_patterns:
+              - 'AWSTemplateFormatVersion:\s+"2010-09-09"'
+          - name: "Azure ARM Templates"
+            file_patterns:
+              - '\.arm\.json$'
+              - 'azuredeploy\.json$'
+            content_patterns:
+              - '"\$schema"\s*:\s*"https?://schema\.management\.azure\.com/.*"'
+          - name: "Bicep"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'param\s+[\w-]+\s+'
+              - 'resource\s+[\w-]+\s+'
+          - name: "Packer"
+            file_patterns:
+              - '\.pkr\.hcl$'
+              - 'packer\.json$'
+            content_patterns:
+              - 'source\s*=\s*"[\w-]+"'
+          - name: "Vagrant"
+            file_patterns:
+              - 'Vagrantfile$'
+            content_patterns:
+              - 'config\.vm\.box\s*=\s*"'
+      - name: "Compute Services"
+        frameworks:
+          - name: "AWS EC2"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_instance"'
+              - 'AWS::EC2::Instance'
+          - name: "Google Compute Engine"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"google_compute_instance"'
+              - 'type:\s+gcp-types/compute-v1:instances'
+          - name: "Azure Virtual Machines"
+            file_patterns:
+              - '\.bicep$'
+              - '\.json$'
+            content_patterns:
+              - 'resource\s+vm\s+'
+              - 'Microsoft.Compute/virtualMachines'
+          - name: "AWS Lambda"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_lambda_function"'
+              - 'AWS::Lambda::Function'
+          - name: "Knative/Serverless"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'apiVersion:\s+serving\.knative\.dev/v1'
+              - 'kind:\s+Service'
+          - name: "Azure App Service"
+            file_patterns:
+              - '\.bicep$'
+              - '\.json$'
+            content_patterns:
+              - 'Microsoft.Web/sites'
+              - 'resource\s+appService\s+'
+      - name: "Networking Services"
+        frameworks:
+          - name: "AWS VPC"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_vpc"'
+              - 'AWS::EC2::VPC'
+          - name: "Azure Virtual Network"
+            file_patterns:
+              - '\.bicep$'
+              - '\.json$'
+            content_patterns:
+              - 'Microsoft.Network/virtualNetworks'
+              - 'resource\s+vnet\s+'
+          - name: "Service Meshes (Istio, Linkerd, Consul Connect)"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'apiVersion:\s+networking\.istio\.io/v1alpha3'
+              - 'kind:\s+ServiceMesh'
+          - name: "Load Balancers"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_lb"'
+              - 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+          - name: "Ingress Controllers"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+Ingress'
+              - 'nginx\.ingress\.kubernetes\.io'
+          - name: "API Gateways"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_apigatewayv2_api"'
+              - 'AWS::ApiGatewayV2::Api'
+      - name: "Storage Services"
+        frameworks:
+          - name: "AWS S3"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_s3_bucket"'
+              - 'AWS::S3::Bucket'
+          - name: "Google Cloud Storage"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"google_storage_bucket"'
+              - 'type:\s+gcp-types/storage-v1:buckets'
+          - name: "Azure Blob Storage"
+            file_patterns:
+              - '\.bicep$'
+              - '\.json$'
+            content_patterns:
+              - 'Microsoft.Storage/storageAccounts'
+              - 'resource\s+storageAccount\s+'
+          - name: "Persistent Volumes (Kubernetes)"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+PersistentVolume'
+              - 'kind:\s+PersistentVolumeClaim'
+      - name: "Database and Data Services"
+        frameworks:
+          - name: "AWS RDS"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_db_instance"'
+              - 'AWS::RDS::DBInstance'
+          - name: "AWS DynamoDB"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_dynamodb_table"'
+              - 'AWS::DynamoDB::Table'
+          - name: "Google Cloud SQL"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"google_sql_database_instance"'
+              - 'type:\s+gcp-types/sqladmin-v1beta4:instances'
+          - name: "Azure CosmosDB"
+            file_patterns:
+              - '\.bicep$'
+              - '\.json$'
+            content_patterns:
+              - 'Microsoft.DocumentDB/databaseAccounts'
+              - 'resource\s+cosmosDBAccount\s+'
+          - name: "Redis"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_elasticache_replication_group"'
+              - 'type:\s+Microsoft.Cache/Redis'
+          - name: "Elasticache"
+            file_patterns:
+              - '\.tf$'
+              - '\.yaml$'
+            content_patterns:
+              - 'resource\s+"aws_elasticache_cluster"'
+              - 'AWS::ElastiCache::CacheCluster'
+  - name: "Container Platform"
+    subcategories:
+      - name: "Container Build and Management"
+        frameworks:
+          - name: "Dockerfile"
+            file_patterns:
+              - '(?i).*dockerfile.*'
+            content_patterns:
+              - '^FROM '
+              - '^RUN '
+              - '^EXPOSE \d+'
+          - name: "docker-compose"
+            file_patterns:
+              - '(?i)docker-compose.*\.ya?ml$'
+              - '(?i)compose[-_].*\.ya?ml$'
+            content_patterns:
+              - '^services:'
+              - '\n  [\w-]+:'
+              - 'image: '
+      - name: "Kubernetes Orchestration"
+        frameworks:
+          - name: "Kubernetes Deployment"
+            file_patterns:
+              - '\.ya?ml$'
+            content_patterns:
+              - 'apiVersion:\s+apps/v1\nkind:\s+Deployment'
+              - 'kind:\s+Deployment'
+          - name: "StatefulSet"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+StatefulSet'
+          - name: "DaemonSet"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+DaemonSet'
+          - name: "Helm Charts"
+            file_patterns:
+              - 'Chart\.yaml$'
+            content_patterns:
+              - 'apiVersion:\s+v2\nname:\s+'
+          - name: "Kustomize"
+            file_patterns:
+              - 'kustomization\.yaml$'
+            content_patterns:
+              - 'resources:\s*\n-\s+'
+          - name: "OpenShift Templates"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+Template\napiVersion:\s+template\.openshift\.io/'
+      - name: "GitOps and Continuous Deployment"
+        frameworks:
+          - name: "ArgoCD"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+Application'
+              - 'argocd\.argoproj\.io'
+          - name: "FluxCD"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+GitRepository'
+              - 'fluxcd\.io/v1beta1'
+  - name: "Configuration and Secrets Management"
+    subcategories:
+      - name: "Configuration Systems"
+        frameworks:
+          - name: "Ansible"
+            file_patterns:
+              - '\.ya?ml$'
+            content_patterns:
+              - 'hosts:'
+              - 'tasks:'
+          - name: "Chef Infrastructure"
+            file_patterns:
+              - '\.rb$'
+              - 'metadata\.rb$'
+              - 'Berksfile$'
+              - 'Policyfile\.rb$'
+              - '\.kitchen\.yml$'
+            content_patterns:
+              - 'node\.(run_list|override|default)'
+              - '(apt_package|package|service)\s+["'']'
+              - 'include_recipe\s+["'']'
+              - 'name\s+["''].*["'']\nversion'
+              - 'chef_gem\s+["'']'
+          - name: "SaltStack"
+            file_patterns:
+              - '\.sls$'
+            content_patterns:
+              - 'include:'
+              - 'pkg\.installed:'
+      - name: "Secrets Management Systems"
+        frameworks:
+          - name: "HashiCorp Vault"
+            file_patterns:
+              - '\.hcl$'
+            content_patterns:
+              - 'vault\s*{'
+              - 'path\s+"[\w\s-]*"'
+          - name: "AWS Secrets Manager"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_secretsmanager_secret"'
+          - name: "SealedSecrets (Kubernetes)"
+            file_patterns:
+              - '\.ya?ml$'
+            content_patterns:
+              - 'kind:\s+SealedSecret'
+          - name: "SSM Parameter Store"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_ssm_parameter"'
+              - 'type\s*=\s*"SecureString"'
+  - name: "Developer Platform and CI/CD"
+    subcategories:
+      - name: "Source Code Management and Integration"
+        frameworks:
+          - name: "GitHub"
+            file_patterns:
+              - '\.github/'
+            content_patterns:
+              - 'on:\s*\n\s+push:'
+          - name: "GitLab"
+            file_patterns:
+              - '\.gitlab-ci\.ya?ml$'
+            content_patterns:
+              - 'stages:'
+          - name: "Bitbucket"
+            file_patterns:
+              - 'bitbucket-pipelines\.ya?ml$'
+            content_patterns:
+              - 'pipelines:'
+          - name: "Azure Repos"
+            file_patterns:
+              - 'azure-pipelines\.ya?ml$'
+            content_patterns:
+              - 'trigger:'
+      - name: "Continuous Integration Systems"
+        frameworks:
+          - name: "GitHub Actions"
+            file_patterns:
+              - '\.github/workflows/.*\.ya?ml$'
+            content_patterns:
+              - 'uses:\s+actions/checkout@v\d'
+          - name: "GitLab CI"
+            file_patterns:
+              - '\.gitlab-ci\.ya?ml$'
+            content_patterns:
+              - 'image:\s+'
+          - name: "Jenkins"
+            file_patterns:
+              - 'Jenkinsfile'
+            content_patterns:
+              - 'pipeline\s*{'
+          - name: "TeamCity"
+            file_patterns:
+              - '\.teamcity/.*\.kts$'
+            content_patterns:
+              - 'project\s*{'
+          - name: "Azure Pipelines"
+            file_patterns:
+              - 'azure-pipelines\.ya?ml$'
+            content_patterns:
+              - 'pool:\s*\n\s+vmImage:'
+          - name: "Bitbucket Pipelines"
+            file_patterns:
+              - 'bitbucket-pipelines\.ya?ml$'
+            content_patterns:
+              - 'pipelines:\s*\n\s+default:'
+      - name: "Continuous Delivery and Deployment Systems"
+        frameworks:
+          - name: "ArgoCD Applications"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'apiVersion:\s*argoproj\.io/.*'
+              - 'kind:\s*Application'
+          - name: "FluxCD Workflows"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'apiVersion:\s*source\.toolkit\.fluxcd\.io/.*'
+  - name: "Observability and Reliability Engineering"
+    subcategories:
+      - name: "Logging Systems"
+        frameworks:
+          - name: "Elasticsearch Configuration"
+            file_patterns:
+              - '\.ya?ml$'
+            content_patterns:
+              - 'image:\s+.*elasticsearch[:]'
+              - 'apiVersion:\s+elasticsearch\.k8s\.elastic\.co/v1'
+              - '9200:9200'
+          - name: "Logstash Configuration"
+            file_patterns:
+              - '\.ya?ml$'
+              - 'logstash\.conf$'
+            content_patterns:
+              - 'image:\s+.*logstash[:]'
+              - 'input\s*{'
+              - 'output\s*{'
+
+          - name: "Kibana Configuration"
+            file_patterns:
+              - '\.ya?ml$'
+              - 'kibana\.yml$'
+            content_patterns:
+              - 'image:\s+.*kibana[:]'
+              - '5601:5601'
+              - 'elasticsearch\.hosts:.*9200'
+
+          - name: "AWS CloudWatch Logs"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_cloudwatch_log_group"'
+          - name: "Loki"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'image:\s+grafana/loki:\d'
+      - name: "Metrics and Monitoring Systems"
+        frameworks:
+          - name: "Prometheus"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'image:\s+prom/prometheus:\d'
+          - name: "AWS CloudWatch Metrics"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_cloudwatch_metric_alarm"'
+          - name: "Grafana"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'image:\s+grafana/grafana:\d'
+      - name: "Tracing Systems"
+        frameworks:
+          - name: "Jaeger"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'image:\s+jaegertracing/all-in-one:\d'
+          - name: "AWS X-Ray"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_xray_sampling_rule"'
+      - name: "Alerting and SLO Management"
+        frameworks:
+          - name: "Alertmanager"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'image:\s+prom/alertmanager:\d'
+          - name: "Grafana Alerts"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'grafana_alert'
+  - name: "Security, Policy, and Compliance"
+    subcategories:
+      - name: "Identity and Access Management"
+        frameworks:
+          - name: "AWS IAM"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_iam_role"'
+          - name: "Azure Active Directory"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'Microsoft.Authorization/roleAssignments'
+          - name: "Kubernetes RBAC"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+RoleBinding'
+      - name: "Network Security Controls"
+        frameworks:
+          - name: "AWS Security Groups"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_security_group"'
+          - name: "Azure Network Security Groups"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'Microsoft.Network/networkSecurityGroups'
+          - name: "Service Mesh MTLS"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'peerIsOptional:\s+false'
+      - name: "Secrets and Key Management"
+        frameworks:
+          - name: "AWS KMS"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_kms_key"'
+          - name: "Azure Key Vault"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'Microsoft.KeyVault/vaults'
+          - name: "Vault Transit Encryption"
+            file_patterns:
+              - '\.hcl$'
+            content_patterns:
+              - 'path\s+"transit/"'
+      - name: "Policy as Code Systems"
+        frameworks:
+          - name: "Open Policy Agent"
+            file_patterns:
+              - '\.rego$'
+            content_patterns:
+              - 'package\s+policy'
+          - name: "AWS Service Control Policies"
+            file_patterns:
+              - '\.json$'
+            content_patterns:
+              - '"Version":\s*"2012-10-17"'
+      - name: "Application Security and Protection"
+        frameworks:
+          - name: "AWS WAF"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_waf_web_acl"'
+          - name: "Cloudflare WAF"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"cloudflare_firewall_rule"'
+  - name: "Cost Management and Resource Optimization"
+    subcategories:
+      - name: "Cost Tracking and Controls"
+        frameworks:
+          - name: "AWS Budgets"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_budgets_budget"'
+          - name: "Azure Cost Management"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'Microsoft.CostManagement/connectors'
+      - name: "Resource Tagging and Governance"
+        frameworks:
+          - name: "AWS Resource Tags"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'tags\s*=\s*{'
+          - name: "Azure Resource Tags"
+            file_patterns:
+              - '\.bicep$'
+            content_patterns:
+              - 'tags:\s*{'
+      - name: "Scaling and Autoscaling"
+        frameworks:
+          - name: "AWS Auto Scaling Groups"
+            file_patterns:
+              - '\.tf$'
+            content_patterns:
+              - 'resource\s+"aws_autoscaling_group"'
+          - name: "Kubernetes Horizontal Pod Autoscalers"
+            file_patterns:
+              - '\.yaml$'
+            content_patterns:
+              - 'kind:\s+HorizontalPodAutoscaler'

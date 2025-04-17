@@ -1,0 +1,135 @@
+categories:
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        frameworks:
+          - name: "IBM MQ / WMQ"
+            patterns:
+              - ".*ibm\\\\.(?:mq|wmq).*"
+          - name: "Atomikos Transactions / Messaging"
+            patterns:
+              - ".*atomikos.*"
+          - name: "RabbitMQ Java Client"
+            patterns:
+              - ".*rabbitmq.*"
+          - name: "Solace Systems Messaging"
+            patterns:
+              - ".*solacesystems.*"
+          - name: "Reactor RabbitMQ"
+            patterns:
+              - ".*projectreactor\\\\.rabbitmq.*"
+          - name: "Eclipse Paho MQTT Client"
+            patterns:
+              - ".*eclipse\\\\.paho.*"
+          - name: "MessagingHub Paho Extensions"
+            patterns:
+              - ".*messaginghub.*"
+          - name: "Synchronoss Messaging / Cloud SDK"
+            patterns:
+              - ".*synchronoss\\\\.cloud.*"
+          - name: "Apache ActiveMQ"
+            patterns:
+              - ".*activemq.*"
+          - name: "Apache Artemis"
+            patterns:
+              - ".*artemis.*"
+          - name: "RabbitMQ Streams"
+            patterns:
+              - ".*rabbitmq-streams.*"
+          - name: "AMQP Java Clients"
+            patterns:
+              - ".*amqp-client.*"
+          - name: "Apache Camel (Integration Framework)"
+            patterns:
+              - ".*camel.*"
+
+      - name: "API Gateways & REST/GraphQL"
+        frameworks:
+          - name: "Google API Clients"
+            patterns:
+              - ".*google\\\\.api.*"
+          - name: "Google HTTP Client"
+            patterns:
+              - ".*google\\\\.http-client.*"
+          - name: "GraphQL Java"
+            patterns:
+              - ".*graphql-java.*"
+          - name: "WireMock"
+            patterns:
+              - ".*github\\\\.tomakehurst.*"
+          - name: "Netflix Eureka"
+            patterns:
+              - ".*netflix\\\\.eureka.*"
+          - name: "Netflix Ribbon"
+            patterns:
+              - ".*netflix\\\\.ribbon.*"
+          - name: "Netflix GraphQL"
+            patterns:
+              - ".*netflix\\\\.graphql.*"
+          - name: "OkHttp3"
+            patterns:
+              - ".*squareup\\\\.okhttp3.*"
+          - name: "Sun Jersey (REST)"
+            patterns:
+              - ".*sun\\\\.jersey.*"
+          - name: "gRPC Java"
+            patterns:
+              - ".*grpc.*"
+          - name: "OpenFeign (Feign Clients)"
+            patterns:
+              - ".*github\\\\.openfeign.*"
+          - name: "RSocket"
+            patterns:
+              - ".*rsocket.*"
+          - name: "Rest-Assured"
+            patterns:
+              - ".*rest-assured.*"
+          - name: "Springfox (Swagger Integration)"
+            patterns:
+              - ".*springfox.*"
+          - name: "Swagger Core"
+            patterns:
+              - ".*swagger\\\\..*"
+          - name: "JBoss Resteasy"
+            patterns:
+              - ".*jboss\\\\.resteasy.*"
+
+      - name: "Event Streaming"
+        frameworks:
+          - name: "Reactor Kafka"
+            patterns:
+              - ".*projectreactor\\\\.kafka.*"
+          - name: "Confluent Kafka Clients"
+            patterns:
+              - ".*confluent:kafka-.*"
+          - name: "Apache Kafka Clients"
+            patterns:
+              - ".*kafka-clients.*"
+          - name: "Kafka Streams"
+            patterns:
+              - ".*kafka-streams.*"
+          - name: "Apache Pulsar"
+            patterns:
+              - ".*pulsar.*"
+          - name: "Redpanda"
+            patterns:
+              - ".*redpanda.*"
+          - name: "Pravega"
+            patterns:
+              - ".*pravega.*"
+
+
+      - name: "Networking"
+        frameworks:
+          - name: "Netty"
+            patterns:
+              - ".*netty.*"
+          - name: "Reactor Netty"
+            patterns:
+              - ".*projectreactor\\\\.netty.*"
+          - name: "JSch (SSH Library)"
+            patterns:
+              - ".*jcraft.*"
+          - name: "Tmate"
+            patterns:
+              - ".*tmatesoft.*"

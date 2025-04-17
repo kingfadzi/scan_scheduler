@@ -3,7 +3,7 @@
 set -e
 
 # S3 Storage Configuration
-S3_URL="http://192.168.1.188:9000"
+S3_URL="http://192.168.1.194:9000"
 BUCKET="blobs"
 TARBALL="tools.tar.gz"
 EXTRACT_DIR="tools"

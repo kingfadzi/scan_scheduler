@@ -1,0 +1,220 @@
+categories:
+  - name: "Infrastructure & Deployment"
+    subcategories:
+      - name: "Application Servers"
+        frameworks:
+          - name: "Java EJB"
+            patterns:
+              - ".*ejb.*"
+          - name: "Java Batch"
+            patterns:
+              - ".*batch.*"
+          - name: "Java Enterprise Deployment"
+            patterns:
+              - ".*enterprise\\.deploy.*"
+          - name: "Java Connector Architecture (JCA)"
+            patterns:
+              - ".*resource.*"
+
+  - name: "Data Management & Storage"
+    subcategories:
+      - name: "Relational Databases"
+        frameworks:
+          - name: "Java SQL"
+            patterns:
+              - ".*sql.*"
+          - name: "Java Transactions"
+            patterns:
+              - ".*transaction.*"
+          - name: "Java Persistence (JPA)"
+            patterns:
+              - ".*persistence.*"
+      - name: "NoSQL & Big Data"
+        frameworks: []
+      - name: "Caching"
+        frameworks:
+          - name: "Java Caching (JSR-107)"
+            patterns:
+              - ".*cache.*"
+      - name: "Data Lakes & Analytics"
+        frameworks: []
+
+  - name: "Messaging & Data Integration"
+    subcategories:
+      - name: "Message Brokers & ETL Tools"
+        frameworks:
+          - name: "Java Mail"
+            patterns:
+              - ".*mail.*"
+          - name: "Java Messaging Service (JMS)"
+            patterns:
+              - ".*jms.*"
+      - name: "API Gateways & REST/GraphQL"
+        frameworks:
+          - name: "Java Web Services Annotations (JWS)"
+            patterns:
+              - ".*jws.*"
+          - name: "Java XML Web Services (JAX-WS)"
+            patterns:
+              - ".*xml\\.ws.*"
+          - name: "Java SOAP (SAAJ)"
+            patterns:
+              - ".*xml\\.soap.*"
+          - name: "Java RESTful Web Services (JAX-RS)"
+            patterns:
+              - ".*ws\\.rs.*"
+          - name: "Java XML RPC"
+            patterns:
+              - ".*xml\\.rpc.*"
+      - name: "Event Streaming"
+        frameworks: []
+      - name: "Networking"
+        frameworks:
+          - name: "Java Networking"
+            patterns:
+              - ".*net.*"
+          - name: "Java RMI"
+            patterns:
+              - ".*rmi.*"
+
+  - name: "Application Development"
+    subcategories:
+      - name: "Web Frameworks"
+        frameworks:
+          - name: "Java Servlet"
+            patterns:
+              - ".*servlet.*"
+          - name: "JavaServer Faces (JSF)"
+            patterns:
+              - ".*faces.*"
+          - name: "Java WebSocket"
+            patterns:
+              - ".*websocket.*"
+          - name: "Java Expression Language (EL)"
+            patterns:
+              - ".*el.*"
+
+      - name: "Spring: Boot"
+        frameworks: []
+      - name: "Spring: Framework"
+        frameworks: []
+      - name: "Reactive Libraries"
+        frameworks: []
+
+      - name: "Dependency Injection"
+        frameworks:
+          - name: "Java Inject (JSR-330)"
+            patterns:
+              - ".*inject.*"
+          - name: "Java Interceptor"
+            patterns:
+              - ".*interceptor.*"
+          - name: "Java Decorator"
+            patterns:
+              - ".*decorator.*"
+          - name: "Java Enterprise (non-deploy)"
+            patterns:
+              - ".*enterprise(?!\\.deploy).*"
+
+      - name: "Template Engines"
+        frameworks: []
+
+  - name: "Serialization"
+    subcategories:
+      - name: "JSON/XML"
+        frameworks:
+          - name: "Java JSON Processing"
+            patterns:
+              - ".*json.*"
+          - name: "Java XML Processing"
+            patterns:
+              - ".*xml.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        frameworks: []
+
+  - name: "Security & Identity"
+    subcategories:
+      - name: "Authentication"
+        frameworks:
+          - name: "Java Security"
+            patterns:
+              - ".*security.*"
+      - name: "Security Layers"
+        frameworks:
+          - name: "Java Cryptography"
+            patterns:
+              - ".*crypto.*"
+      - name: "Transport & Data Security"
+        frameworks: []
+      - name: "Identity Management"
+        frameworks: []
+
+  - name: "Observability & Reliability"
+    subcategories:
+      - name: "Logging & Monitoring"
+        frameworks:
+          - name: "Java Management (JMX)"
+            patterns:
+              - ".*management.*"
+      - name: "Metrics & Distributed Tracing"
+        frameworks: []
+      - name: "Circuit Breakers & Rate Limiting"
+        frameworks: []
+
+  - name: "Development & Testing Tools"
+    subcategories:
+      - name: "Build Tools & Dependency Management"
+        frameworks:
+          - name: "Java Annotations"
+            patterns:
+              - ".*annotation.*"
+          - name: "Java Language Model API"
+            patterns:
+              - ".*lang\\.model.*"
+          - name: "Java Tools API"
+            patterns:
+              - ".*tools.*"
+
+      - name: "Testing"
+        frameworks: []
+      - name: "Code Quality & Profiling"
+        frameworks: []
+
+  - name: "Utilities & Libraries"
+    subcategories:
+      - name: "General-Purpose"
+        frameworks:
+          - name: "Java Accessibility API"
+            patterns:
+              - ".*accessibility.*"
+          - name: "Java Activation Framework"
+            patterns:
+              - ".*activation.*"
+          - name: "Java Activity Service"
+            patterns:
+              - ".*activity.*"
+          - name: "Java ImageIO"
+            patterns:
+              - ".*imageio.*"
+          - name: "Java Naming and Directory Interface (JNDI)"
+            patterns:
+              - ".*naming.*"
+          - name: "Java Print Service"
+            patterns:
+              - ".*print.*"
+          - name: "Java Scripting API"
+            patterns:
+              - ".*script.*"
+          - name: "Java Sound API"
+            patterns:
+              - ".*sound.*"
+          - name: "Java Bean Validation"
+            patterns:
+              - ".*validation.*"
+          - name: "Java XML Registry (UDDI)"
+            patterns:
+              - ".*xml\\.registry.*"
+          - name: "Java Money and Currency API"
+            patterns:
+              - ".*money.*"

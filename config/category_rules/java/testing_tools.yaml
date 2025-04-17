@@ -1,0 +1,136 @@
+categories:
+  - name: "Development & Testing Tools"
+    subcategories:
+
+      - name: "Build Tools & Dependency Management"
+        frameworks:
+          - name: "Bnd"
+            patterns:
+              - ".*aQute\\.bnd.*"
+          - name: "Spring Gradle Plugins"
+            patterns:
+              - ".*spring\\.gradle.*"
+          - name: "Codehaus BTM"
+            patterns:
+              - ".*codehaus\\.btm.*"
+          - name: "Codehaus Janino"
+            patterns:
+              - ".*codehaus\\.janino.*"
+          - name: "Codehaus Mojo"
+            patterns:
+              - ".*codehaus\\.mojo.*"
+
+      - name: "Testing"
+        frameworks:
+          - name: "UlisesBochio"
+            patterns:
+              - ".*ulisesbochio.*"
+          - name: "Karate"
+            patterns:
+              - ".*intuit\\.karate.*"
+          - name: "TooMuchCoding JSONAssert"
+            patterns:
+              - ".*toomuchcoding\\.jsonassert.*"
+          - name: "Cucumber"
+            patterns:
+              - ".*cukes.*"
+              - ".*cucumber.*"
+          - name: "Kotest"
+            patterns:
+              - ".*kotest.*"
+          - name: "Flapdoodle Embedded"
+            patterns:
+              - ".*flapdoodle\\.embed.*"
+          - name: "JUnit"
+            patterns:
+              - ".*junit.*"
+          - name: "JUnit Jupiter / Platform / Vintage"
+            patterns:
+              - ".*junit\\.(?:jupiter|platform|vintage).*"
+          - name: "Serenity BDD"
+            patterns:
+              - ".*serenity-bdd.*"
+          - name: "HtmlUnit"
+            patterns:
+              - ".*htmlunit.*"
+          - name: "AssertJ"
+            patterns:
+              - ".*assertj.*"
+          - name: "Awaitility"
+            patterns:
+              - ".*awaitility.*"
+          - name: "Hamcrest"
+            patterns:
+              - ".*hamcrest.*"
+          - name: "JMock"
+            patterns:
+              - ".*jmock.*"
+          - name: "Arquillian"
+            patterns:
+              - ".*arquillian.*"
+          - name: "Mockito"
+            patterns:
+              - ".*mockito.*"
+          - name: "PowerMock"
+            patterns:
+              - ".*powermock.*"
+          - name: "Spock Framework"
+            patterns:
+              - ".*spockframework.*"
+          - name: "Testcontainers"
+            patterns:
+              - ".*testcontainers.*"
+          - name: "SeleniumHQ"
+            patterns:
+              - ".*selenium.*"
+          - name: "Testing Utilities"
+            patterns:
+              - ".*testing.*"
+          - name: "Rest-Assured"
+            patterns:
+              - ".*rest-assured.*"
+          - name: "Micronaut Test"
+            patterns:
+              - ".*micronaut-test.*"
+          - name: "Groovy Testing"
+            patterns:
+              - ".*codehaus\\.groovy.*testing.*"
+          - name: "TestNG"
+            patterns:
+              - ".*testng.*"
+          - name: "EasyMock"
+            patterns:
+              - ".*easymock.*"
+          - name: "Pact JVM"
+            patterns:
+              - ".*pact-jvm.*"
+          - name: "QuickTheories"
+            patterns:
+              - ".*quicktheories.*"
+          - name: "JBehave"
+            patterns:
+              - ".*jbehave.*"
+          - name: "Gatling"
+            patterns:
+              - ".*gatling.*"
+          - name: "Postman Libraries"
+            patterns:
+              - ".*postman.*"
+          - name: "Datafaker"
+            patterns:
+              - ".*datafaker.*"
+          - name: "Selenide"
+            patterns:
+              - ".*selenide.*"
+
+      - name: "Code Quality & Profiling"
+        frameworks:
+          - name: "SpotBugs"
+            patterns:
+              - ".*spotbugs.*"
+          - name: "JaCoCo"
+            patterns:
+              - ".*jacoco.*"
+          - name: "SonarQube"
+            patterns:
+              - ".*sonar.*"

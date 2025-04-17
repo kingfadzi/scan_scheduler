@@ -1,0 +1,174 @@
+categories:
+  - name: "Infrastructure Platform"
+    subcategories:
+      - name: "Provisioning Systems"
+        frameworks:
+          - name: "Terraform"
+          - name: "Pulumi"
+          - name: "AWS CloudFormation"
+          - name: "Azure ARM Templates"
+          - name: "Bicep"
+          - name: "Packer"
+          - name: "Vagrant"
+
+      - name: "Compute Services"
+        frameworks:
+          - name: "AWS EC2"
+          - name: "Google Compute Engine"
+          - name: "Azure Virtual Machines"
+          - name: "AWS Lambda"
+          - name: "Google Cloud Run"
+          - name: "Azure App Service"
+
+      - name: "Networking Services"
+        frameworks:
+          - name: "AWS VPC"
+          - name: "Azure Virtual Network"
+          - name: "Service Meshes (Istio, Linkerd, Consul Connect)"
+          - name: "Load Balancers"
+          - name: "Ingress Controllers"
+          - name: "API Gateways"
+
+      - name: "Storage Services"
+        frameworks:
+          - name: "AWS S3"
+          - name: "Google Cloud Storage"
+          - name: "Azure Blob Storage"
+          - name: "Persistent Volumes (Kubernetes)"
+
+      - name: "Database and Data Services"
+        frameworks:
+          - name: "AWS RDS"
+          - name: "AWS DynamoDB"
+          - name: "Google Cloud SQL"
+          - name: "Azure CosmosDB"
+          - name: "Redis"
+          - name: "Elasticache"
+
+  - name: "Container Platform"
+    subcategories:
+      - name: "Container Build and Management"
+        frameworks:
+          - name: "Dockerfile"
+          - name: "docker-compose"
+
+      - name: "Kubernetes Orchestration"
+        frameworks:
+          - name: "Kubernetes Clusters (EKS, AKS, GKE)"
+          - name: "Workload Types (Deployment, StatefulSet, DaemonSet)"
+          - name: "Application Packaging (Helm, Kustomize)"
+          - name: "OpenShift Templates"
+
+      - name: "GitOps and Continuous Deployment"
+        frameworks:
+          - name: "ArgoCD"
+          - name: "FluxCD"
+
+  - name: "Configuration and Secrets Management"
+    subcategories:
+      - name: "Configuration Systems"
+        frameworks:
+          - name: "Ansible"
+          - name: "Chef"
+          - name: "SaltStack"
+
+      - name: "Secrets Management Systems"
+        frameworks:
+          - name: "HashiCorp Vault"
+          - name: "AWS Secrets Manager"
+          - name: "SealedSecrets (Kubernetes)"
+          - name: "SSM Parameter Store"
+
+  - name: "Developer Platform and CI/CD"
+    subcategories:
+      - name: "Source Code Management and Integration"
+        frameworks:
+          - name: "GitHub"
+          - name: "GitLab"
+          - name: "Bitbucket"
+          - name: "Azure Repos"
+
+      - name: "Continuous Integration Systems"
+        frameworks:
+          - name: "GitHub Actions"
+          - name: "GitLab CI"
+          - name: "Jenkins"
+          - name: "TeamCity"
+          - name: "Azure Pipelines"
+          - name: "Bitbucket Pipelines"
+
+      - name: "Continuous Delivery and Deployment Systems"
+        frameworks:
+          - name: "ArgoCD Applications"
+          - name: "FluxCD Workflows"
+
+  - name: "Observability and Reliability Engineering"
+    subcategories:
+      - name: "Logging Systems"
+        frameworks:
+          - name: "ELK Stack (Elasticsearch, Logstash, Kibana)"
+          - name: "AWS CloudWatch Logs"
+          - name: "Loki"
+
+      - name: "Metrics and Monitoring Systems"
+        frameworks:
+          - name: "Prometheus"
+          - name: "AWS CloudWatch Metrics"
+          - name: "Grafana"
+
+      - name: "Tracing Systems"
+        frameworks:
+          - name: "Jaeger"
+          - name: "AWS X-Ray"
+
+      - name: "Alerting and SLO Management"
+        frameworks:
+          - name: "Alertmanager"
+          - name: "Grafana Alerts"
+
+  - name: "Security, Policy, and Compliance"
+    subcategories:
+      - name: "Identity and Access Management"
+        frameworks:
+          - name: "AWS IAM"
+          - name: "Azure Active Directory"
+          - name: "Kubernetes RBAC"
+
+      - name: "Network Security Controls"
+        frameworks:
+          - name: "AWS Security Groups"
+          - name: "Azure Network Security Groups"
+          - name: "Service Mesh MTLS"
+
+      - name: "Secrets and Key Management"
+        frameworks:
+          - name: "AWS KMS"
+          - name: "Azure Key Vault"
+          - name: "Vault Transit Encryption"
+
+      - name: "Policy as Code Systems"
+        frameworks:
+          - name: "Open Policy Agent (OPA)"
+          - name: "AWS Service Control Policies (SCPs)"
+
+      - name: "Application Security and Protection"
+        frameworks:
+          - name: "AWS WAF"
+          - name: "Cloudflare WAF"
+
+  - name: "Cost Management and Resource Optimization"
+    subcategories:
+      - name: "Cost Tracking and Controls"
+        frameworks:
+          - name: "AWS Budgets"
+          - name: "Azure Cost Management"
+
+      - name: "Resource Tagging and Governance"
+        frameworks:
+          - name: "AWS Resource Tags"
+          - name: "Azure Resource Tags"
+
+      - name: "Scaling and Autoscaling"
+        frameworks:
+          - name: "AWS Auto Scaling Groups"
+          - name: "Kubernetes Horizontal Pod Autoscalers (HPA)"

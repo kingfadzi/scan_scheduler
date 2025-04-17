@@ -1,0 +1,69 @@
+categories:
+  - name: "Serialization"
+    subcategories:
+
+      - name: "JSON/XML"
+        frameworks:
+          - name: "FasterXML Jackson"
+            patterns:
+              - ".*fasterxml.*"
+          - name: "GlassFish JAXB"
+            patterns:
+              - ".*glassfish\\.jaxb.*"
+          - name: "Jayway JsonPath"
+            patterns:
+              - ".*jayway\\.jsonpath.*"
+          - name: "Googlecode JSON-Simple"
+            patterns:
+              - ".*googlecode\\.json-simple.*"
+          - name: "XStream"
+            patterns:
+              - ".*thoughtworks\\.xstream.*"
+          - name: "Apache Commons Collections"
+            patterns:
+              - ".*commons-collections.*"
+          - name: "dom4j"
+            patterns:
+              - ".*dom4j.*"
+          - name: "Jaxen"
+            patterns:
+              - ".*jaxen.*"
+          - name: "Minidev"
+            patterns:
+              - ".*minidev.*"
+          - name: "Codehaus Jackson, Woodstox, Castor, Jettison"
+            patterns:
+            - ".*codehaus\\.(?:jackson|woodstox|castor|jettison).*"
+          - name: "JDOM"
+            patterns:
+              - ".*jdom.*"
+          - name: "org.json"
+            patterns:
+              - ".*org\\.json.*"
+          - name: "StAX Extensions"
+            patterns:
+              - ".*jvnet\\.(?:staxex|mimepull).*"
+          - name: "XMLUnit"
+            patterns:
+              - ".*xmlunit.*"
+          - name: "SnakeYAML"
+            patterns:
+              - ".*org\\.yaml.*"
+          - name: "WSDL4J"
+            patterns:
+              - ".*wsdl4j.*"
+          - name: "Java-JSON Schema Validator (fge)"
+            patterns:
+              - ".*github\\.fge.*"
+          - name: "Java-JSON Additional Parsers"
+            patterns:
+              - ".*github\\.java-json.*"
+
+      - name: "Protocol Buffers & Binary Formats"
+        frameworks:
+          - name: "Google Protocol Buffers"
+            patterns:
+              - ".*google\\.protobuf.*"
+          - name: "Apache Avro"
+            patterns:
+              - ".*apache\\.avro.*"
