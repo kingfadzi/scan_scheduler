@@ -18,7 +18,7 @@ dependencies_flow = create_analysis_flow(
 if __name__ == "__main__":
     dependencies_flow.deploy(
         name="main-analysis-deployment",
-        work_pool_name="fundamentals_pool",
+        work_pool_name="fundamentals-pool",
         parameters={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
