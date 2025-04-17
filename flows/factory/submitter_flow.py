@@ -6,6 +6,7 @@ from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client import get_client
 from prefect.client.schemas.filters import FlowRunFilter, DeploymentFilter
+
 from shared.utils import Utils
 from flows.factory.flow_config import FlowConfig
 import json
@@ -13,7 +14,6 @@ import json
 MAX_RUNNING = 4
 MAX_WAITING = 4
 MAX_IN_FLIGHT = MAX_RUNNING + MAX_WAITING
-
 
 
 @flow(name="submitter_flow")
@@ -37,17 +37,18 @@ async def submitter_flow(
 
     utils = Utils(logger=logger)
 
+    async with get_client() as client:
+        deployment = await client.read_deployment_by_name(processor_deployment)
+        deployment_id = deployment.id
+
     while True:
         async with get_client() as client:
-            deployment = await client.read_deployment_by_name(processor_deployment)
-            flow_filter = FlowRunFilter(
-                deployment=DeploymentFilter(id={"any_": [deployment.id]})
-            )
             runs = await client.read_flow_runs(
-                flow_filter=flow_filter,
+                flow_filter=FlowRunFilter(
+                    deployment=DeploymentFilter(id={"any_": [deployment_id]})
+                ),
                 limit=100
             )
-
 
             running = sum(
                 1 for r in runs if r.state.name == "Running" and r.parameters.get("parent_run_id") == parent_run_id
@@ -64,7 +65,7 @@ async def submitter_flow(
                 await asyncio.sleep(check_interval)
                 continue
 
-        repos = utils.fetch_repositories_batch(payload, offset=offset, batch_size=batch_size, logger=logger)
+        repos = utils.fetch_repositories_batch(payload, offset=offset, batch_size=batch_size)
 
         if not repos:
             logger.info("No more repos. Resetting offset to 0.")
@@ -87,7 +88,7 @@ async def submitter_flow(
 
         async with get_client() as client:
             await client.create_flow_run_from_deployment(
-                deployment_id=deployment.id,
+                deployment_id=deployment_id,
                 parameters={
                     "config": config.model_dump(),
                     "repos": [json.loads(json.dumps(r, default=str)) for r in repos],
