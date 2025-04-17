@@ -14,7 +14,7 @@ deployments:
         host_name: ["github.com"]
         activity_status: ["ACTIVE"]
         main_language: ["Python", "Java"]
-      processor_deployment: batch_repo_subflow/batch_repo_subflow-deployment
+      processor_deployment: batch_repo_subflow/batch_repo_subflow
       flow_prefix: DEPENDENCIES
       batch_size: 100
       sub_dir: dependencies
@@ -36,7 +36,7 @@ deployments:
         host_name: ["github.com"]
         activity_status: ["ACTIVE"]
         main_language: ["Python"]
-      processor_deployment: batch_repo_subflow/batch_repo_subflow-deployment
+      processor_deployment: batch_repo_subflow/batch_repo_subflow
       flow_prefix: STANDARDS
       batch_size: 100
       sub_dir: standards
