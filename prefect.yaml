@@ -51,6 +51,39 @@ deployments:
     work_queue: default
     schedule: null
 
+  - name: submitter-uber
+    entrypoint: flows/factory/submitter_flow.py:submitter_flow
+    parameters:
+      payload:
+        analysis_type: uber
+        host_name: [ "github.com" ]
+        activity_status: [ "ACTIVE" ]
+        main_language: [ "Python", "Java", "Javascript", "Typescript", "Go", "c#"]
+      processor_deployment: batch_repo_subflow/batch_repo_subflow
+      flow_prefix: UBER
+      batch_size: 100
+      sub_dir: uber
+      additional_tasks:
+        - core.iac_components
+        - core.semgrep
+        - core.lizard
+        - core.cloc
+        - core.goenry
+        - core.gitlog
+        - core.syft_dependency
+        - core.iac_components
+        - core.semgrep
+        - core.trivy
+        - core.grype
+        - core.xeol
+      processing_batch_workers: 4
+      per_batch_workers: 3
+      task_concurrency: 5
+      check_interval: 10
+    tags: [ submitter, uber ]
+    work_queue: default
+    schedule: null
+
   - name: batch_repo_subflow
     entrypoint: flows/factory/batch_repo_subflow.py:batch_repo_subflow
     parameters:

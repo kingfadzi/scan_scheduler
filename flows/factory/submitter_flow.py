@@ -5,7 +5,7 @@ from typing import Dict, List
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client import get_client
-from prefect.client.schemas.filters import FlowRunFilter, DeploymentFilter
+from prefect.client.schemas.filters import FlowRunFilter
 from prefect.client.schemas.sorting import FlowRunSort
 
 from shared.utils import Utils
@@ -15,7 +15,6 @@ import json
 MAX_RUNNING = 4
 MAX_WAITING = 4
 MAX_IN_FLIGHT = MAX_RUNNING + MAX_WAITING
-
 
 @flow(name="submitter_flow")
 async def submitter_flow(
@@ -44,7 +43,7 @@ async def submitter_flow(
 
     while True:
         async with get_client() as client:
-            # CRITICAL FIX: Proper filtering with tags and no limit
+
             runs = await client.read_flow_runs(
                 flow_run_filter=FlowRunFilter(
                     deployment_id={"any_": [deployment_id]},
@@ -94,7 +93,7 @@ async def submitter_flow(
                     "parent_run_id": parent_run_id
                 },
                 name=flow_run_name,
-                tags=[f"parent_run_id={parent_run_id}"]  # CRUCIAL: Tag for filtering
+                tags=[f"parent_run_id={parent_run_id}"]
             )
 
         logger.info(f"Submitted batch #{batch_counter} with {len(repos)} repos")
