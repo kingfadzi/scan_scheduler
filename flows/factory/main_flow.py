@@ -7,16 +7,7 @@ from prefect.task_runners import ConcurrentTaskRunner
 from flows.factory.flow_config import FlowConfig
 from flows.tasks.base_tasks import fetch_repositories_task, start_task
 from prefect.client import get_client
-from prefect.client.schemas.sorting import FlowRunSort
 
-
-async def get_active_flow_run_count(client, deployment_id):
-    flow_runs = await client.read_flow_runs(
-        deployment_id=deployment_id,
-        limit=20,
-        sort=[FlowRunSort.CREATED_DESC]
-    )
-    return sum(1 for run in flow_runs if run.state.name in {"RUNNING", "SCHEDULED", "PENDING"})
 
 
 def create_analysis_flow(
@@ -48,14 +39,14 @@ def create_analysis_flow(
             task_concurrency: int = default_task_concurrency
     ):
         logger = get_run_logger()
-        repo_count = 0
+        batch_futures = []
         current_batch = []
+        repo_count = 0
         batch_counter = 1
-        MAX_ACTIVE_BATCHES = 8
 
         try:
             parent_run_ctx = get_run_context()
-            parent_run_id = str(parent_run_ctx.flow_run.id)
+            parent_run_id = str(get_run_context().flow_run.id)
             parent_start_time = parent_run_ctx.flow_run.start_time
             parent_time_str = parent_start_time.strftime("%Y%m%d_%H%M%S")
 
@@ -69,59 +60,63 @@ def create_analysis_flow(
                 parent_run_id=parent_run_id
             )
 
+            logger.debug(
+                "Initializing flow with config:\n"
+                f"Subdir: {sub_dir}\nBatch size: {processing_batch_size}\n"
+                f"Workers: {processing_batch_workers}/{per_batch_workers}\n"
+                f"Additional tasks: {additional_tasks}"
+            )
+
             await start_task(flow_prefix)
 
-            async with get_client() as client:
-                deployment = await client.read_deployment_by_name(
-                    "main_analysis_flow/main-analysis-deployment"
-                )
+            async for repo in fetch_repositories_task(payload, db_fetch_batch_size):
+                repo_count += 1
+                current_batch.append(repo)
 
-                async for repo in fetch_repositories_task(payload, db_fetch_batch_size):
-                    repo_count += 1
-                    current_batch.append(repo)
-
-                    if len(current_batch) >= processing_batch_size:
-                        while True:
-                            active_count = await get_active_flow_run_count(client, deployment.id)
-                            if active_count < MAX_ACTIVE_BATCHES:
-                                break
-                            logger.debug(f"{active_count} active batches — waiting to drop below {MAX_ACTIVE_BATCHES}...")
-                            await asyncio.sleep(10)
-
-                        logger.info(f"Submitting batch {batch_counter:04d}")
-                        await submit_batch_subflow(
-                            config, current_batch.copy(), parent_time_str, batch_counter
+                if len(current_batch) >= processing_batch_size:
+                    logger.debug(f"Queueing batch {batch_counter} ({len(current_batch)} repos)")
+                    batch_futures.append(
+                        asyncio.create_task(
+                            submit_batch_subflow(
+                                config,
+                                current_batch.copy(),
+                                parent_time_str,
+                                batch_counter
+                            )
                         )
-                        current_batch = []
-                        batch_counter += 1
-
-                if current_batch:
-                    while True:
-                        active_count = await get_active_flow_run_count(client, deployment.id)
-                        if active_count < MAX_ACTIVE_BATCHES:
-                            break
-                        logger.debug(f"{active_count} active batches — waiting to drop below {MAX_ACTIVE_BATCHES}...")
-                        await asyncio.sleep(10)
-
-                    logger.info(f"Submitting final batch {batch_counter:04d}")
-                    await submit_batch_subflow(
-                        config, current_batch, parent_time_str, batch_counter
                     )
+                    current_batch = []
                     batch_counter += 1
 
-                logger.info(f"Submitted {batch_counter - 1} batches for {repo_count} repositories.")
+            if current_batch:
 
-                # Self-trigger next run
-                logger.info("Triggering next run of this flow...")
-                await client.create_flow_run_from_deployment(
-                    deployment_id=deployment.id,
-                    parameters={"payload": payload},
-                    name=f"auto_rerun_after_{parent_time_str}"
+                logger.debug(f"Queueing final batch {batch_counter} ({len(current_batch)} repos)")
+                #batch_futures.append(...)
+
+                logger.info(f"Submitted {len(batch_futures)} batches")
+
+                batch_futures.append(
+                    asyncio.create_task(
+                        submit_batch_subflow(
+                            config,
+                            current_batch,
+                            parent_time_str,
+                            batch_counter
+                        )
+                    )
                 )
+                batch_counter += 1
+
+            logger.info(f"Submitted {len(batch_futures)} batches with parent time {parent_time_str}")
+
+            if batch_futures:
+                results = await asyncio.gather(*batch_futures, return_exceptions=True)
+                success_count = sum(1 for res in results if not isinstance(res, Exception))
+                logger.info(f"Completed {success_count}/{len(results)} batches successfully")
 
             return {
                 "processed_repos": repo_count,
-                "batches": batch_counter - 1,
+                "batches": len(batch_futures),
                 "parent_run_time": parent_time_str
             }
 
@@ -129,10 +124,11 @@ def create_analysis_flow(
             logger.error(f"Main flow failed: {str(e)}", exc_info=True)
             raise
         finally:
+            #await refresh_views_task(flow_prefix)
             logger.info("Main flow cleanup completed")
 
     return main_flow
-
+    
 
 async def submit_batch_subflow(
         config: FlowConfig,
@@ -140,6 +136,7 @@ async def submit_batch_subflow(
         parent_start_time: str,
         batch_number: int
 ) -> str:
+
     logger = get_run_logger()
     try:
         async with get_client() as client:
@@ -159,7 +156,6 @@ async def submit_batch_subflow(
                 },
                 name=flow_run_name
             )
-            logger.info(f"Submitted {flow_run_name} (ID: {flow_run.id})")
             return flow_run.id
     except Exception as e:
         logger.error(f"Batch submission failed: {str(e)}", exc_info=True)
