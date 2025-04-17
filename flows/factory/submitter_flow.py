@@ -5,8 +5,7 @@ from typing import Dict, List
 from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client import get_client
-from shared.utils import fetch_repositories_batch
-from flows.helpers.repo_query_builder import fetch_repositories_dict
+from shared.utils import Utils
 from flows.factory.flow_config import FlowConfig
 import json
 
@@ -33,6 +32,8 @@ async def submitter_flow(
     batch_counter = 1
     parent_run_id = str(ctx.flow_run.id)
 
+    utils = Utils(logger=logger)
+
     while True:
         async with get_client() as client:
             runs = await client.read_flow_runs(
@@ -51,7 +52,7 @@ async def submitter_flow(
                 continue
         
 
-        repos = fetch_repositories_batch(payload, offset=offset, batch_size=batch_size, logger=logger)
+        repos = utils.fetch_repositories_batch(payload, offset=offset, batch_size=batch_size, logger=logger)
 
         if not repos:
             logger.info("No repos to process. Resetting offset to 0 and sleeping...")

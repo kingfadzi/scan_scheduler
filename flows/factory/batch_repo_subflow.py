@@ -1,7 +1,9 @@
 import asyncio
 from typing import List, Dict
-from prefect import flow, get_run_logger
+
 from asyncio import Semaphore, create_task, as_completed
+
+from prefect import get_run_logger, flow
 
 from flows.factory.flow_config import FlowConfig
 from flows.factory.single_repo_flow import process_single_repo_flow
