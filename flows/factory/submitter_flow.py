@@ -43,19 +43,19 @@ async def submitter_flow(
 
     while True:
         async with get_client() as client:
-            # CORRECTED FILTER HERE
+            # FIXED FILTER USING DEPLOYMENT_FILTER PARAMETER
             runs = await client.read_flow_runs(
-                flow_filter=FlowRunFilter(
-                    deployment_id={"any_": [deployment_id]}  # Fixed parameter
-                ),
+                deployment_filter=DeploymentFilter(id={"any_": [deployment_id]}),
                 limit=100
             )
 
             running = sum(
-                1 for r in runs if r.state.name == "Running" and r.parameters.get("parent_run_id") == parent_run_id
+                1 for r in runs if r.state.name == "Running" 
+                and r.parameters.get("parent_run_id") == parent_run_id
             )
             waiting = sum(
-                1 for r in runs if r.state.name in ("Scheduled", "Pending") and r.parameters.get("parent_run_id") == parent_run_id
+                1 for r in runs if r.state.name in ("Scheduled", "Pending") 
+                and r.parameters.get("parent_run_id") == parent_run_id
             )
             in_flight = running + waiting
 
