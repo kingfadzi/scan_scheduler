@@ -1,10 +1,7 @@
-import asyncio
 from flows.factory.main_flow import create_analysis_flow
 from config.config import Config
 
-VALID_DEPENDENCY_TASKS = [
-    "core.syft_dependency"
-]
+VALID_DEPENDENCY_TASKS = ["core.syft_dependency"]
 
 dependencies_flow = create_analysis_flow(
     flow_name="dependencies_flow",
@@ -18,15 +15,15 @@ dependencies_flow = create_analysis_flow(
     default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
 )
 
-
 if __name__ == "__main__":
-
-    asyncio.run(dependencies_flow(
-        payload={
+    dependencies_flow.deploy(
+        name="main-analysis-deployment",
+        work_pool_name="fundamentals_pool",
+        parameters={
             "payload": {
                 "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-                "activity_status": ['ACTIVE'],
-                 "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
+                "activity_status": ["ACTIVE"],
+                "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
             }
         }
-    ))
+    )
