@@ -1,0 +1,60 @@
+name: repo-analysis
+prefect-version: 2.14.0
+
+build:
+  - prefect.deployments.steps.set_working_directory:
+      directory: .
+
+deployments:
+  - name: submitter-dependencies
+    entrypoint: flows/submitter_flow.py:submitter_flow
+    parameters:
+      payload:
+        analysis_type: dependencies
+        host_name: ["github.com"]
+        activity_status: ["ACTIVE"]
+        main_language: ["Python", "Java"]
+      processor_deployment: batch_repo_subflow/batch_repo_subflow-deployment
+      flow_prefix: DEPENDENCIES
+      batch_size: 100
+      sub_dir: dependencies
+      additional_tasks: ["core.syft_dependency"]
+      processing_batch_workers: 4
+      per_batch_workers: 4
+      task_concurrency: 10
+      check_interval: 10
+    tags: [submitter, dependencies]
+    work_queue: default
+    schedule: null
+
+  - name: submitter-standards
+    entrypoint: flows/submitter_flow.py:submitter_flow
+    parameters:
+      payload:
+        analysis_type: standards
+        host_name: ["github.com"]
+        activity_status: ["ACTIVE"]
+        main_language: ["Python"]
+      processor_deployment: batch_repo_subflow/batch_repo_subflow-deployment
+      flow_prefix: STANDARDS
+      batch_size: 100
+      sub_dir: standards
+      additional_tasks: ["core.iac_components", "core.semgrep"]
+      processing_batch_workers: 3
+      per_batch_workers: 3
+      task_concurrency: 5
+      check_interval: 10
+    tags: [submitter, standards]
+    work_queue: default
+    schedule: null
+
+  - name: batch_repo_subflow
+    entrypoint: flows/batch_repo_subflow.py:batch_repo_subflow
+    parameters:
+      config: {}
+      repos: []
+      parent_run_id: ""
+    tags: [processor]
+    work_queue: default
+    schedule: null
+

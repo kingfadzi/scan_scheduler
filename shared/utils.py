@@ -80,6 +80,41 @@ class Utils(BaseLogger):
                 f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
                 f"over {offset//batch_size} pages"
             )
+            
+    def fetch_repositories_batch(payload, offset=0, batch_size=1000, logger=None):
+        if logger:
+            logger.info(
+                f"Fetching repository batch - Offset: {offset:,}, Size: {batch_size}, Payload keys: {list(payload.keys())}"
+            )
+    
+        session = Session()
+        base_query = build_query(payload)
+    
+        if logger:
+            logger.debug(f"Base SQL template:\n{base_query}")
+    
+        try:
+            final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+            start_time = time.perf_counter()
+            batch = session.query(Repository).from_statement(text(final_query)).all()
+            query_time = time.perf_counter() - start_time
+    
+            if logger:
+                logger.info(
+                    f"Fetched {len(batch)} repos in {query_time:.2f}s (offset {offset})"
+                )
+    
+            if not batch:
+                return []
+    
+            def serialize_repo(repo):
+                return {c.name: getattr(repo, c.name) for c in repo.__table__.columns}
+    
+            return [serialize_repo(repo) for repo in batch]
+    
+        finally:
+            session.close()          
+            
 
     def refresh_views(self):
 
