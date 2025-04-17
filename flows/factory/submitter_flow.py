@@ -43,9 +43,10 @@ async def submitter_flow(
 
     while True:
         async with get_client() as client:
+            # CORRECTED FILTER HERE
             runs = await client.read_flow_runs(
                 flow_filter=FlowRunFilter(
-                    deployment=DeploymentFilter(id={"any_": [deployment_id]})
+                    deployment_id={"any_": [deployment_id]}  # Fixed parameter
                 ),
                 limit=100
             )
