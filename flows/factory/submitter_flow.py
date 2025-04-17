@@ -6,6 +6,7 @@ from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client import get_client
 from prefect.client.schemas.filters import FlowRunFilter, DeploymentFilter
+from prefect.client.schemas.sorting import FlowRunSort
 
 from shared.utils import Utils
 from flows.factory.flow_config import FlowConfig
@@ -43,20 +44,17 @@ async def submitter_flow(
 
     while True:
         async with get_client() as client:
-            # FIXED FILTER USING DEPLOYMENT_FILTER PARAMETER
+            # CRITICAL FIX: Proper filtering with tags and no limit
             runs = await client.read_flow_runs(
-                deployment_filter=DeploymentFilter(id={"any_": [deployment_id]}),
-                limit=100
+                flow_run_filter=FlowRunFilter(
+                    deployment_id={"any_": [deployment_id]},
+                    tags={"any_": [f"parent_run_id={parent_run_id}"]}
+                ),
+                sort=FlowRunSort.START_TIME_DESC
             )
 
-            running = sum(
-                1 for r in runs if r.state.name == "Running" 
-                and r.parameters.get("parent_run_id") == parent_run_id
-            )
-            waiting = sum(
-                1 for r in runs if r.state.name in ("Scheduled", "Pending", "Late") 
-                and r.parameters.get("parent_run_id") == parent_run_id
-            )
+            running = sum(1 for r in runs if r.state.name == "Running")
+            waiting = sum(1 for r in runs if r.state.name in ("Scheduled", "Pending", "Late"))
             in_flight = running + waiting
 
             logger.info(f"[{parent_run_id}] running={running}, waiting={waiting}, in_flight={in_flight}")
@@ -95,7 +93,8 @@ async def submitter_flow(
                     "repos": [json.loads(json.dumps(r, default=str)) for r in repos],
                     "parent_run_id": parent_run_id
                 },
-                name=flow_run_name
+                name=flow_run_name,
+                tags=[f"parent_run_id={parent_run_id}"]  # CRUCIAL: Tag for filtering
             )
 
         logger.info(f"Submitted batch #{batch_counter} with {len(repos)} repos")
