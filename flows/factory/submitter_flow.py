@@ -66,7 +66,7 @@ async def submitter_flow(
                 await asyncio.sleep(check_interval)
                 continue
 
-        repos = utils.fetch_repositories_batch(payload, offset=offset, batch_size=batch_size)
+        repos = utils.fetch_repositories_batch(payload=payload, offset=offset, batch_size=batch_size)
 
         if not repos:
             logger.info("No more repos. Resetting offset to 0.")
