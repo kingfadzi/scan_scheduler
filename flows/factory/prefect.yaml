@@ -7,7 +7,7 @@ build:
 
 deployments:
   - name: submitter-dependencies
-    entrypoint: flows/submitter_flow.py:submitter_flow
+    entrypoint: flows/factory/submitter_flow.py:submitter_flow
     parameters:
       payload:
         analysis_type: dependencies
@@ -18,7 +18,8 @@ deployments:
       flow_prefix: DEPENDENCIES
       batch_size: 100
       sub_dir: dependencies
-      additional_tasks: ["core.syft_dependency"]
+      additional_tasks:
+        - core.syft_dependency
       processing_batch_workers: 4
       per_batch_workers: 4
       task_concurrency: 10
@@ -28,7 +29,7 @@ deployments:
     schedule: null
 
   - name: submitter-standards
-    entrypoint: flows/submitter_flow.py:submitter_flow
+    entrypoint: flows/factory/submitter_flow.py:submitter_flow
     parameters:
       payload:
         analysis_type: standards
@@ -39,7 +40,9 @@ deployments:
       flow_prefix: STANDARDS
       batch_size: 100
       sub_dir: standards
-      additional_tasks: ["core.iac_components", "core.semgrep"]
+      additional_tasks:
+        - core.iac_components
+        - core.semgrep
       processing_batch_workers: 3
       per_batch_workers: 3
       task_concurrency: 5
@@ -49,7 +52,7 @@ deployments:
     schedule: null
 
   - name: batch_repo_subflow
-    entrypoint: flows/batch_repo_subflow.py:batch_repo_subflow
+    entrypoint: flows/factory/batch_repo_subflow.py:batch_repo_subflow
     parameters:
       config: {}
       repos: []
@@ -57,4 +60,3 @@ deployments:
     tags: [processor]
     work_queue: default
     schedule: null
-
