@@ -54,7 +54,7 @@ async def submitter_flow(
                 and r.parameters.get("parent_run_id") == parent_run_id
             )
             waiting = sum(
-                1 for r in runs if r.state.name in ("Scheduled", "Pending") 
+                1 for r in runs if r.state.name in ("Scheduled", "Pending", "Late") 
                 and r.parameters.get("parent_run_id") == parent_run_id
             )
             in_flight = running + waiting
