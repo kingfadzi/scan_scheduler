@@ -15,6 +15,7 @@ METRIC_TASKS = [
     "core.gitlog"
 ]
 
+
 @task(name='Clean Up Repository Task', cache_policy=NO_CACHE)
 def cleanup_hook_adapter(flow=None, flow_run=None, state=None):
     logger = get_run_logger()
