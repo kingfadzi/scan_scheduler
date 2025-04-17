@@ -6,8 +6,7 @@ from prefect import flow, get_run_logger
 from prefect.context import get_run_context
 from prefect.client import get_client
 from prefect.client.schemas.filters import FlowRunFilter, DeploymentFilter
-
-from flows.helpers.repo_query_builder import fetch_repositories_batch
+from shared.utils import Utils
 from flows.factory.flow_config import FlowConfig
 import json
 
@@ -35,6 +34,8 @@ async def submitter_flow(
     offset = 0
     batch_counter = 1
 
+    utils = Utils(logger=logger)
+
     while True:
         async with get_client() as client:
             deployment = await client.read_deployment_by_name(processor_deployment)
@@ -61,7 +62,7 @@ async def submitter_flow(
                 await asyncio.sleep(check_interval)
                 continue
 
-        repos = fetch_repositories_batch(payload, offset=offset, batch_size=batch_size, logger=logger)
+        repos = utils.fetch_repositories_batch(payload, offset=offset, batch_size=batch_size, logger=logger)
 
         if not repos:
             logger.info("No more repos. Resetting offset to 0.")
