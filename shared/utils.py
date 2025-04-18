@@ -90,10 +90,15 @@ class Utils(BaseLogger):
         base_query = build_query(payload)
 
         try:
-            final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+            # Log total only on first batch
+            if offset == 0:
+                count_query = f"SELECT COUNT(*) FROM ({base_query}) AS filtered"
+                total_repos = session.execute(text(count_query)).scalar()
+                self.logger.info(f"Total repositories matching filters: {total_repos:,}")
 
+            final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
             self.logger.debug(
-                f"Executing SQL:\n{text(final_query).statement}\n"
+                f"Executing SQL:\n{final_query}\n"
                 f"Parameters: offset={offset}, limit={batch_size}"
             )
 
@@ -103,7 +108,6 @@ class Utils(BaseLogger):
 
             self.logger.info(
                 f"Fetched {len(batch)} repos in {query_time:.2f}s | "
-                f"Query: {final_query.split('FROM')[0]}... [truncated] | "
                 f"Offset: {offset}, Limit: {batch_size}"
             )
 
@@ -116,13 +120,13 @@ class Utils(BaseLogger):
             return [serialize_repo(repo) for repo in batch]
 
         except Exception as e:
-            self.logger.error(
-                f"Query failed: {final_query} | "
-                f"Error: {str(e)}"
-            )
+            self.logger.error(f"Query failed: {final_query} | Error: {str(e)}")
             raise
         finally:
             session.close()
+
+
+
 
 
     def refresh_views(self):
