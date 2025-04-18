@@ -64,8 +64,6 @@ deployments:
       batch_size: 100
       sub_dir: uber
       additional_tasks:
-        - core.iac_components
-        - core.semgrep
         - core.lizard
         - core.cloc
         - core.goenry

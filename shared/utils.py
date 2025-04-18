@@ -81,7 +81,7 @@ class Utils(BaseLogger):
                 f"over {offset//batch_size} pages"
             )
             
-    def fetch_repositories_batch(self, payload, offset=0, batch_size=1000, logger=None):
+    def fetch_repositories_batch(self, payload, offset=0, batch_size=100, logger=None):
         if logger:
             logger.info(
                 f"Fetching repository batch - Offset: {offset:,}, Size: {batch_size}, Payload keys: {list(payload.keys())}"
