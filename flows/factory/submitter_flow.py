@@ -7,7 +7,7 @@ from prefect.context import get_run_context
 from prefect.client import get_client
 from prefect.client.schemas.filters import FlowRunFilter
 from prefect.client.schemas.sorting import FlowRunSort
-
+from prefect.runtime import flow_run
 from shared.utils import Utils
 from flows.factory.flow_config import FlowConfig
 import json
@@ -18,8 +18,15 @@ MAX_WAITING = 4
 MAX_IN_FLIGHT = MAX_RUNNING + MAX_WAITING
 RETRY_DELAY_SECONDS = 10
 
+def generate_submitter_flow_name():
+    flow_prefix = flow_run.parameters.get("flow_prefix", "UNNAMED_FLOW")
+    return f"{flow_prefix}_SUBMITTER_FLOW"
 
-@flow(name="submitter_flow")
+@flow(
+    name="submitter_flow",
+    flow_run_name=generate_submitter_flow_name,
+    persist_result=False
+)
 async def submitter_flow(
         payload: Dict,
         processor_deployment: str,

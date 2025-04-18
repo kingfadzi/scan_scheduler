@@ -8,7 +8,7 @@ from prefect import get_run_logger, flow
 from flows.factory.flow_config import FlowConfig
 from flows.factory.single_repo_flow import process_single_repo_flow
 
-@flow(name="batch_repo_subflow")
+@flow(name="batch_repo_subflow", persist_result=False)
 async def batch_repo_subflow(config: FlowConfig, repos: List[Dict], parent_run_id: str):
     logger = get_run_logger()
     logger.info(f"Processing {len(repos)} repos with parent_run_id={parent_run_id}")
