@@ -61,7 +61,7 @@ deployments:
         main_language: [ "Python", "Java", "Javascript", "Typescript", "Go", "c#"]
       processor_deployment: batch_repo_subflow/batch_repo_subflow
       flow_prefix: UBER
-      batch_size: 100
+      batch_size: 20
       sub_dir: uber
       additional_tasks:
         - core.lizard
@@ -75,8 +75,8 @@ deployments:
         - core.grype
         - core.xeol
       processing_batch_workers: 4
-      per_batch_workers: 3
-      task_concurrency: 5
+      per_batch_workers: 5
+      task_concurrency: 1
       check_interval: 10
     tags: [ submitter, uber ]
     work_queue: default
