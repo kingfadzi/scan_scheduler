@@ -81,11 +81,10 @@ class Utils(BaseLogger):
                 f"over {offset//batch_size} pages"
             )
 
-    def fetch_repositories_batch(self, payload, offset=0, batch_size=100, logger=None):
-        if logger:
-            logger.info(
-                f"Fetching repository batch - Offset: {offset:,}, Size: {batch_size}, Payload keys: {list(payload.keys())}"
-            )
+    def fetch_repositories_batch(self, payload, offset=0, batch_size=100):
+        self.logger.info(
+            f"Fetching repository batch - Offset: {offset:,}, Size: {batch_size}, Payload keys: {list(payload.keys())}"
+        )
 
         session = Session()
         base_query = build_query(payload)
@@ -93,22 +92,20 @@ class Utils(BaseLogger):
         try:
             final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
 
-            if logger:
-                logger.debug(
-                    f"Executing SQL:\n{text(final_query).statement}\n"
-                    f"Parameters: offset={offset}, limit={batch_size}"
-                )
+            self.logger.debug(
+                f"Executing SQL:\n{text(final_query).statement}\n"
+                f"Parameters: offset={offset}, limit={batch_size}"
+            )
 
             start_time = time.perf_counter()
             batch = session.query(Repository).from_statement(text(final_query)).all()
             query_time = time.perf_counter() - start_time
 
-            if logger:
-                logger.info(
-                    f"Fetched {len(batch)} repos in {query_time:.2f}s | "
-                    f"Query: {final_query.split('FROM')[0]}... [truncated] | "
-                    f"Offset: {offset}, Limit: {batch_size}"
-                )
+            self.logger.info(
+                f"Fetched {len(batch)} repos in {query_time:.2f}s | "
+                f"Query: {final_query.split('FROM')[0]}... [truncated] | "
+                f"Offset: {offset}, Limit: {batch_size}"
+            )
 
             if not batch:
                 return []
@@ -119,16 +116,14 @@ class Utils(BaseLogger):
             return [serialize_repo(repo) for repo in batch]
 
         except Exception as e:
-            if logger:
-                logger.error(
-                    f"Query failed: {final_query} | "
-                    f"Error: {str(e)}"
-                )
+            self.logger.error(
+                f"Query failed: {final_query} | "
+                f"Error: {str(e)}"
+            )
             raise
         finally:
             session.close()
 
-            
 
     def refresh_views(self):
 
