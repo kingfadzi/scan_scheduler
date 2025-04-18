@@ -10,7 +10,7 @@ if __name__ == "__main__":
             "activity_status": ["ACTIVE"]
             # "main_language": ["Python"]
         },
-        processor_deployment="batch_repo_subflow/batch_repo_subflow-deployment",
+        processor_deployment="batch_repo_subflow/batch_repo_subflow",
         flow_prefix="STAN",
         batch_size=100,
         check_interval=10,
