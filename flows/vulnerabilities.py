@@ -1,32 +1,26 @@
-from config.config import Config
 import asyncio
-from flows.factory.main_flow import create_analysis_flow
-
-VALID_VULN_TASKS = [
-    "core.trivy",
-    "core.grype",
-    "core.xeol"
-]
-
-vulnerabilities_flow = create_analysis_flow(
-    flow_name="vulnerabilities_flow",
-    default_sub_dir="vulnerabilities",
-    default_flow_prefix="VULN",
-    default_additional_tasks=VALID_VULN_TASKS,
-    default_db_fetch_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
-    default_processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
-    default_per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
-    default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
-)
+from config.config import Config
+from flows.factory.submitter_flow import submitter_flow
 
 if __name__ == "__main__":
-    asyncio.run(vulnerabilities_flow(
+    asyncio.run(submitter_flow(
         payload={
-            "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-                "activity_status": ['ACTIVE'],
-                "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
-        }
-        }
+            "analysis_type": "vulnerabilities",
+            "host_name": ["github.com"],
+            "activity_status": ["ACTIVE"],
+            "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
+        },
+        processor_deployment="batch_repo_subflow/batch_repo_subflow",
+        flow_prefix="VULN",
+        batch_size=100,
+        check_interval=10,
+        sub_dir="vulnerabilities",
+        additional_tasks=[
+            "core.trivy",
+            "core.grype",
+            "core.xeol"
+        ],
+        processing_batch_workers=4,
+        per_batch_workers=4,
+        task_concurrency=10
     ))

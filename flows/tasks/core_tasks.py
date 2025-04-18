@@ -1,6 +1,5 @@
 from prefect import task, get_run_logger
 from prefect.cache_policies import NO_CACHE
-from plugins.core.checkov_analysis import CheckovAnalyzer
 from plugins.core.iac_analysis import IacComponentAnalyzer
 from plugins.core.semgrep_analysis import SemgrepAnalyzer
 from plugins.core.gitlog_analysis import GitLogAnalyzer
@@ -8,25 +7,12 @@ from plugins.core.go_enry_analysis import GoEnryAnalyzer
 from plugins.core.lizard_analysis import LizardAnalyzer
 from plugins.core.cloc_analysis import ClocAnalyzer
 from plugins.core.trivy_analysis import TrivyAnalyzer
-from plugins.core.syft_analysis import SyftAnalyzer
 from plugins.core.grype_analysis import GrypeAnalyzer
 from plugins.core.xeol_analysis import XeolAnalyzer
 
 from plugins.core.syft_dependency_analysis import SyftDependencyAnalyzer
 from shared.models import IacComponent
 
-
-@task(name="Run Checkov Analysis Task", cache_policy=NO_CACHE)
-async def run_checkov_analysis_task(repo_dir, repo, run_id):
-    logger = get_run_logger()
-    try:
-        logger.info(f"[Standards Assessment] Starting Checkov analysis for repository: {repo['repo_id']}")
-        analyzer = CheckovAnalyzer(logger=logger, run_id=run_id)
-        analyzer.run_analysis(repo_dir=repo_dir, repo=repo)
-        logger.info(f"[Standards Assessment] Completed Checkov analysis for repository: {repo['repo_id']}")
-    except Exception as exc:
-        logger.exception("Error during Checkov analysis")
-        raise exc
 
 @task(name="Run Semgrep Analysis Task", cache_policy=NO_CACHE)
 async def run_semgrep_analysis_task(repo_dir, repo, run_id):

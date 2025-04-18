@@ -1,33 +1,27 @@
-from config.config import Config
 import asyncio
-from flows.factory.main_flow import create_analysis_flow
-
-VALID_METRICS_TASKS = [
-    "core.lizard",
-    "core.cloc",
-    "core.goenry",
-    "core.gitlog"
-]
-
-fundamental_metrics_flow = create_analysis_flow(
-    flow_name="fundamental_metrics_flow",
-    default_sub_dir="fundamental_metrics",
-    default_flow_prefix="METRICS",
-    default_additional_tasks=VALID_METRICS_TASKS,
-    default_db_fetch_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
-    default_processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
-    default_per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
-    default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
-)
+from config.config import Config
+from flows.factory.submitter_flow import submitter_flow
 
 if __name__ == "__main__":
-    asyncio.run(fundamental_metrics_flow(
+    asyncio.run(submitter_flow(
         payload={
-            "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-                #"activity_status": ['ACTIVE'],
-                # "main_language": ["Python"]
-            }
-        }
+            "analysis_type": "fundamental_metrics",
+            "host_name": ["github.com"]
+            # "activity_status": ["ACTIVE"],
+            # "main_language": ["Python"]
+        },
+        processor_deployment="batch_repo_subflow/batch_repo_subflow",
+        flow_prefix="METRICS",
+        batch_size=100,
+        check_interval=10,
+        sub_dir="fundamental_metrics",
+        additional_tasks=[
+            "core.lizard",
+            "core.cloc",
+            "core.goenry",
+            "core.gitlog"
+        ],
+        processing_batch_workers=4,
+        per_batch_workers=4,
+        task_concurrency=10
     ))

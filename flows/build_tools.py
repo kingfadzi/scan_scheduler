@@ -1,35 +1,28 @@
-from flows.factory.main_flow import create_analysis_flow
+import asyncio
 from config.config import Config
-
-VALID_BUILD_TASKS = [
-    "languages.go.build",
-    "languages.java.gradle.build",
-    "languages.java.maven.build",
-    "languages.javascript.build",
-    "languages.python.build"
-]
-
-build_tools_flow = create_analysis_flow(
-    flow_name="build_tools_flow",
-    default_sub_dir="build_tools",
-    default_flow_prefix="BUILD_TOOLS",
-    default_additional_tasks=VALID_BUILD_TASKS,
-    default_db_fetch_batch_size=Config.DEFAULT_DB_FETCH_BATCH_SIZE,
-    default_processing_batch_size=Config.DEFAULT_PROCESSING_BATCH_SIZE,
-    default_processing_batch_workers=Config.DEFAULT_PROCESSING_BATCH_WORKERS,
-    default_per_batch_workers=Config.DEFAULT_PER_BATCH_WORKERS,
-    default_task_concurrency=Config.DEFAULT_TASK_CONCURRENCY
-)
+from flows.factory.submitter_flow import submitter_flow
 
 if __name__ == "__main__":
-    import asyncio
-    # Local test payload
-    asyncio.run(build_tools_flow(
+    asyncio.run(submitter_flow(
         payload={
-            "payload": {
-                "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
-                "activity_status": ['ACTIVE'],
-                "main_language": ["Python","Java", "Go", "JavaScript"],
-            }
-        }
+            "analysis_type": "build_tools",
+            "host_name": ["github.com"],
+            "activity_status": ["ACTIVE"],
+            "main_language": ["Python", "Java", "Go", "JavaScript"]
+        },
+        processor_deployment="batch_repo_subflow/batch_repo_subflow",
+        flow_prefix="BUILD_TOOLS",
+        batch_size=100,
+        check_interval=10,
+        sub_dir="build_tools",
+        additional_tasks=[
+            "languages.go.build",
+            "languages.java.gradle.build",
+            "languages.java.maven.build",
+            "languages.javascript.build",
+            "languages.python.build"
+        ],
+        processing_batch_workers=4,
+        per_batch_workers=4,
+        task_concurrency=10
     ))

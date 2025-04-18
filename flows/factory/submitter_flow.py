@@ -21,16 +21,16 @@ RETRY_DELAY_SECONDS = 10
 
 @flow(name="submitter_flow")
 async def submitter_flow(
-    payload: Dict,
-    processor_deployment: str,
-    flow_prefix: str,
-    batch_size: int,
-    check_interval: int,
-    sub_dir: str,
-    additional_tasks: List[str],
-    processing_batch_workers: int,
-    per_batch_workers: int,
-    task_concurrency: int,
+        payload: Dict,
+        processor_deployment: str,
+        flow_prefix: str,
+        batch_size: int,
+        check_interval: int,
+        sub_dir: str,
+        additional_tasks: List[str],
+        processing_batch_workers: int,
+        per_batch_workers: int,
+        task_concurrency: int,
 ):
     logger = get_run_logger()
     ctx = get_run_context()
@@ -40,17 +40,29 @@ async def submitter_flow(
 
     utils = Utils(logger=logger)
 
+    logger.info(
+        f"Starting submitter flow - "
+        f"Processor: {processor_deployment}, "
+        f"Batch size: {batch_size}, "
+        f"Max in-flight: {MAX_IN_FLIGHT} ({MAX_RUNNING} running + {MAX_WAITING} waiting), "
+        f"Check interval: {check_interval}s, "
+        f"Workers: {processing_batch_workers}"
+    )
+
     try:
         async with get_client() as client:
             deployment = await client.read_deployment_by_name(processor_deployment)
             deployment_id = deployment.id
+            logger.debug(f"Resolved deployment '{processor_deployment}' to ID: {deployment_id}")
     except Exception as e:
-        logger.error(f"Failed to fetch deployment: {e}")
+        logger.error(f"Failed to fetch deployment '{processor_deployment}': {str(e)}")
         logger.debug(traceback.format_exc())
         return
 
     while True:
         try:
+            logger.debug(f"Processing cycle started - Batch: {batch_counter}, Offset: {offset}")
+
             async with get_client() as client:
                 runs = await client.read_flow_runs(
                     flow_run_filter=FlowRunFilter(
@@ -64,17 +76,32 @@ async def submitter_flow(
                 waiting = sum(1 for r in runs if r.state.name in ("Scheduled", "Pending", "Late"))
                 in_flight = running + waiting
 
-                logger.info(f"[{parent_run_id}] running={running}, waiting={waiting}, in_flight={in_flight}")
+                logger.info(
+                    f"Queue status - "
+                    f"Running: {running}/{MAX_RUNNING}, "
+                    f"Waiting: {waiting}/{MAX_WAITING}, "
+                    f"Total in-flight: {in_flight}/{MAX_IN_FLIGHT}, "
+                    f"Batches submitted: {batch_counter-1}, "
+                    f"Estimated repos: {(batch_counter-1)*batch_size}"
+                )
 
                 if in_flight >= MAX_IN_FLIGHT:
-                    logger.info(f"In-flight limit ({MAX_IN_FLIGHT}) reached. Sleeping...")
+                    logger.warning(
+                        f"Throttling active - in-flight limit reached ({in_flight}/{MAX_IN_FLIGHT}), "
+                        f"Next check in {check_interval}s"
+                    )
                     await asyncio.sleep(check_interval)
                     continue
 
             repos = utils.fetch_repositories_batch(payload=payload, offset=offset, batch_size=batch_size)
+            logger.debug(f"Fetched {len(repos)} repos (offset: {offset}, batch size: {batch_size})")
 
             if not repos:
-                logger.info("No more repos. Resetting offset to 0.")
+                logger.info(
+                    f"No repositories found at offset {offset}, "
+                    f"Resetting to offset 0, "
+                    f"Total processed: {batch_counter-1} batches ({(batch_counter-1)*batch_size} repos)"
+                )
                 offset = 0
                 await asyncio.sleep(check_interval)
                 continue
@@ -92,8 +119,16 @@ async def submitter_flow(
 
             flow_run_name = f"{flow_prefix}_{parent_time_str}_batch_{batch_counter:04d}"
 
+            logger.info(
+                f"Submitting batch #{batch_counter} - "
+                f"Repos: {len(repos)}, "
+                f"Flow name: {flow_run_name}, "
+                f"Current offset: {offset}, "
+                f"Next offset: {offset + batch_size}"
+            )
+
             async with get_client() as client:
-                await client.create_flow_run_from_deployment(
+                flow_run = await client.create_flow_run_from_deployment(
                     deployment_id=deployment_id,
                     parameters={
                         "config": config.model_dump(),
@@ -103,14 +138,16 @@ async def submitter_flow(
                     name=flow_run_name,
                     tags=[f"parent_run_id={parent_run_id}"]
                 )
+                logger.debug(f"Created flow run: {flow_run.name} (ID: {flow_run.id})")
 
-            logger.info(f"Submitted batch #{batch_counter} with {len(repos)} repos")
             batch_counter += 1
             offset += batch_size
             await asyncio.sleep(check_interval)
 
         except Exception as e:
-            logger.error(f"Exception occurred during flow loop: {e}")
+            logger.error(
+                f"Error in batch #{batch_counter} (offset: {offset}): {str(e)}, "
+                f"Retrying in {RETRY_DELAY_SECONDS}s"
+            )
             logger.debug(traceback.format_exc())
-            logger.info(f"Retrying in {RETRY_DELAY_SECONDS} seconds...")
             await asyncio.sleep(RETRY_DELAY_SECONDS)
