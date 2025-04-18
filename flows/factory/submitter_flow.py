@@ -49,6 +49,8 @@ async def submitter_flow(
         f"Workers: {processing_batch_workers}"
     )
 
+    parent_time_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
     try:
         async with get_client() as client:
             deployment = await client.read_deployment_by_name(processor_deployment)
@@ -58,6 +60,7 @@ async def submitter_flow(
         logger.error(f"Failed to fetch deployment '{processor_deployment}': {str(e)}")
         logger.debug(traceback.format_exc())
         return
+
 
     while True:
         try:
@@ -103,10 +106,11 @@ async def submitter_flow(
                     f"Total processed: {batch_counter-1} batches ({(batch_counter-1)*batch_size} repos)"
                 )
                 offset = 0
+                parent_time_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
                 await asyncio.sleep(check_interval)
                 continue
 
-            parent_time_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
             config = FlowConfig(
                 sub_dir=sub_dir,
                 flow_prefix=flow_prefix,

@@ -80,40 +80,54 @@ class Utils(BaseLogger):
                 f"Fetch completed - Total repositories retrieved: {total_fetched:,} "
                 f"over {offset//batch_size} pages"
             )
-            
+
     def fetch_repositories_batch(self, payload, offset=0, batch_size=100, logger=None):
         if logger:
             logger.info(
                 f"Fetching repository batch - Offset: {offset:,}, Size: {batch_size}, Payload keys: {list(payload.keys())}"
             )
-    
+
         session = Session()
         base_query = build_query(payload)
-    
-        if logger:
-            logger.debug(f"Base SQL template:\n{base_query}")
-    
+
         try:
             final_query = f"{base_query} OFFSET {offset} LIMIT {batch_size}"
+
+            if logger:
+                logger.debug(
+                    f"Executing SQL:\n{text(final_query).statement}\n"
+                    f"Parameters: offset={offset}, limit={batch_size}"
+                )
+
             start_time = time.perf_counter()
             batch = session.query(Repository).from_statement(text(final_query)).all()
             query_time = time.perf_counter() - start_time
-    
+
             if logger:
                 logger.info(
-                    f"Fetched {len(batch)} repos in {query_time:.2f}s (offset {offset})"
+                    f"Fetched {len(batch)} repos in {query_time:.2f}s | "
+                    f"Query: {final_query.split('FROM')[0]}... [truncated] | "
+                    f"Offset: {offset}, Limit: {batch_size}"
                 )
-    
+
             if not batch:
                 return []
-    
+
             def serialize_repo(repo):
                 return {c.name: getattr(repo, c.name) for c in repo.__table__.columns}
-    
+
             return [serialize_repo(repo) for repo in batch]
-    
+
+        except Exception as e:
+            if logger:
+                logger.error(
+                    f"Query failed: {final_query} | "
+                    f"Error: {str(e)}"
+                )
+            raise
         finally:
-            session.close()          
+            session.close()
+
             
 
     def refresh_views(self):
