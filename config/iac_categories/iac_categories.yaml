@@ -590,3 +590,76 @@ categories:
               - '\.yaml$'
             content_patterns:
               - 'kind:\s+HorizontalPodAutoscaler'
+  - name: "Infrastructure Platform"
+    subcategories:
+      - name: "Application Servers"
+        frameworks:
+          - name: "Apache Tomcat"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'web\.xml$'
+              - 'context\.xml$'
+            content_patterns:
+              - 'org\.apache\.tomcat'
+              - 'tomcat-maven-plugin'
+              - 'spring-boot-starter-tomcat'
+              - '<web-app'
+              - '<Context'
+          - name: "JBoss / WildFly"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'jboss-deployment-structure\.xml$'
+              - 'standalone\.xml$'
+            content_patterns:
+              - 'org\.jboss\..*'
+              - 'wildfly.*'
+              - 'jboss-deployment'
+              - '<jboss-deployment-structure>'
+              - '<subsystem xmlns="urn:jboss:domain'
+          - name: "WebLogic"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'weblogic-application\.xml$'
+              - 'config\.xml$'
+            content_patterns:
+              - 'weblogic-maven-plugin'
+              - 'com\.oracle\.weblogic'
+              - '<weblogic-application>'
+              - '<application-name>'
+          - name: "WebSphere"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'server\.xml$'
+              - 'ibm-application-bnd\.xml$'
+              - 'ibm-web-ext\.xml$'
+            content_patterns:
+              - 'com\.ibm\.websphere'
+              - '<featureManager>'
+              - '<application-bnd'
+          - name: "GlassFish / Payara"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'glassfish-resources\.xml$'
+              - 'sun-application\.xml$'
+            content_patterns:
+              - 'org\.glassfish'
+              - 'fish\.payara'
+              - '<glassfish-application>'
+              - '<sun-application>'
+          - name: "Jetty"
+            file_patterns:
+              - 'pom\.xml$'
+              - 'build\.gradle$'
+              - 'jetty\.xml$'
+              - 'start\.ini$'
+              - 'webdefault\.xml$'
+            content_patterns:
+              - 'org\.eclipse\.jetty'
+              - 'jetty-maven-plugin'
+              - '<Configure id="Server"'
+              - 'jetty\.server\.'

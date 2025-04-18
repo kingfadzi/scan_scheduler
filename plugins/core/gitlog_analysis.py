@@ -72,7 +72,7 @@ class GitLogAnalyzer(BaseLogger):
             for commit in repo_obj.iter_commits(default_branch)
             if commit.committed_datetime >= cutoff_date
         ]
-
+        
         metrics = {
             "repo_id": repo["repo_id"],
             "repo_size_bytes": total_size,
