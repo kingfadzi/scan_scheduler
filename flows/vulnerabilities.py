@@ -7,7 +7,7 @@ if __name__ == "__main__":
         payload={
             "analysis_type": "vulnerabilities",
             "host_name": ["github.com"],
-            "activity_status": ["ACTIVE"],
+            "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
             "main_language": ["c#", "go", "java", "JavaScript", "Ruby", "Python"]
         },
         processor_deployment="batch_repo_subflow/batch_repo_subflow",

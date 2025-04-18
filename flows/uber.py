@@ -6,7 +6,7 @@ if __name__ == "__main__":
     asyncio.run(submitter_flow(
         payload={
             "analysis_type": "uber",
-            "host_name": ["github.com"],
+            "host_name": [Config.GITLAB_HOSTNAME, Config.BITBUCKET_HOSTNAME],
             "activity_status": ["ACTIVE"]
         },
         processor_deployment="batch_repo_subflow/batch_repo_subflow",
