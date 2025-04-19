@@ -131,6 +131,8 @@ async def copy_table(entry, src_type, src_conn, dst_conn, src_table, dst_table, 
                 ddl = await extract_postgres_schema.fn(src_conn, src_table)
             else:
                 ddl = await extract_sqlserver_schema.fn(src_conn, dst_table)
+
+            ddl = ddl.replace(src_table, dst_table)
         except Exception as e:
             logger.error(f"Failed to extract schema from source DB for {src_table}: {e}")
             return
@@ -197,4 +199,6 @@ async def copy_multi_db_tables():
 if __name__ == "__main__":
     asyncio.run(copy_multi_db_tables())
 
+
+The full script has been updated. It now ensures the destination table is properly recreated using
 
