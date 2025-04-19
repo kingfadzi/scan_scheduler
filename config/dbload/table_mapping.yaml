@@ -11,7 +11,7 @@ databases:
 
   - name: sqlserver_migration
     source_type: sqlserver
-    enabled: true
+    enabled: false
     source_db: "DSN=sqlserver_source"
     target_db: postgresql://postgres:postgres@localhost/gitlab%2Dusage
     tables:
