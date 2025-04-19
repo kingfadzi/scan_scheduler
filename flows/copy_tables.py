@@ -200,5 +200,3 @@ if __name__ == "__main__":
     asyncio.run(copy_multi_db_tables())
 
 
-The full script has been updated. It now ensures the destination table is properly recreated using
-
