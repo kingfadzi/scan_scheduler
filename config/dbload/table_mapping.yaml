@@ -2,7 +2,7 @@ databases:
   - name: postgres_migration
     source_type: postgres
     enabled: true
-    source_db: postgresql://postgres:postgres@192.168.1.188/gitlab%2Dusage
+    source_db: postgresql://postgres:postgres@192.168.1.188:5432/gitlab%2Dusage
     target_db: postgresql://postgres:postgres@localhost/gitlab%2Dusage
     tables:
       - source: public.dependencies
