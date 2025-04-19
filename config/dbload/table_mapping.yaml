@@ -1,0 +1,18 @@
+databases:
+  - name: postgres_migration
+    enabled: true
+    source_type: postgres
+    source_db: postgresql://postgres:postgres@192.168.1.188/gitlab-usage
+    target_db: postgresql://postgres:postgres@localhost/gitlab-usage
+    tables:
+      - source: public.dependencies
+        dest: public.dependencies_temp
+
+  - name: sqlserver_migration
+    enabled: true
+    source_type: sqlserver
+    source_db: DRIVER={ODBC Driver 17 for SQL Server};SERVER=192.168.1.200;UID=sa;PWD=yourpass;DATABASE=source_db
+    target_db: postgresql://postgres:postgres@localhost/target_db
+    tables:
+      - source: dbo.syft_dependencies
+        dest: public.syft_dependencies_temp
